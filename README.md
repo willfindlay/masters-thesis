@@ -3,3 +3,7 @@
 ![Build Thesis](https://github.com/willfindlay/masters-thesis/workflows/Build%20Thesis/badge.svg)
 
 My Master's Thesis... eventually...
+
+## Important Links
+
+See [links](./notes/links.md).
