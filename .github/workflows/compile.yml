@@ -1,6 +1,6 @@
 name: Build Thesis
 
-on:[push, pull_request]
+on: [push, pull_request]
 
 jobs:
   build_latex:
