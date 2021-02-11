@@ -2,25 +2,82 @@
   fontsize=12pt,
   paper=letter,
   twosided,
-  %cleardoublepage=plain,
+  cleardoublepage=plain,
   %final
 ]{scrbook}
 
-\usepackage{thesis}
+\usepackage[utf8]{inputenc}
+\usepackage{findlay}
+
+% Use rmfamily for chapters, sections, etc.
+\addtokomafont{disposition}{\rmfamily}
+
+% Fix top and bottom margins
+\newgeometry{tmargin=1.67in, bmargin=1.67in}
 
 % Uncomment this to help debug layout
 %\usepackage{showframe}
 
-\title{TODO\@: Title Here}
+\newcommand{\bpfcontain}{\textsc{BPFContain}}
+
+\title{\bpfcontain\@: Securing the Soft Underbelly of Linux Containers}
 \author{William P.~Findlay}
-\date{\today}
+\date{April, 2021}
 
 \begin{document}
 
+% ==============================================================================
+% Cover Page, Abstract and TOC
+% ==============================================================================
+
+% Title page
 \include{titlepage}
 
+\frontmatter%
+
+\section*{Abstract}
+\cleardoublepage%
+
+\section*{Acknowledgements}
+\cleardoublepage%
+
+\section*{Prior Publication}
+\cleardoublepage%
+
+% TOC
+\begingroup
+\hypersetup{linkcolor=black}
 \tableofcontents
 \listoffigures
 \listoftables
+\endgroup
+
+\mainmatter%
+
+% ==============================================================================
+% Main Chapter Content Here
+% ==============================================================================
+
+\chapter{Introduction}%
+\label{c:introduction}
+\include{chapters/introduction}
+
+\begin{lstlisting}[language=c,caption={Hello there}]
+  int main() {
+    return 0;
+  }
+\end{lstlisting}
+
+\chapter{Background}%
+\label{c:background}
+\include{chapters/background}
+
+\chapter{Related Work}%
+\label{c:related}
+\include{chapters/related}
+
+\chapter{Conclusion}%
+\label{c:conclusion}
+\include{chapters/conclusion}
 
 \end{document}

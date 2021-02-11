@@ -1,0 +1,203 @@
+% ==============================================================================
+% Preamble
+% ==============================================================================
+
+\RequirePackage{etoolbox}
+
+% ==============================================================================
+% Spacing
+% ==============================================================================
+
+% for changing margins in titlepage
+\RequirePackage{geometry}
+
+% for 1.5 line spacing
+\RequirePackage{setspace}
+\onehalfspacing%
+% single spacing for table of contents
+\AfterTOCHead{\singlespacing}
+
+% recompute page layout based on the above
+\recalctypearea%
+
+% ==============================================================================
+% Colors
+% ==============================================================================
+
+% more colors (like RedOrange)
+\RequirePackage[dvipsnames]{xcolor}
+
+% some nice colors
+\definecolor[named]{red}{HTML}{A4031F}
+\definecolor[named]{blue}{HTML}{0071B2}
+\definecolor[named]{orange}{HTML}{E59C00}
+\definecolor[named]{green}{HTML}{009E73}
+\definecolor[named]{purple}{HTML}{88498F}
+
+% hyperref settings
+\RequirePackage[unicode, breaklinks=true]{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=purple,
+    urlcolor=blue,
+    citecolor=purple,
+}
+\urlstyle{same}
+
+% better references
+\RequirePackage{cleveref}
+% names for listings
+\crefname{lstlisting}{listing}{listings}
+\Crefname{lstlisting}{Listing}{Listings}
+
+% better enumerations
+\RequirePackage[shortlabels,inline]{enumitem}
+\setlist[enumerate]{
+  leftmargin=*
+}
+
+% bold smallcaps
+\RequirePackage{bold-extra}
+
+% ==============================================================================
+% Code Listings
+% ==============================================================================
+
+% code listings
+\RequirePackage{listings}
+
+% colorscheme for listings
+% new colors
+\definecolor{listing-background}{HTML}{F7F7F7}
+\definecolor{listing-rule}{HTML}{B3B2B3}
+\definecolor{listing-numbers}{HTML}{B3B2B3}
+% existing colors
+\colorlet{listing-basic}{black}
+\colorlet{listing-keyword}{purple}
+\colorlet{listing-keyword-2}{orange} % additional keywords
+\colorlet{listing-keyword-3}{red}    % additional keywords
+\colorlet{listing-identifier}{blue}
+\colorlet{listing-string}{green}
+\colorlet{listing-comment}{green}
+
+% define "none" language for listings
+\lstdefinelanguage{none}{
+  identifierstyle={\color{listing-basic}}
+}
+
+% et default listings style
+\lstdefinestyle{listing_style}{
+    language         = none,
+    numbers          = left,
+    xleftmargin      = 1em,
+    framexleftmargin = 0.25em,
+    xrightmargin      = 1em,
+    framexrightmargin = 1em,
+    backgroundcolor  = \color{listing-background},
+    numberstyle      = \color{listing-numbers}\ttfamily\normalsize\lst@ifdisplaystyle\footnotesize\fi,
+    basicstyle       = \ttfamily\normalsize\lst@ifdisplaystyle\footnotesize\singlespacing\fi,
+    breaklines       = true,
+    frame            = single,
+    framesep         = 0.19em,
+    rulecolor        = \color{listing-rule},
+    frameround       = ffff,
+    tabsize          = 4,
+    aboveskip        = 1em,
+    belowskip        = 1em,
+    abovecaptionskip = 0em,
+    belowcaptionskip = 0em,
+    identifierstyle  = {\color{listing-identifier}},
+    keywordstyle     = {\color{listing-keyword}\bfseries},
+    keywordstyle     = {[2]\color{listing-keyword-2}\bfseries},
+    keywordstyle     = {[3]\color{listing-keyword-3}\bfseries\itshape},
+    sensitive        = true,
+    commentstyle     = \color{listing-comment},
+    stringstyle      = \color{listing-string},
+    showstringspaces = false,
+    escapeinside     = {!@}{@!}, % Allow LaTeX inside these special comments
+    columns          = fullflexible,
+    keepspaces       = true,
+    literate         =
+    {…}{{\ldots}}1 {≥}{{>=}}1 {≤}{{<=}}1 {„}{{\glqq}}1 {“}{{\grqq}}1
+    {”}{{''}}1 {~}{$\sim$}{1}
+}
+\lstset{style=listing_style}
+
+% ==============================================================================
+% Tables
+% ==============================================================================
+
+% table packages
+\RequirePackage{booktabs}
+\RequirePackage{multirow}
+\RequirePackage{rotating}
+\RequirePackage{adjustbox}
+\RequirePackage{array}
+\RequirePackage{longtable}
+
+% center longtables
+\AtBeginEnvironment{longtable}{\singlespacing\centering}
+
+\setlength{\extrarowheight}{.5em}
+
+% add a column type for rotations
+\newcolumntype{R}[2]{%
+    >{\adjustbox{angle=#1,lap=\width-(#2)}\bgroup}%
+    l%
+    <{\egroup}%
+}
+\newcommand*\rot[1]{\multicolumn{1}{R{#1}{1em}}}%
+
+% circle commands for comparison tables
+\RequirePackage{wasysym}
+\newcommand{\fullc}{\CIRCLE}
+\newcommand{\halfc}{\LEFTcircle}
+\newcommand{\emptyc}{\Circle}
+
+% center floats by default
+\makeatletter
+\g@addto@macro\@floatboxreset{\centering}
+\makeatother
+
+% graphicx for figures
+\RequirePackage{graphicx}
+
+% barriers for figure placement
+\RequirePackage{placeins}
+
+% format captions
+\RequirePackage[bf,font={small,stretch=1}]{caption}
+
+% reposition captions automatically
+\RequirePackage{floatrow}
+\floatsetup[figure]{capposition=bottom}
+\floatsetup[listing]{capposition=top}
+\floatsetup[table]{capposition=top}
+
+% subcounters for figures and tables
+\RequirePackage{chngcntr}
+\ifdef{\chapter}{
+  \counterwithin{figure}{chapter}
+  \counterwithin{table}{chapter}
+  \AtBeginDocument%
+  {
+    \counterwithin{lstlisting}{chapter}
+  }
+}{
+  \counterwithin{figure}{section}
+  \counterwithin{table}{section}
+  \AtBeginDocument%
+  {
+    \counterwithin{lstlisting}{section}
+  }
+}
+
+% ==============================================================================
+% Misc.
+% ==============================================================================
+
+% so we can splice in PDFs
+\RequirePackage{pdfpages}
+
+% for \ifoptionfinal
+\RequirePackage{ifdraft}
