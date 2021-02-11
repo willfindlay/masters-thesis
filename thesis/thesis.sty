@@ -1,0 +1,25 @@
+% Much of the following preamble was inspired by or taken from Jon Gjengset
+% https://github.com/jonhoo/thesis/blob/master/thesis.tex
+
+\usepackage{geometry}
+
+% for 1.5 line spacing
+\usepackage{setspace}
+\onehalfspacing%
+% single spacing for table of contents
+\AfterTOCHead{\singlespacing}
+
+% recompute page layout based on the above
+\recalctypearea%
+
+% more colors (like RedOrange)
+\usepackage[dvipsnames]{xcolor}
+
+% so we can splice in PDFs
+\usepackage{pdfpages}
+
+% for \ifoptionfinal
+\usepackage{ifdraft}
+
+% clever references
+\usepackage{cleveref}

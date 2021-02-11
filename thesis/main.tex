@@ -1,5 +1,15 @@
-\documentclass{book}
+\documentclass[
+  fontsize=12pt,
+  paper=letter,
+  twosided,
+  %cleardoublepage=plain,
+  %final
+]{scrbook}
+
 \usepackage{thesis}
+
+% Uncomment this to help debug layout
+%\usepackage{showframe}
 
 \title{TODO\@: Title Here}
 \author{William P.~Findlay}
@@ -7,6 +17,10 @@
 
 \begin{document}
 
-\maketitle
+\include{titlepage}
+
+\tableofcontents
+\listoffigures
+\listoftables
 
 \end{document}
