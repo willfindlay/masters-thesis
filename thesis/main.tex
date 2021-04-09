@@ -1,13 +1,26 @@
 \documentclass[
   fontsize=12pt,
   paper=letter,
-  twosided,
+  twoside,
   cleardoublepage=plain,
   %final
 ]{scrbook}
 
 \usepackage[utf8]{inputenc}
 \usepackage{findlay}
+\usepackage{epigraph}
+
+% for changing margins in titlepage
+\RequirePackage{geometry}
+
+% for 1.5 line spacing
+\RequirePackage{setspace}
+\onehalfspacing%
+% single spacing for table of contents
+\AfterTOCHead{\singlespacing}
+
+% recompute page layout based on the above
+\recalctypearea%
 
 % Use rmfamily for chapters, sections, etc.
 \addtokomafont{disposition}{\rmfamily}
@@ -31,7 +44,7 @@
 % ==============================================================================
 
 % Title page
-\include{titlepage}
+\input{titlepage}
 
 \frontmatter%
 
@@ -60,24 +73,18 @@
 
 \chapter{Introduction}%
 \label{c:introduction}
-\include{chapters/introduction}
-
-\begin{lstlisting}[language=c,caption={Hello there}]
-  int main() {
-    return 0;
-  }
-\end{lstlisting}
+\input{chapters/introduction}
 
 \chapter{Background}%
 \label{c:background}
-\include{chapters/background}
+\input{chapters/background}
 
 \chapter{Related Work}%
 \label{c:related}
-\include{chapters/related}
+\input{chapters/related}
 
 \chapter{Conclusion}%
 \label{c:conclusion}
-\include{chapters/conclusion}
+\input{chapters/conclusion}
 
 \end{document}

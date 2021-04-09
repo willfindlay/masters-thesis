@@ -5,22 +5,6 @@
 \RequirePackage{etoolbox}
 
 % ==============================================================================
-% Spacing
-% ==============================================================================
-
-% for changing margins in titlepage
-\RequirePackage{geometry}
-
-% for 1.5 line spacing
-\RequirePackage{setspace}
-\onehalfspacing%
-% single spacing for table of contents
-\AfterTOCHead{\singlespacing}
-
-% recompute page layout based on the above
-\recalctypearea%
-
-% ==============================================================================
 % Colors
 % ==============================================================================
 
@@ -94,8 +78,8 @@
     xrightmargin      = 1em,
     framexrightmargin = 1em,
     backgroundcolor  = \color{listing-background},
-    numberstyle      = \color{listing-numbers}\ttfamily\normalsize\lst@ifdisplaystyle\footnotesize\fi,
-    basicstyle       = \ttfamily\normalsize\lst@ifdisplaystyle\footnotesize\singlespacing\fi,
+    numberstyle      = \color{listing-numbers}\ttfamily\lst@ifdisplaystyle\footnotesize\fi,
+    basicstyle       = \ttfamily\lst@ifdisplaystyle\footnotesize\singlespacing\fi,
     breaklines       = true,
     frame            = single,
     framesep         = 0.19em,
@@ -154,6 +138,10 @@
 \newcommand{\halfc}{\LEFTcircle}
 \newcommand{\emptyc}{\Circle}
 
+% ==============================================================================
+% Misc.
+% ==============================================================================
+
 % center floats by default
 \makeatletter
 \g@addto@macro\@floatboxreset{\centering}
@@ -192,9 +180,8 @@
   }
 }
 
-% ==============================================================================
-% Misc.
-% ==============================================================================
+% add \enquote
+\usepackage{csquotes}
 
 % so we can splice in PDFs
 \RequirePackage{pdfpages}
