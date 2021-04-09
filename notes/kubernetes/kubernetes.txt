@@ -1,0 +1,99 @@
+Kubernetes Talk by Heather
+==========================
+
+Overview
+--------
+
+- Container orchestration
+    - managing lifecycle
+    - container creation, death, permission
+    - talk to cloud provider to spin up new VMs for containers
+
+- Manage connections within cluster
+    - between containers, nodes
+    - between cluster, cloud provider
+    - between cluster, wider internet
+
+- Manage system security
+    - monitor container function for unusual behaviorus
+    - monitor nodes for unusual behaviours
+    - filter requests
+
+- Some examples of orchestration solutions:
+    - Docker Swarm
+    - Amazon ECS
+    - Borg + K8s
+    - Apache Mesos
+    - Helios
+
+- Second system syndrome
+    - https://en.wikipedia.org/wiki/Second-system_effect
+    - stack features on top of features, feature creep
+    - bad practice?
+
+- Kubernetes distributions
+    - kops, kubeadm + kubectl
+    - every cloud provider has their own branded distribution
+
+K8s Structure
+-------------
+
+- Control plane
+    - API server, etcd, scheduler, controller, cloud controller
+    - API server handles node creation/desctruction
+    - Scheduler assigns pods to nodes
+    - Controller monitors and controls nodes, jobs, endpoints
+    - Etcd (manages API access?)
+
+- Nodes
+    - kubelet, kuve-proxy, container runtime (e.g. Docker)
+    - every node has a pod
+    - K8s wraps around the container runtime
+    - ealier: based on LXC or LXD, now also based on Docker
+
+- Pods
+    - containers within pods
+
+The Messiness
+-------------
+
+- Extensions and plugins
+    - Advanced network interfaces for pods
+    - Dashboard
+    - KubeVirt
+    - Admission Controller
+    - Third-Party Operators -- operatorhub.io
+
+Kubernetes Threat Model
+-----------------------
+
+- Unauthorized behaviour is a mistake, not an attack
+- It's the end-user's job to configure things properly
+- If you want better security, you need to hack it together yourself
+    - Use operators
+
+Tesla Cryptojacking Attack 2018
+-------------------------------
+
+- Attackers got in via K8s dashboard
+- Was exposed to the general internet
+    - With no auth, elevated privileges on the cluster
+    - Can occur by running a cluster without RBAC
+- DevOps people tend to issue blanket permissions rather than being careful
+
+Proposing a Better Threat Model
+-------------------------------
+
+- User error will always make the cluster vulnerable
+    - This is good for my argument: we want to remove user configuration as much as
+      possible
+
+- The container orchestration system should always be responsible for security
+
+Some of my Thoughts
+-------------------
+
+- Currently container security is a configuration problem
+- Container _orchestration_ security seems like a configuration and an architecture problem
+    - Complexity is the enemy of security
+    - How on Earth can anybody understand all these knobs
