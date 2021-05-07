@@ -31,6 +31,7 @@
 % Uncomment this to help debug layout
 %\usepackage{showframe}
 
+\newcommand{\bpfbox}{\textsc{BPFBox}}
 \newcommand{\bpfcontain}{\textsc{BPFContain}}
 
 \title{\bpfcontain\@: Securing the Soft Underbelly of Linux Containers}
@@ -78,6 +79,18 @@
 \chapter{Background}%
 \label{c:background}
 \input{chapters/background}
+
+\chapter{\bpfbox: A Prototype Process Confinement Mechanism}%
+\label{c:bpfbox}
+\input{chapters/bpfbox}
+
+\chapter{\bpfcontain: Extending \bpfbox{} to Model Containers}%
+\label{c:bpfcontain}
+\input{chapters/bpfcontain}
+
+\chapter{Discussion}%
+\label{c:discussion}
+\input{chapters/discussion}
 
 \chapter{Related Work}%
 \label{c:related}
