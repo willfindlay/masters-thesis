@@ -190,3 +190,8 @@
 \RequirePackage{ifdraft}
 
 \RequirePackage{comment}
+
+\providecommand{\todo}[1]{\textcolor{red}{[#1]}}
+\newenvironment{inprogress}
+  {\vspace{1em} \color{red} \hrule \vspace{.5em} \noindent \textbf{TODO}}
+  {\hrule \vspace{1em}}
