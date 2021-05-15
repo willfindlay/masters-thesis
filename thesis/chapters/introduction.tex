@@ -1,16 +1,11 @@
-Virtualization is not confinement.
+Virtualization is not confinement. To security experts, this may be an obvious statement, but these two concepts are often conflated, leading to dangerous assumptions about security in practice. To see why virtualization and confinement are disparate concepts, consider the goals of each. \textit{Virtualization} describes the goal of providing a unique, private mapping of shared system resources to a particular subject \todo{CITATION NEEDED?} (be it a process, a virtualized operating system, or something else). \textit{Confinement}, on the other hand, describes the goal of restricting a subjects access to system resources or other subjects \todo{CITATION NEEDED?}. It should now be abundantly clear that virtualization and confinement are not only two entirely different concepts, but that virtualization must be combined with confinement to offer any practical security guarantees.
 
-\begin{comment}
-- Virtualization is not confinement
-  - To security experts, this should be an obvious statement
-  - After all, each of these properties addresses an entirely different problem
-  - Virtualization describes the goal of providing a unique, private mapping of shared resources,
-    allowing an ...................
-  - Confinement ...................
-- But not everybody is a security expert
-- Despite clear differences, virtualization and confinement are often conflated
-\end{comment}
+\begin{inprogress}
+\begin{itemize}
+  \item Container technologies on Linux offer a motivating example of the difference between virtualization and confinement.
+\end{itemize}
+\end{inprogress}
 
-\section{Contributions}
 
-Foo
+\section{Contributions}%
+\label{s:contributions}
