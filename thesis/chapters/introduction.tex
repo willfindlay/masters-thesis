@@ -1,9 +1,26 @@
-Virtualization is not confinement. To security experts, this may be an obvious statement, but these two concepts are often conflated, leading to dangerous assumptions about security in practice. To see why virtualization and confinement are disparate concepts, consider the goals of each. \textit{Virtualization} describes the goal of providing a unique, private mapping of shared system resources to a particular subject \todo{CITATION NEEDED?} (be it a process, a virtualized operating system, or something else). \textit{Confinement}, on the other hand, describes the goal of restricting a subjects access to system resources or other subjects \todo{CITATION NEEDED?}. It should now be abundantly clear that virtualization and confinement are not only two entirely different concepts, but that virtualization must be combined with confinement to offer any practical security guarantees.
+Virtualization is not confinement. To security experts, this may be an obvious statement,
+but these two concepts are often conflated, leading to dangerous assumptions about
+security in practice. To see why virtualization and confinement are disparate concepts,
+consider the goals of each. \textit{Virtualization} describes the goal of providing
+a unique, private mapping of shared system resources to a particular subject~\todo{CITE}
+(be it a process, a virtualized operating system, or something else).
+\textit{Confinement}, on the other hand, describes the goal of restricting a subjects
+access to system resources or other subjects~\todo{CITE}. In other words, virtualization
+is about \textit{what we can see}, whereas confinement is about \textit{what we can do}.
+It should now be abundantly clear that virtualization and confinement are not only two
+entirely different concepts, but that virtualization must be combined with confinement to
+offer any practical security guarantees.
 
 \begin{inprogress}
-\begin{itemize}
-  \item Container technologies on Linux offer a motivating example of the difference between virtualization and confinement.
-\end{itemize}
+  Container technologies on Linux offer a motivating example of the difference between
+  virtualization and confinement and how conflating the two can result in problematic
+  misunderstandings about the security of a system. Linux containers offer lightweight
+  virtualization and confinement using a series primitives exposed by the operating system
+  kernel. Namespaces and cgroups virtualize system resources while confinement layers such
+  as \texttt{seccomp(2)} provide some degree of isolation from the rest of the system~\todo{CITE}.
+  Unfortunately, while virtualization primitives are widely used in container deployments,
+  the use of confinement primitives is often overlooked, oversimplified, or overly
+  permissive (i.e.~misconfigured)~\todo{CITE}.
 \end{inprogress}
 
 
