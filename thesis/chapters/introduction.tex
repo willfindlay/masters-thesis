@@ -34,14 +34,26 @@ serves much the same purpose as virtualization in other areas of computer scienc
 allow two pieces of code to use the same name for different things and to abstract away
 the complex details of the underlying system.
 
-This thesis argues that the key to fixing isolation lies in improving our confinement
-frameworks to work well in containerized applications. The status quo of process
-confinement on Linux is a motley collection of unrelated technologies, each designed for
-a specific purpose, often beyond the scope of simple process confinement. Container
-management solutions cobble these technologies together, applying over-permissive,
-coarse-grained defaults or compiling simple policies into a complex entanglement. To
-rectify the status quo, we must rethink confinement from the ground up, and build
-a confinement framework designed to be aware of the container model of computation.
+This thesis argues that the key to truly isolating containers from the rest of the system
+lies in improving our confinement frameworks to work well in containerized applications.
+The status quo of process confinement on Linux is a motley collection of unrelated
+technologies, each designed for a specific purpose, often beyond the scope of simple
+process confinement. Container management solutions cobble these technologies together,
+applying over-permissive, coarse-grained defaults or compiling simple policies into
+a complex entanglement. To rectify the status quo, we must rethink confinement from the
+ground up, and build a confinement framework designed to be aware of the container model
+of computation.
+
+To improve the status quo of confinement on Linux, this thesis presents two research
+systems, \bpfbox{} and its successor, \bpfcontain{}. The former is a novel application
+sandboxing framework, and the latter extends that framework to work well in the context of
+container security. Both research systems are implemented using a new Linux kernel
+technology called \textit{Extended Berkley Packet Filter} (eBPF), a framework for
+dynamically attaching simple filter programs to various system events and aggregating data
+from these events on the fly in kernelspace. Using eBPF, we can safely extend the kernel
+at runtime, building a new confinement model that suits the container use case without
+detracting from existing confinement implementations or tying the kernel down to one
+particular model.
 \end{inprogress}
 
 
@@ -49,6 +61,10 @@ a confinement framework designed to be aware of the container model of computati
 \label{s:motivation}
 
 \begin{inprogress}
+Containers are \textit{everywhere}.
+
+
+Containers, in their current state, cannot be considered secure.
 Container security issues are widely studied in the literature~\todo{CITE ALL EXAMPLES}.
 \end{inprogress}
 
@@ -59,3 +75,7 @@ Container security issues are widely studied in the literature~\todo{CITE ALL EX
 
 \section{Contributions}%
 \label{s:contributions}
+
+
+\section{Outline}%
+\label{s:outline}
