@@ -1,4 +1,3 @@
-\begin{inprogress}
 Virtualization is not confinement. To security experts, this may be an obvious statement,
 but these two concepts are often conflated, leading to dangerous assumptions about
 security in practice. To see why virtualization and confinement are disparate concepts,
@@ -18,7 +17,7 @@ misunderstandings about the security of a system. From first principles, a conta
 nothing more than a group of associated processes (and system resources) managed by some
 container management engine (e.g.~Docker or \textit{lxc}). While often used for dependency
 management, containers also offer lightweight virtualization and confinement using
-a series primitives exposed by the operating system kernel.  Namespaces and cgroups
+a series primitives exposed by the operating system kernel. Namespaces and cgroups
 virtualize system resources while confinement layers such as \texttt{seccomp(2)} provide
 some degree of isolation from the rest of the system~\todo{CITE}. Unfortunately, while
 virtualization primitives are widely used in container deployments, the use of confinement
@@ -44,16 +43,52 @@ a complex entanglement. To rectify the status quo, we must rethink confinement f
 ground up, and build a confinement framework designed to be aware of the container model
 of computation.
 
-To improve the status quo of confinement on Linux, this thesis presents two research
-systems, \bpfbox{} and its successor, \bpfcontain{}. The former is a novel application
-sandboxing framework, and the latter extends that framework to work well in the context of
-container security. Both research systems are implemented using a new Linux kernel
-technology called \textit{Extended Berkley Packet Filter} (eBPF), a framework for
+\todo{Missing something here?}
+
+To improve the status quo of confinement on Linux, we present two research prototypes,
+\bpfbox{} and its successor, \bpfcontain{}. The former is a novel application sandboxing
+framework, and the latter extends that framework to work well in the context of container
+security. Both research systems are implemented using a new Linux kernel technology called
+\textit{Extended Berkley Packet Filter} (eBPF), a new Linux kernel mechanism for
 dynamically attaching simple filter programs to various system events and aggregating data
-from these events on the fly in kernelspace. Using eBPF, we can safely extend the kernel
-at runtime, building a new confinement model that suits the container use case without
-detracting from existing confinement implementations or tying the kernel down to one
-particular model.
+from these events on the fly in kernelspace~\cite{gregg2019_bpf,starovoitov2014_ebpf}.
+Using eBPF, we can safely extend the kernel at runtime, building a new confinement model
+that suits the container use case without detracting from existing confinement
+implementations or tying the kernel down to one particular model.
+
+
+\section{Motivation}%
+\label{s:motivation}
+
+\subsection{Contextualizing the Problem}%
+\label{ss:contextualizing-the-problem}
+
+Containers are \textit{everywhere}. In the cloud, containers form the backbone of
+cloud-native computation. Kubernetes~\todo{CITE} clusters drive the microservices that
+power scalable web applications. In devops, Docker~\todo{CITE} containers often form the
+backbone of continuous integration workflows, providing reproducible environments for
+development, testing, and debugging. On the desktop, containerized package managers like
+Snap~\todo{CITE}, FlatPak~\todo{CITE}, and AppImage~\todo{CITE} offer self-contained,
+isolated software bundles, facilitating a smooth software installation process (mostly)
+free of dependency management concerns.
+
+Despite a steadily increasing prevalence, containers face major adoptability challenges in
+deployments where they are expected to outright replace virtual machines. Unlike virtual
+machines, which are abstracted away from the host and interact with a hypervisor,
+containers interact directly with the host operating system kernel. This means that, while
+much lighter-weight than hypervisor-based virtualization, containers are inherently less
+isolated from each other and from the host system in general~\todo{CITE CONTAINER SECURITY
+SURVEY}. In order to have truly secure containers, we must take great care to ensure
+that a container is properly \textit{confined}. As we have already discussed,
+virtualization primitives alone are not enough to achieve proper isolation. These
+primitives \textit{must} be combined with confinement mechanisms and these confinement
+mechanisms \textit{must} be applied properly.  Otherwise, we risk overprivilege, resulting
+in potential violations of our security model.
+
+Container security issues are widely studied in the literature~\todo{CITE ALL EXAMPLES}.
+
+\subsection{Why eBPF?}%
+\label{ss:why-ebpf}
 
 An eBPF-based confinement mechanism provides several advantages over traditional
 confinement models.  Firstly, eBPF is \textit{light-weight}. eBPF programs can monitor
@@ -68,35 +103,50 @@ Linux. Rather than combining namespaces, cgroups, seccomp, and mandatory access 
 together, eBPF provides the opportunity to design a single framework providing the
 advantages of each.
 
-A second advantage of eBPF in the confinement space is that it is \textit{dynamic}. \todo{FINISH}
+A second advantage of eBPF for writing a security framework is that it is
+\textit{dynamic}. eBPF programs can be loaded into the kernel dynamically and attached to
+multiple events. Instrumenting a system event with eBPF can be done at runtime,
+\textit{without} the need to modify the kernel in any way.  Similarly, eBPF maps, the
+canonical runtime data store for eBPF programs, can be loaded, unloaded, modified, and
+queried at runtime from both userspace and kernelspace, providing a rich substrate for
+a dynamic model of system behaviour. These properties culminate in the ability to design
+a flexible security mechanism without tying the kernel down to any one particular
+abstraction. In the context of container security, this is a particularly important goal,
+as containers are traditionally a \textit{userspace} concept, glued together with various
+abstractions provided by the kernel.
 
-\textit{Safety} is a third advantage provided by eBPF. \todo{FINISH}
-\end{inprogress}
+\textit{Production-safety} is a third advantage provided by eBPF. All eBPF programs go
+through a verification process before they are loaded into the kernel. The eBPF verifier
+analyzes the program, asserting that it conforms to a number of safety requirements, such
+as program termination\footnote{This property is enforceable due to the fact that eBPF
+programs are not Turing complete~\cite{gregg2019_bpf}.}, memory safety, and read-only
+access to kernel data structures. While itself not formally verified, the eBPF verifier
+facilitates the adoption of new eBPF programs into production use cases, since an eBPF
+program is far less likely to adversely impact a production system than other methods of
+extending the kernel (e.g.~kernel patches and loadable kernel modules). In fact, eBPF is
+already being used in production at large companies like Facebook, Netflix, and Google to
+monitor server workloads for security and performance regressions~\cite{gregg2019_bpf}.
+These factors make eBPF a promising choice for designing an \textit{adoptable} security
+mechanism.
 
+\todo{SUMMARIZE HERE}
 
-\section{Motivation}%
-\label{s:motivation}
+\subsection{Why Design a New Confinement Framework?}%
+\label{ss:why-new}
 
-\begin{inprogress}
-Containers are \textit{everywhere}. In the cloud, containers form the backbone of
-cloud-native computation. Kubernetes~\todo{CITE} clusters drive the microservices that
-power scalable web applications. In devops, Docker~\todo{CITE} containers often form the
-backbone of continuous integration workflows, providing reproducible environments for
-development, testing, and debugging. On the desktop, containerized package managers like
-Snap~\todo{CITE}, FlatPak~\todo{CITE}, and AppImage~\todo{CITE} offer self-contained,
-isolated software bundles, facilitating a smooth software installation process (mostly)
-free of dependency management concerns.
+The process confinement problem dates back half a century~\cite{lampson1973_confinement}.
+Since the advent of multi-processing \todo{IN WHAT YEAR? (e.g.~with Unix in 196X) CITE},
+security experts have been concerned with designing systems in such a way that two running
+programs minimally interfere with one another. Since then, an abundance of tools and
+frameworks, some more practical than others, have been proposed to limit the damage that
+untrusted software can do to the system as a whole~\cite{shu2016_security_isolation_study}.
+These are covered in more depth in \Cref{c:background}. For now, we focus on why it might be
+prudent to design yet another confinement framework amidst this veritable ocean of prior work.
 
-Despite a steadily increasing prevalence, containers face major adoptability challenges in
-deployments where they are expected to replace virtual machines.
+In the context of Linux,
 
-Containers, in their current state, cannot be considered secure.
-Container security issues are widely studied in the literature~\todo{CITE ALL EXAMPLES}.
-\end{inprogress}
-
-
-\section{Building a Container-Aware Security Model}%
-\label{s:container-aware}
+%\section{Building a Container-Aware Security Model}%
+%\label{s:container-aware}
 
 
 \section{Contributions}%

@@ -1,0 +1,208 @@
+------------------------------------------------------------------------------
+                            Process Confinement
+------------------------------------------------------------------------------
+
+First proposal of the confinement problem
+@article{lampson1973_confinement,
+  author       = {Lampson, Butler W.},
+  title        = {{A Note on the Confinement Problem}},
+  year         = {1973},
+  publisher    = {Association for Computing Machinery},
+  address      = {New York, NY, USA},
+  volume       = {16},
+  number       = {10},
+  issn         = {0001-0782},
+  doi          = {10.1145/362375.362389},
+  journal      = {Communications of the ACM},
+  pages        = {613–615},
+  numpages     = {3},
+}
+
+Nice literature review examining security isolation techniques
+@article{shu2016_security_isolation_study,
+	title    = {{A Study of Security Isolation Techniques}},
+	volume   = {49},
+	%issn   = {0360-0300, 1557-7341},
+	%url    = {https://dl.acm.org/doi/10.1145/2988545},
+	doi      = {10.1145/2988545},
+	number   = {3},
+	urldate  = {2020-07-27},
+	journal  = {ACM Computing Surveys},
+	author   = {Shu, Rui and Wang,
+              Peipei and Gorski III,
+              Sigmund A and Andow,
+              Benjamin and Nadkarni,
+              Adwait and Deshotels,
+              Luke and Gionta,
+              Jason and Enck,
+              William and
+              Gu, Xiaohui},
+	year     = {2016},
+	pages    = {1--37},
+}
+
+
+
+
+------------------------------------------------------------------------------
+                Linux Virtualization/Confinement Primitives
+------------------------------------------------------------------------------
+
+
+
+
+------------------------------------------------------------------------------
+                                   eBPF
+------------------------------------------------------------------------------
+
+eBPF book
+@book{gregg2019_bpf,
+  title     = {{BPF Performance Tools}},
+  author    = {Gregg, Brendan},
+  year      = {2019},
+  isbn      = {0-13-655482-2},
+  publisher = {Addison-Wesley Professional}
+}
+
+Classic BPF
+@article{mccanne1993_bpf,
+  author  = {Steven McCanne and Van Jacobson},
+  year    = {1993},
+  title   = {{The BSD Packet Filter: A New Architecture for User-level Packet Capture}},
+  journal = {{USENIX Winter}},
+  url     = {https://www.tcpdump.org/papers/bpf-usenix93.pdf},
+  volume  = {93}
+}
+
+Extended BPF
+@techreport{starovoitov2014_ebpf,
+  author = {Alexei Starovoitov and Daniel Borkmann},
+  title  = {{Rework/optimize internal BPF interpreter's instruction set}},
+  year   = 2014,
+  month  = {March},
+  url    = {https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id = bd4cf0ed331a275e9bf5a49e6d0fd55dffc551b8},
+  type   = {Kernel patch},
+}
+
+FreeBSD BPF
+@misc{freebsd_bpf,
+  author  = {{FreeBSD}},
+  title   = {{bpf(4)}},
+  url     = {https://www.unix.com/man-page/FreeBSD/4/bpf},
+  urldate = {2020-12-13},
+  note    = {BSD Kernel Interfaces Manual},
+}
+
+OpenBSD BPF
+@misc{openbsd_bpf,
+  author  = {{OpenBSD}},
+  title   = {{bpf(4)}},
+  url     = {https://man.openbsd.org/bpf},
+  urldate = {2020-12-13},
+  note    = {Device Drivers Manual},
+}
+
+Linux BPF
+@misc{linux_bpf,
+  author  = {{Linux}},
+  title   = {{bpf(2)}},
+  url     = {https://www.man7.org/linux/man-pages/man2/bpf.2.html},
+  urldate = {2020-12-13},
+  note    = {Linux Programmer's Manual},
+}
+
+KRSI patch
+@techreport{singh2019_krsi,
+  author  = {Singh, KP},
+  journal = {{LWN.net}},
+  title   = {{MAC and Audit Policy Using eBPF (KRSI)}},
+  year    = {2019},
+  url     = {https://lwn.net/ml/linux-kernel/20191220154208.15895-1-kpsingh@chromium.org/},
+  type    = {Kernel patch},
+}
+
+KRSI article in LWN
+@article{corbet2019_krsi,
+  author  = {Corbet, Jonathan},
+  journal = {{LWN.net}},
+  title   = {{KRSI — The Other BPF Security Module}},
+  year    = {2019},
+  month   = {December 27},
+  url     = {https://lwn.net/Articles/808048/},
+}
+
+libbpf
+@misc{libbpf,
+  author  = {{Libbpf Contributors}},
+  title   = {{libbpf}},
+  url     = {https://github.com/libbpf/libbpf},
+  urldate = {2020-12-13},
+  note    = {GitHub repository}
+}
+
+libbpf-rs
+@misc{libbpf-rs,
+  author  = {Daniel Xu, {Libbpf-rs Contributors}},
+  title   = {{libbpf-rs}},
+  url     = {https://github.com/libbpf/libbpf-rs},
+  urldate = {2021-05-28},
+  note    = {GitHub repository}
+}
+
+LLVM BPF
+@misc{llvm_bpf,
+  author  = {{LLVM}},
+  title   = {{BPF Directory Reference}},
+  url     = {https://llvm.org/doxygen/dir_b9f4b12c13768d2acd91c9fc79be9cbf.html},
+  urldate = {2020-12-13},
+  note    = {Developer documenation},
+}
+
+DTrace
+@inproceedings{cantrill2004_dtrace,
+  author       = {Cantrill, Bryan M. and Shapiro, Michael W. and Leventhal, Adam H.},
+  title        = {{Dynamic Instrumentation of Production Systems}},
+  booktitle    = {{Proceedings of the Annual Conference on USENIX Annual Technical Conference}},
+  series       = {{ATEC '04}},
+  year         = {2004},
+  location     = {Boston, MA},
+  pages        = {2--2},
+  numpages     = {1},
+  url          = {https://www.usenix.org/legacy/publications/library/proceedings/usenix04/tech/general/full_papers/cantrill/cantrill.pdf},
+  publisher    = {{USENIX Association}},
+  address      = {Berkeley, CA, USA},
+}
+
+DTrace book
+@book{gregg2001_dtrace,
+	edition   = {1st},
+	title     = {{DTrace: Dynamic Tracing in Oracle Solaris, Mac OS X, and FreeBSD}},
+	publisher = {Prentice Hall},
+	author    = {Gregg, Brendan and Mauro, Jim},
+	year      = {2011}
+}
+
+
+
+
+------------------------------------------------------------------------------
+                            Container Security
+------------------------------------------------------------------------------
+
+
+
+
+------------------------------------------------------------------------------
+                              Related Work
+------------------------------------------------------------------------------
+
+
+
+
+------------------------------------------------------------------------------
+                        Useful Links / Staging
+------------------------------------------------------------------------------
+
+https://cloud.google.com/containers/
+https://linuxhint.com/snap_vs_flatpak_vs_appimage/
+
