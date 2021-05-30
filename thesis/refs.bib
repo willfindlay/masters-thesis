@@ -189,6 +189,91 @@ DTrace book
                             Container Security
 ------------------------------------------------------------------------------
 
+Container security survey
+@article{sultan2019_container_security,
+  author    = {Sari Sultan and
+               Imtiaz Ahmad and
+               Tassos Dimitriou},
+  title     = {{Container Security: Issues, Challenges, and the Road Ahead}},
+  journal   = {{IEEE} Access},
+  volume    = {7},
+  pages     = {52976--52996},
+  year      = {2019},
+  doi       = {10.1109/ACCESS.2019.2911732},
+}
+
+Study of container security vulnerabilities, attacks, countermeasures
+  - Important finding -> However, the interdependence and mutual-influence relationship
+    among these kernel security mechanisms may make them fall into the "short board effect"
+    and impair their protection capability.
+@inproceedings{xin2018_container_security,
+  author    = {Lin, Xin and Lei, Lingguang and Wang, Yuewu and Jing, Jiwu and Sun, Kun and Zhou, Quan},
+  title     = {{A Measurement Study on Linux Container Security: Attacks and Countermeasures}},
+  year      = {2018},
+  isbn      = {9781450365697},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  doi       = {10.1145/3274694.3274720},
+  booktitle = {Proceedings of the 34th Annual Computer Security Applications Conference},
+  pages     = {418–429},
+  numpages  = {12},
+  location  = {San Juan, PR, USA},
+  series    = {ACSAC '18}
+}
+
+Study of LSMs and LSFs for hardening Docker containers
+@inproceedings{mp2016_hardening,
+  author    = {{Amith Raj MP} and A. {Kumar} and S. J. {Pai} and A. {Gopal}},
+  booktitle = {2016 2nd International Conference on Applied and Theoretical Computing and Communication Technology (iCATccT)},
+  title     = {Enhancing Security of Docker Using Linux Hardening Techniques},
+  year      = {2016},
+  pages     = {94-99},
+  doi       = {10.1109/ICATCCT.2016.7911971}
+}
+
+Study of security measures for containerized applications in docker
+@article{mullinix2020_security_measures,
+  author    = {Samuel P. Mullinix and
+               Erikton Konomi and
+               Renee Davis Townsend and
+               Reza M. Parizi},
+  title     = {{On Security Measures for Containerized Applications Imaged with Docker}},
+  journal   = {CoRR},
+  volume    = {abs/2008.04814},
+  year      = {2020},
+  url       = {https://arxiv.org/abs/2008.04814},
+}
+
+Security analysis of Docker security
+@article{bui2015_docker_analysis,
+  author    = {Thanh Bui},
+  title     = {{Analysis of Docker Security}},
+  journal   = {CoRR},
+  volume    = {abs/1501.02967},
+  year      = {2015},
+  url       = {http://arxiv.org/abs/1501.02967},
+  archivePrefix = {arXiv},
+  eprint    = {1501.02967},
+}
+
+Docker AppArmor documentation
+@misc{docker_apparmor,
+  author  = {{Docker Developers}},
+  title   = {{AppArmor security profiles for Docker}},
+  url     = {https://docs.docker.com/engine/security/apparmor/},
+  urldate = {2021-05-29},
+  note    = {Developer documenation},
+}
+
+Docker default AppArmor profile
+@misc{docker_default_apparmor,
+  author  = {{Docker Developers}},
+  title   = {{profiles/apparmor/template.go}},
+  url     = {https://github.com/moby/moby/blob/master/profiles/apparmor/template.go},
+  urldate = {2021-05-29},
+  note    = {Github repository},
+}
+
 
 
 
@@ -203,6 +288,17 @@ DTrace book
                         Useful Links / Staging
 ------------------------------------------------------------------------------
 
-https://cloud.google.com/containers/
-https://linuxhint.com/snap_vs_flatpak_vs_appimage/
+An outline of container technologies by Google
+  https://cloud.google.com/containers/
 
+A Comparison of Snap, FlatPak, and AppImage
+  https://linuxhint.com/snap_vs_flatpak_vs_appimage/
+
+A scathing criticism of FlatPak security
+  https://flatkill.org/
+
+Security documentation for lxc
+  https://linuxcontainers.org/lxc/security/
+
+SELinux Docker security policy
+  https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux_atomic_host/7/html/container_security_guide/docker_selinux_security_policy
