@@ -2,7 +2,7 @@
   fontsize=12pt,
   paper=letter,
   twoside,
-  cleardoublepage=plain,
+  cleardoublepage=none,
   %final
 ]{scrbook}
 
@@ -15,7 +15,7 @@
 
 % for 1.5 line spacing
 \RequirePackage{setspace}
-\onehalfspacing%
+\doublespacing%
 % single spacing for table of contents
 \AfterTOCHead{\singlespacing}
 
@@ -38,7 +38,7 @@
 
 \title{A Practical, Light-Weight, and Flexible Confinement Framework in eBPF}
 \author{William P.~Findlay}
-\date{April, 2021}
+\date{August, 2021}
 
 \begin{document}
 
@@ -51,13 +51,19 @@
 
 \frontmatter%
 
-\section*{Abstract}
+\section*{Abstract}%
+\addcontentsline{toc}{section}{Abstract}%
+\todo{ABSTRACT HERE}
 \cleardoublepage%
 
-\section*{Acknowledgements}
+\section*{Acknowledgements}%
+\addcontentsline{toc}{section}{Acknowledgements}%
+\todo{ACKNOWLEDGEMENTS HERE}
 \cleardoublepage%
 
-\section*{Prior Publication}
+\section*{Prior Publication}%
+\addcontentsline{toc}{section}{Prior Publication}%
+\todo{PRIOR PUBLICATION HERE}
 \cleardoublepage%
 
 % TOC
@@ -103,7 +109,8 @@
 \input{chapters/conclusion}
 
 \cleardoublepage%
-\printbibliography
-\nocite{*}
+\printbibliography%
+\addcontentsline{toc}{chapter}{Bibliography}%
+\nocite{*} % TODO: Remove this when finished
 
 \end{document}
