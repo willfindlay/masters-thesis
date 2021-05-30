@@ -48,9 +48,11 @@ lies in a semantic gap between the containers themselves and the confinement pri
 that are used to secure them. Many academics have recognized this semantic gap. Some have
 attempted to rectify it by introducing mechanisms for automatic policy derivation based on
 container images (e.g.~the Docker image manifest) or observed behaviours at
-runtime~\todo{CITE ALL EXAMPLES}. Others have \todo{what did others do?}. We propose that
-the heart of the problem lies in the fact that the Linux kernel itself has no single
-representation of \textit{what exactly a container is} from a security standpoint.
+runtime~\todo{CITE ALL EXAMPLES}. Others have attempted to introduce new layers of
+abstraction to security policies~\todo{CITE Snap et al} or into the kernel
+itself~\todo{CITE security namespaces}. \todo{WHY ARE THESE BAD IN ONE SENTENCE?} We
+propose that the heart of the problem lies in the fact that the Linux kernel itself has no
+single representation of \textit{what exactly a container is} from a security standpoint.
 
 One approach would be to extend the container with a container-aware LSM, but maintaining
 out-of-tree kernel modules is challenging, as such a module would need to be continually
@@ -171,13 +173,13 @@ From the kernel's perspective, a containerized process is just like any other. W
 may be virtualized under one or more namespace and process control groups, there is no
 precise definition of what exactly constitutes a \textit{container}. This lack of a solid
 abstraction widens the semantic gap between traditional policy enforcement mechanisms and
-security policy designed to protect containers. In defining a new policy enforcement mechanism
-focused specifically on containers, we have an opportunity to narrow this semantic gap,
-simplify the resulting policies, and eliminate the need to combine several security mechanisms
-together to do a job that could be accomplished by just one. Since our proposed solution is based
-on eBPF, it requires no modification of the kernel and can be dynamically loaded at runtime.
-This means that we can provide such a unified abstraction without sacrificing forward
-or backward compatibility with alternative approaches.
+security policy designed to protect containers. In defining a new policy enforcement
+mechanism focused specifically on containers, we have an opportunity to narrow this
+semantic gap, simplify the resulting policies, and eliminate the need to combine several
+security mechanisms together to do a job that could be accomplished by just one. Since our
+proposed solution is based on eBPF, it requires no modification of the kernel and can be
+dynamically loaded at runtime.  This means that we can provide such a unified abstraction
+without sacrificing forward or backward compatibility with alternative approaches.
 
 \subsection{Why eBPF?}%
 \label{ss:why-ebpf}
@@ -236,6 +238,29 @@ effective.
 \section{Contributions}%
 \label{s:contributions}
 
+This thesis offers three principle contributions to the field of computer science.
+They are summarized as follows:
+\begin{itemize}
+  \item \todo{Enumerate contributions}
+  \item \todo{Enumerate contributions}
+  \item \todo{Enumerate contributions}
+\end{itemize}
 
 \section{Outline}%
 \label{s:outline}
+
+The rest of this thesis proceeds as follows. \Cref{c:background} presents background on
+virtualization and process confinement, historical confinement techniques that have been
+employed in Linux and other Unix-like operating systems, and eBPF and its applications to
+performance and security monitoring. \Cref{c:bpfbox} describes the design and
+implementation of \bpfbox, presents an initial performance evaluation, and~\todo{What
+else?  Need to figure out how much I want to say about \bpfbox}. \Cref{c:bpfcontain}
+presents \bpfcontain, an iteration on the original \bpfbox{} system designed
+specifically for container security. We present its design and implementation, evaluate
+its performance and effectiveness as a security mechanism in greater detail, and describe
+how it can be applied to secure practical container deployments. \Cref{c:discussion}
+presents a discussion on \bpfbox{} and \bpfcontain{} and discusses opportunities for
+future work both in the context of container security and other potential security
+applications of eBPF beyond the scope of confinement. \Cref{c:related} surveys existing
+literature in the confinement space and compares \bpfbox{} and \bpfcontain{} to extant
+approaches. \Cref{c:conclusion} concludes.
