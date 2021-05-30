@@ -4,7 +4,7 @@ security in practice. To see why virtualization and confinement are disparate co
 consider the goals of each. \textit{Virtualization} describes the goal of providing
 a unique, private mapping of shared system resources to a particular subject~\todo{CITE}
 (be it a process, a virtualized operating system, or something else).
-\textit{Confinement}, on the other hand, describes the goal of restricting a subjects
+\textit{Confinement}, on the other hand, describes the goal of restricting a subject's
 access to system resources or other subjects~\todo{CITE}. In other words, virtualization
 is about \textit{what we can see}, whereas confinement is about \textit{what we can do}.
 It should now be abundantly clear not only that virtualization and confinement are two
@@ -64,7 +64,7 @@ totally isolate containers from each other, while use cases (e.g.~microservices
 deployments) may require individual containers to communicate and cooperate with each
 other. Thus, our solution should be practical, light-weight, and flexible such that we can
 define a container-level policy enforcement mechanism that can be readily adopted in
-production use cases. A relatively new Linux technology, \textit{Extended Berkley Packet
+production use cases. A relatively new Linux technology, \textit{Extended Berkeley Packet
 Filter} (eBPF), offers the opportunity to design such a system.
 
 To improve the status quo of confinement on Linux, we present two research prototypes,
