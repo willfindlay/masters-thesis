@@ -2,7 +2,7 @@
   fontsize=12pt,
   paper=letter,
   twoside,
-  cleardoublepage=none,
+  cleardoublepage=plain,
   %final
 ]{scrbook}
 
@@ -51,17 +51,18 @@
 
 \frontmatter%
 
-\section*{Abstract}%
+\chapter*{Abstract}%
+\addcontentsline{toc}{chapter}{Frontmatter}%
 \addcontentsline{toc}{section}{Abstract}%
 \todo{ABSTRACT HERE}
 \cleardoublepage%
 
-\section*{Acknowledgements}%
+\chapter*{Acknowledgements}%
 \addcontentsline{toc}{section}{Acknowledgements}%
 \todo{ACKNOWLEDGEMENTS HERE}
 \cleardoublepage%
 
-\section*{Prior Publication}%
+\chapter*{Prior Publication}%
 \addcontentsline{toc}{section}{Prior Publication}%
 \todo{PRIOR PUBLICATION HERE}
 \cleardoublepage%
