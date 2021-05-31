@@ -56,7 +56,7 @@ interfaces and userspace functions. In this section, we discuss the origins of e
 components and how they work, its applications under the Linux kernel, and how it has
 evolved over time.
 
-\subsection{Origins of BPF\@: An Efficient Packet Filtering System}%
+\subsection{Origins of BPF\@: Efficient Packet Filtering and Beyond}%
 \label{ss:origins-of-bpf-bg}
 
 The original Berkeley Packet Filter, hereafter referred to as classic BPF or cBPF, arose
@@ -85,12 +85,53 @@ a page fault~\cite{mccanne1993_bpf}. By applying filtering logic in the kernel, 
 expensive copying could be skipped for packets that would be discarded or ignored by the
 network monitor anyway.
 
-\begin{figure}[htbp]
+\begin{figure}[htb!]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/classic-bpf.pdf}
-  \caption{The classic BPF architecture. Adapted from McCanne and Jacobson~\cite{mccanne1993_bpf}.}%
+  \caption[The classic BPF architecture]{The classic BPF architecture. Adapted from McCanne and Jacobson~\cite{mccanne1993_bpf}.}%
   \label{fig:classic-bpf}
 \end{figure}
+
+Classic BPF can be divided into two major components: a \textit{tap} mechanism and a set
+of one or more \textit{filter} programs. The cBPF architecture is depicted in
+\Cref{fig:classic-bpf}. Classic BPF programs are expressed as a control-flow graph (CFG)
+over a set of abstract registers, backed by physical registers on the CPU. The tap
+mechanism hooks into packets as they enter the networking stack, copying and forwarding
+them to the filters. At runtime, the filter programs walk their control-flow graph, taking
+the forwarded packets as input. As output, they return a filtering decision which controls
+whether or not the packet should be forwarded to userspace~\cite{mccanne1993_bpf}.
+
+Since its original introduction in 1993, classic BPF has since been ported to a number of
+Unix-like operating systems, including Linux~\cite{linux_bpf}, OpenBSD~\cite{openbsd_bpf},
+and FreeBSD~\cite{freebsd_bpf}. Classic BPF forms the backbone of widely used traffic
+monitoring tools, most notably tcpdump~\todo{CITE tcpdump}. In Linux, the seccomp system
+call was enhanced to include classic BPF filters, allowing a process to use classic BPF
+programs to define allowlists and denylists of system calls (c.f.~\Cref{ss:seccomp-bg}).
+
+In 2014, Alexei Starovoitov and Daniel Borkmann~\cite{starovoitov2014_ebpf} first proposed
+a total overhaul of the Linux BPF engine. Their proposal, dubbed eBPF, expanded the classic BPF
+execution model into a full-fledged virtual instruction set. \todo{Enumerate the
+properties of eBPF, from my existing papers}
+
+\begin{figure}[htb!]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/background/ebpf.pdf}
+  \caption[The extended BPF architecture]{The extended BPF architecture. Unlike classic
+  BPF, eBPF programs are JIT compiled to the native instruction set, share data using
+  specialized map data structures, and can be attached to many different kinds of system
+  events. All eBPF bytecode goes through a verification step before it can be loaded into
+  the kernel.}%
+  \label{fig:extended-bpf}
+\end{figure}
+
+While modern eBPF has very little to do with the execution model of its older cousin, some
+of the properties that made classic BPF so performant still hold true today. In
+particular, to notion of aggregating and processing data in kernelspace before
+(optionally) handing it off to userspace is a key aspect of classic BPF that has carried
+over to eBPF. What this means in practice is that eBPF programs can be used to implement
+very efficient monitoring software, harnessing the performance benefits of a pure
+kernelspace implementation while maintaining the flexibility of a userspace
+implementation.
 
 \subsection{eBPF Programs}%
 \label{ss:bpf-programs-bg}
