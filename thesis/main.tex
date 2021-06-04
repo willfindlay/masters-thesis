@@ -1,8 +1,11 @@
 \documentclass[
   fontsize=12pt,
+  titlepage=firstiscover,
   paper=letter,
   twoside,
   cleardoublepage=plain,
+  parskip=half-,
+  DIV=10,
   %final
 ]{scrbook}
 
@@ -26,10 +29,12 @@
 \addtokomafont{disposition}{\rmfamily}
 
 % Fix top and bottom margins
-\newgeometry{tmargin=1.67in, bmargin=1.67in}
+%\newgeometry{margin=1in}
 
 % Uncomment this to help debug layout
 %\usepackage{showframe}
+
+\setcapindent{0pt}
 
 \newcommand{\bpfbox}{\textsc{BPFBox}}
 \newcommand{\bpfcontain}{\textsc{BPFContain}}

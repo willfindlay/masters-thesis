@@ -37,7 +37,14 @@
 % better enumerations
 \RequirePackage[shortlabels,inline]{enumitem}
 \setlist[enumerate]{
-  leftmargin=*
+  leftmargin=*,
+  parsep=0pt,
+  itemsep=0pt
+}
+
+\setlist[itemize]{
+  parsep=0pt,
+  itemsep=0pt
 }
 
 % bold smallcaps
@@ -154,7 +161,7 @@
 \RequirePackage{placeins}
 
 % format captions
-\RequirePackage[bf,font={small,stretch=1}]{caption}
+\RequirePackage[bf,font={small}]{caption}
 
 % reposition captions automatically
 \RequirePackage{floatrow}
@@ -200,3 +207,7 @@
 \RequirePackage[backend=biber, style=ieee, citestyle=numeric, sortcites=true, maxbibnames=3, minbibnames=2, sorting=nyt, dashed=false, giveninits=false]{biblatex}
 \patchcmd{\bibsetup}{\interlinepenalty=5000}{\interlinepenalty=10000}{}{}
 \emergencystretch=1em
+
+% Removes glue around section titles.
+\RequirePackage{xpatch}
+\xapptocmd{\sectionlinesformat}{\vspace*{-\parskip}}{}{\PatchFailed}

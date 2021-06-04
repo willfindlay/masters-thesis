@@ -1,0 +1,236 @@
+Big Picture
+===========
+
+- Applied security -> no theory, very hard to get through review
+- Be careful when explaining a design decision -- very carefully explain the rationale
+- Make it easy for the reviewers to get things
+
+Actionable Changes
+==================
+
+- Compare BPFContain policy with other policies (AppArmor, SELinux, etc.)
+- Talk about snaps -> simple policy file that explodes into another huge policy file
+
+- What parts of the paper can we cut?
+- Performance evaluation is a page, could be cut down (give citations to discuss the
+  properties of each benchmark)
+
+- Big improvements to evaluation
+
+- Virtualization vs confinement (motivation)
+
+- Section 6.1
+    - Redo this, make it less verbose and focus on real-world CVEs
+- Section 5.2
+    - Drop hot patching (could be good for a separate paper)
+    - Compress in terms of writing, can be made less verbose
+- Section 4
+    - 2 pages on policy is a lot, cut this down and make it more terse
+    - Have some good example policies and a basic comparison with existing policies (a la snap)
+    - How is the policy language designed so that I make fewer errors when writing the policy?
+    - Could move policy language docs into the appendix
+
+- Having the same performance is actually a good thing because these other guys are
+  implemented as straight up kernel modules
+- The spin has to be very carefully made, maybe even repeated a couple times (in
+  implementation, evaluation, discussion)
+
+Time Frame
+==========
+
+
+
+1st Review
+==========
+
+> Similarly, the tainting concept is quite similar to prior work (also cited here) on
+> evolving security policy over phases of execution.  It might be helpful to compare the
+> tainting approach to policy specification versus the explicit phased specification
+> approach.  I'd imagine there's a trade-off between concision and comprehensibility in the
+> tainting approach.
+
+> [...] it wasn't clear to me why kernel modifications were off-limits [...]
+
+- Kernel modifications are not strictly off-limits, and this might be something to bring
+  up in future work
+    - Changes to the kernel should be realistic to _upstream_ -> add features to eBPF!
+    - If kernels are really supposed to policy-agnostic, what does this look like for
+      containers?
+
+- Could potentially introduce a mechanism to dynamically attach per-cgroup LSM BPF
+  programs, bringing the "passive" overhead down to zero on unconfined processes
+
+- Might be worth mentioning how eBPF is widely adopted in production systems
+
+> However, BPFContain also gives the impression of being thin contribution on top of
+> existing kernel security frameworks.  Enlarging the evaluation to draw sharper
+> distinctions between BPFContain and the related work in terms of sVirt, bpfbox,
+> seccomp-bpf, etc., would greatly strengthen the paper as well.
+
+- BPFBox is at least our own work, so maybe there isn't much need to differentiate
+  BPFContain from it
+- Even so, I like the idea of drawing comparisons based "units of security"
+- BPFBox et al. are interested in individual processes, whereas BPFContain treats the
+  container as a unit re. the policy language
+- As the other reviewer mentions, the strength is per-container policies, where the
+  existing frameworks were not designed with this in mind
+
+2nd Review
+==========
+
+> The authors motivate their work by frequently mentioning that writing correct SELinux,
+> AppArmor, _etc._, policies is hard and error-prone.  However, the authors proceed to
+> propose their own YAML-based policy language, which supposedly overcomes the
+> aforementioned issues, but no quantitative nor qualitative results are presented to back
+> up this claim. What exactly makes the policy language of BPFContain better than those of
+> other authorization frameworks out there? How did the authors reach to this conclusion?
+> Did they perform a user study?
+
+- We need to make it more clear that we are not making any claims about usability
+- Either that or do a user study (not exactly realistic given the time frame)
+
+> In my opinion, the unique characteristic of this language is that it is designed to
+> express _per-container_ policies, compared to SELinux, AppArmor, _etc._, which were not
+> designed with this goal in mind -- this is perhaps something that the authors could focus
+> on to motivate their work.
+
+- This is definitely worth discussing in more detail as it is certainly a key
+  differentiating factor
+
+> Given that the authorization checks are implemented using eBPF, is it necessary to have
+> the eBPF programs installed for certain events when there's no active policy that requires
+> them? Wouldn't than reduce the runtime slowdown?  The "BPF Base" scenario in Fig. 6 should
+> result in ~0% slowdown using the approach above. Is this something possible or there's
+> some specific requirement that prevents the daemon for dynamically installing/removing
+> eBPF programs?
+
+- This might be possible, but would require changes to KRSI
+- A good approach might be filtering at the cgroup level
+- See my comments above
+
+>> for instance, a dynamically linked C application will map shared libraries into
+>> executable memory during its setup phase, but is unlikely to perform similar mappings
+>> for the remainder of its lifecycle
+
+> This is not true at all. Certain applications make heavy use of
+> `dlopen/dlsym` to dynamically load shared objects in their address space.
+> See Sysfilter (RAID 2020) -- the authors report (among other things) results
+> from a wide study in Debian binaries. Also, any application that uses "modules"
+> for certain functionality will most likely leverage `dlopen/dlsym` to map
+> `.so` files at runtime.
+
+- If this is the case then we may need to seriously rethink our tainting approach
+  and how useful it actually is :(
+
+> Certain authorization actions shown in the policy examples are not explained
+> at all. What does 'd' corresponds to in the case of a file (Listing 4.3)?
+> Ditto for 'm' and 'c'. (I guess the latter is "create"?
+
+- This is something we cut from the paper in order to save space, it can be added back in
+  for the thesis
+
+Security Evaluation
+-------------------
+
+- I plan to redo this anyway, but let's consider the following points
+
+> (Re. checking commit_creds to check for privilege escalation within a container)
+> If the attacker has already achieved arbitrary code execution (e.g., via code reuse), what
+> prevents them from just skipping the probe check?
+
+- I don't think the point is to say that we can prevent _all_ such privilege escalation
+  attacks... without a full CFI mechanism, code reuse will always be a problem
+- But we at least significantly raise the bar for attackers with these additional checks
+- May be worth leaving this out entirely though
+
+>> If we assume that the property of complete mediation holds for the LSM framework
+>> itself, we can say that BPFCONTAIN achieves complete mediation insofar as its LSM-level
+>> policy is concerned.
+> This is an unrealistic assumption, because LSM hooks are _manually_ placed in the Linux
+> kernel. There is nothing that guarantees that LSM achieves complete mediation this far.
+
+- I agree that this is not a realistic assumption, and I don't think this is really what
+  I was intending to say in the first place
+- The point is that we can say that BPFContain's complete mediation falls back to that of
+  LSM's, which plenty of other confinement frameworks are already based on
+- That being said, I don't think our security evaluation even needs to rely on this per se
+
+>> BPFCONTAIN is still vulnerable to kernel-level compromises, for example through code
+>> injection attacks. This vulnerability is no more than that of any other Linux kernel
+>> security mechanism, however. Further, as explained above, BPFCONTAIN has significant
+>> protections against unauthorized yet privileged users and processes.
+
+> Code injection is less of a problem nowadays. Arbitrary code execution (in
+> kernel mode) is typically achieved via means of code reuse. In any case,
+> however, the protections via unauthorized tampering do not really offer any
+> real security as the attacker can just "skip" the respective check and execute
+> what they need to execute via reusing code (gadgets, code snippets, _etc._).
+
+- Right, code reuse would have been a better example
+- I don't think we can _solve_ such attacks with BPFContain but we can certainly raise the
+  bar for attackers
+
+Performance Evaluation
+----------------------
+
+> Why is the runtime slowdown measured atop a virtualized (KVM) host and not
+> over Linux running on bare metal? Also, and more importantly, why is the guest
+> VM using Qemu for device emulation? The virtualization-based setting most
+> likely masks part of the overhead. The proper way to measure the runtime
+> slowdown that BPFContain incurs by executing the vanilla kernel and the one
+> that includes the BPFContain infrastructure over the baremetal hardware.
+
+- I don't think this person has a full understanding of what Qemu is or how it works
+- Qemu _supports_ device emulation but doesn't imply it... KVM passthrough is a thing and
+  is what I used here
+
+- Also... is testing on a VM really that problematic? I don't see anything wrong with it,
+  especially since we tested AppArmor under _exactly_ the same conditions!
+- If we think it is a problem, I can probably just redo the benchmarks on my own machine
+
+> The comparison with AppArmor is incomplete as there is no report re: how many
+> LSM hooks AppArmor uses relative to BPFContain. The overhead that such
+> customizable authorization systems incur is proportional to (1) the number of
+> hooks they use, and (2) the code responsible for actually implementing the
+> authorization checks. The authors do report the number of hooks required by
+> BPFContain, but there's no such number reported for AppArmor to put the
+> performance numbers into perspective. In certain cases the runtime slowdown of
+> AppArmor is comparable to (or worse than) that of BPFContain. This is by
+> hooking how many events? The same? The same order of magnitude? Twice as many?
+> Fewer?
+
+- I do agree that we could draw more emphasis on the differences between BPFContain and
+  AppArmor that result in performance improvements/slowdowns across various categories
+- This is something I will address in the thesis
+
+Nits
+----
+
+> Please take a look at the following, relevant papers:
+>   - Sysfilter, RAID 2020.
+>   - Confine, RAID 2020 and https://www.usenix.org/conference/usenixsecurity20/presentation/ghavamnia
+>   - Abhaya, OOPSLA 2020.
+
+- sVirt is another one to look at, was mentioned by the first reviewer
+
+- Do a big diagram showing what everyone else is doing vs what we're doing
+- Incorporate related work into an architectural diagram, point arrows to parts of the
+  kernel/userspace stack that is being used
+- Others are building on top of pieces like SELinux, AppArmor, seccomp-bpf, we are
+  replacing those entirely
+- _Virtualization is not confinement!_ Whether you want virtualization or not is
+  a separate thing from confinement -- one is not a subset of the other. This is a point
+  that we need to drive home.
+
+> Such systems (especially Sysfilter and Confine) can automatically generate a
+> `seccomp-BPF` policy for a container image. What's the benefit of using
+> something like BPFContain? In most cases, the system calls allowed by
+> BPFContain will be a superset from what the container actually needs --
+> BPFContain results in more overprivileged containers (compared to the
+> approaches mentioned above). Is there any other benefit? Perhaps argument
+> checking?
+
+- I don't think that BPFContain allowing a superset of system calls is a strictly valid
+  argument for overprivilege
+- It would also be easy enough to add system call filtering logic directly to BPFContain,
+  but I don't strictly see how this is an improvement over just using LSM hooks
