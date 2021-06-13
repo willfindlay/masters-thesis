@@ -198,10 +198,11 @@
 
 \RequirePackage{comment}
 
-\providecommand{\todo}[1]{\textcolor{red}{\bfseries[#1]}}
+\providecommand{\todo}[1]{\textcolor{red}{\bfseries[TODO #1]}}
 \newenvironment{inprogress}
   {\vspace{1em} \color{red} \hrule \vspace{.5em} \noindent}
   {\vspace{0.5em} \hrule \vspace{1em}}
+\providecommand{\etal}{\textit{et al\@.}}
 
 % bibliography
 \RequirePackage[backend=biber, style=ieee, citestyle=numeric, sortcites=true, maxbibnames=3, minbibnames=2, sorting=nyt, dashed=false, giveninits=false]{biblatex}
