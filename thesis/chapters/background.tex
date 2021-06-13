@@ -3,46 +3,309 @@ technologies in Linux and other Unix-like operating systems. It also presents a 
 history and examination of eBPF and discusses its applications in the domains of computer
 security, performance monitoring, and beyond.
 
-\begin{comment}
-\section{Virtualization Technologies}%
-\label{s:virtualization-bg}
+\section{Process-Level Virtualization and Confinement}%
+\label{s:virtualization-and-confinement}
 
-\subsection{Namespaces}%
-\label{ss:namespaces-bg}
+Unlike virtual machines, containers are nothing but a collection of related processes
+(sometimes just one process, but often more) running on the host operating system. These
+processes share the same kernel as other running containers and as \enquote{native}
+processes running outside of a container. While these properties can help containers to be
+lighter-weight than virtual machines, they also necessitate the usage of process-level
+virtualization and confinement primitives to isolate containers from one
+another~\cite{sultan2019_container_security}.  \Cref{s:container-security-bg} covers
+containers and container security in greater detail, further differentiating them from
+VMs. For the purposes of this section, it is enough to know that containerized processes
+run directly on the host, share the host kernel, and use virtualization and confinement
+primitives to achieve isolation.
 
-\subsection{Process Control Groups}%
-\label{ss:cgroups-bg}
+While containers rely on virtualization and confinement primitives to facilitate normal
+operation, this notion of process isolation predates the advent of containers by decades.
+Isolation of processes, particularly in the case of multi-tenant and network-facing
+systems, makes a lot of sense from the persecutive of security best-practices. Locking
+down a program such that it can only perform the actions required for it to function
+correctly can help reduce attack surface and minimize the potential for damage to the rest
+of the system in the event of compromise. This notion of restricting a program's
+capabilities to the minimal viable set has a name in the security literature: the
+\textit{principle of least-privilege}~\cite{schneider03_least_privilege,
+van_oorschot2020_tools_jewels}.
 
-\subsection{Hypervisors and Virtual Machines}%
-\label{ss:vms-bg}
+Researchers have been studying confinement for decades~\cite{lampson1973_confinement}, and
+have been designing and applying confinement primitives since the early days of
+time-sharing computers and multi-tenant systems~\cite{shu2016_security_isolation_study}.
+Process-level virtualization has become similarly important, but for subtly different
+reasons\,---\,namely, for the purpose of restricting and modifying a process' visibility
+into the rest of the system.  Decades of research into virtualization and confinement
+techniques has culminated in a wealth of knowledge and prior artifacts, some of which have
+seen widespread deployment and remain relevant to date. The rest of this section presents
+technical background on such process-level virtualization confinement mechanisms and
+surveys the academic literature related to this area.
+
+\subsection{The Reference Monitor}%
+\label{ss:refmon}
+
+\todo{Describe reference monitor}
+
+\subsection{Discretionary Access Control}%
+\label{ss:dac}
+
+\textit{Discretionary access control} (DAC) forms the most basic form of access control in
+many operating systems, including Linux and other Unix-like operating systems, and
+Microsoft Windows. First formalized in the 1983 US Department of Defense (sic)
+standard~\cite{orange_book}, a discretionary access control mechanism partitions and
+labels system objects (i.e.~resources such as files) by the subjects (i.e.~actors such as
+users and user processes) that \textit{own} them. The corresponding resource owner then
+has full authority to decide which subjects have access to its owned objects. This notion
+of ultimate authority over a subject's owned objects constitutes the primary difference
+between discretionary access control and mandatory access control, which is covered in
+\Cref{ss:mac}. Classically, Unix-like systems have implemented discretionary access
+control in the form of \textit{permission bits} and \textit{access control lists}, which
+can in turn be overridden by the \textit{superuser} or
+\textit{root}~\cite{van_oorschot2020_tools_jewels, jaeger2008_os_security}.
+
+\subsubsection*{Permission Bits}
+
+Permission bits in Unix are special metadata associated with a file that determine
+coarse-grained access to the file according to a subject's \textit{user ID} (UID) and
+\textit{group ID} (GID). Permission bits are divided into three sections: \textit{User},
+\textit{Group}, and \textit{Other}. The \textit{User} bits apply to subjects whose UID
+matches the resource owner's UID, while the \textit{Group} bits consider the GID instead.
+In all other cases (i.e.~when neither the UID nor the GID matches), the \textit{Other}
+bits determine the allowed access. To determine which access should be allowed, permission
+bits encode a coarse-grained \textit{access vector}, specifying read, write, and execute
+access on a file or directory (in the case of a directory, execute access implies the
+ability to \texttt{chdir(2)} into that directory).
+
+While convenient, permission bits are generally insufficient to provide legitimate
+security guarantees to modern systems~\cite{van_oorschot2020_tools_jewels,
+jaeger2008_os_security}. In particular, permission bits encode coarse-grained permissions
+and apply these permissions in a coarse-grained, all-or-nothing, manner. For instance,
+consider the use case of granting read-only access to another user. Specifying such access
+as part of the \textit{Other} bitmask implies granting access to any user on the system.
+Specifying access to a particular \textit{Group} is slightly better, but the resource
+owner has no direct control over which other users belong to this group, now or in the
+future. Thus, we cannot say with certainty that we may specify such access without
+violating our security assumptions.
+
+\subsubsection*{Access Control Lists}
+
+Access control lists (ACLs) offer a slightly more granular alternative to permission bits,
+at the expense of increased complexity~\cite{jaeger2008_os_security,
+van_oorschot2020_tools_jewels}. Unlike permission bits, which rely on three coarse-grained
+subject categories (\textit{User}, \textit{Group}, and \textit{Other}), an access control
+list defines a set of subjects and their corresponding permissions for every object. It
+may be helpful to think of this as breaking up the \textit{Other} category into distinct
+subjects rather than granting or revoking blanket access to all other users on the system.
+
+Capability lists, complementary to access control lists, define a set of objects and
+allowed access patterns for every subject. A capability list for a given subject can be
+derived by taking the set of all access control lists for every object and vice
+versa~\cite{van_oorschot2020_tools_jewels}. Together, the set of all access control lists
+(or capability lists) forms an \textit{access matrix}, describing the DAC policy over
+the entire system. \Cref{fig:acl} depicts this relationship.
+
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/background/acl.pdf}
+  \caption[The access matrix]{
+    The access matrix and the relationship between ACLs and capability
+    lists~\cite{van_oorschot2020_tools_jewels, jaeger2008_os_security}.
+  }%
+  \label{fig:acl}
+\end{figure}
+
+\subsubsection*{User and Group Assignment}
+
+To alleviate concerns with discretionary access control, systems often take the approach of
+assigning a unique user and/or group to a specific application. Such applications are
+typically security-sensitive, such as a privileged daemon or network-facing service. This
+technique achieves a dual-purpose: firstly, the application can lock down any resources it
+owns, simply by restricting any access to its own UID; secondly, the resulting process no
+longer needs to run under the same UID as its parent. This effectively limits the amount
+of outside resources that the application can access (so long as permission bits are
+correctly configured).
+
+The Android operating system takes this model a step further, assigning a unique UID and
+GID to every application on the system, with optional UID sharing between applications
+that come from the same vendor. Under this model, no process' UID ever corresponds to
+a human user. While this arguably improves security, Barrera
+\etal~\cite{barrera2012_android} found weaknesses in Android's UID sharing model that can
+reduce its security to the trustworthiness of an app's signing key.
+
+\subsubsection*{The Superuser and Setuid}
+
+To facilitate system administration, many DAC schemes incorporate the notion of
+a \textit{superuser} or \textit{administrator role} into their model. In Unix and
+Unix-like operating systems, the superuser or \textit{root} user is denoted by the UID of
+`0`. Any process running with the effective user ID (eUID) or 0 is said to be
+\textit{root-privileged}. These root-privileged processes can then override the system's
+DAC policy, bypassing permission bits and access control entries on system objects.
+
+In many cases, a program requires additional privileges in order to function. For
+instance, a \texttt{login} program would require the ability to read security-sensitive
+password entries in \texttt{/etc/shadow}. To achieve such functionality, Unix provides
+special \texttt{setuid} and \texttt{setgid} permission bits that implicitly set the
+effective user and group IDs of a process to those of the file owner.
+A sufficiently-privileged process may also change its own eUID or eGID at runtime using
+the \texttt{setuid(2)} and \texttt{setgid(2)} system calls. Our login program, for
+instance, could use these system calls to drop its privileges to those of the user that is
+logging in. While necessary under the Unix DAC model, setuid and setgid binaries have long
+been the target of exploitation, particularly for privilege escalation
+attacks~\cite{dittmer2014_setuid, van_oorschot2020_tools_jewels, jaeger2008_os_security}.
+
+\subsubsection*{POSIX Capabilities}
+
+\todo{Write this}
+
+\subsubsection*{DAC Security Assumptions and Attacks}
+
+\todo{This probably belongs in \enquote{The Confinement Problem}?}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item DAC assumes that all processes are benign and contain no exploitable vulnerabilities (dangerous and invalid assumption in practice)
+    \item All setuid root binaries are part of the trusted computing base
+    \item The user has no control over which other users belong to a particular group
+    \item Trojan horse attacks, confused deputy attacks~\cite{shu2016_security_isolation_study}
+    \item Other attacks against DAC?
+  \end{itemize}
+\end{inprogress}
+
+\subsubsection*{Proposals for Alternative Schemes}
+
+Academics have long recognized that weaknesses in the discretionary access control model
+must be addressed. Many have turned to mandatory access control~\todo{CITE}
+(c.f.~\Cref{ss:mac}) to solve the fundamental issues in DAC, while others have proposed
+improvements or alternative schemes for implementing discretionary access control. This
+subsection focuses on the latter.
+
+\begin{inprogress}
+  \begin{itemize}
+    \item Mao \etal~\cite{mao2009_trojan_resistant_dac} proposed a new DAC model (IFEDAC) that is
+    resistant to Trojan Horse attacks.
+    \item Dittmer and Tripunitara~\cite{dittmer2014_setuid} examined the security of
+    setuid-family system calls and the setuid permission bits.
+  \end{itemize}
+\end{inprogress}
 
 
 
 
-\section{Confinement Technologies}%
-\label{s:confinement-bg}
+\subsection{Mandatory Access Control}%
+\label{ss:mac}
 
-\subsection{FreeBSD Jails}%
-\label{ss:jails-bg}
+\subsubsection*{CPU Protection Rings}
 
-\subsection{OpenBSD Pledge and Unveil}%
-\label{ss:pledge-bg}
+\subsubsection*{The FLASK Architecture}
 
-\subsection{Linux Seccomp and Seccomp-BPF}%
-\label{ss:seccomp-bg}
+\subsubsection*{Linux Security Modules}
 
-\subsection{Unix DAC}%
-\label{ss:unix-dac-bg}
+\begin{inprogress}
+  \begin{itemize}
+    \item SELinux, Miranda
+    \item AppArmor, aa-logprof, aa-genprof, and aa-easyprof
+    \item Tomoyo
+    \item FBAC-LSM
+    \item FSF~\cite{hu2013_fsf}
+    \item Landlock
+    \item KRSI
+  \end{itemize}
+\end{inprogress}
 
-\subsection{Linux MAC}%
-\label{ss:linux-mac-bg}
+
+
+
+\subsection{System Call Filtering}%
+\label{ss:syscall-filtering}
+
+\subsubsection*{Janus}
+\label{sss:janus}
+
+\subsubsection*{OpenBSD Pledge and Unveil}
+\label{sss:pledge}
+
+\subsubsection*{FreeBSD Capsicum and Cherry Capabilities}
+\label{sss:capsicum}
+
+\subsubsection*{Linux Seccomp and Seccomp-BPF}%
+\label{sss:seccomp}
+
+
+
+\subsection{Process-Level Virtualization}%
+\label{ss:virtualization}
+
+\subsubsection*{Chroots and Chroot Jails}
+
+\subsubsection*{FreeBSD Jails}
+
+\subsubsection*{Linux Namespaces}
+
+\subsubsection*{Linux Cgroups}
+
+
+
+%\subsection{Linux Security Modules}%
+%
+%\subsection{Process-Level Virtualization in Linux}%
+%\label{ss:virtualization-bg}
+%
+%\subsection*{Namespaces}
+%
+%\subsection*{Process Control Groups}
+%
+%\subsection{Process Control Groups}%
+%\label{ss:cgroups-bg}
+%
+%\subsection{Unix DAC}%
+%\label{ss:unix-dac-bg}
+%
+%\subsection{Chroot Jails}%
+%\label{ss:chroot-jails-bg}
+%
+%\subsection{FreeBSD Jails}%
+%\label{ss:freebsd-jails-bg}
+%
+%\subsection{OpenBSD Pledge and Unveil}%
+%\label{ss:pledge-bg}
+%
+%\subsection{Linux Seccomp and Seccomp-BPF}%
+%\label{ss:seccomp-bg}
+%
+%\subsection{Linux MAC}%
+%\label{ss:linux-mac-bg}
 
 
 
 
-\section{Linux Containers}%
-\label{s:containers-bg}
-\end{comment}
+
+
+
+\section{Containers and Container Security}%
+\label{s:container-security-bg}
+
+\subsection{Containers}%
+\label{ss:containers-bg}
+
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/background/virtualization.pdf}
+  \caption[A comparison of virtual machine and container architectures]{
+    A comparison of virtual machine and container architectures. Containers \textbf{(a)}
+    achieve virtualization using a thin layer provided by the host operating system
+    itself. They share the underlying operating system kernel and resources, requiring no
+    guest operating system. Type I hypervisors \textbf{(b)} virtualize and control the
+    underlying hardware directly, but require full guest operating systems on top of the
+    virtualization layer. Type II hypervisors \textbf{(c)} run on top of a host operating
+    system but still require full guest operating systems above the virtualization layer.
+  }%
+  \label{fig:virt}
+\end{figure}
+
+\subsection{Container Security}%
+\label{ss:container-security-bg}
+
+
+
 
 
 
@@ -51,10 +314,12 @@ security, performance monitoring, and beyond.
 \label{s:ebpf-bg}
 
 eBPF stands for \enquote{Extended Berkeley Packet Filter}, though in reality it has very
-little to do with Berkeley, packets, or filtering in its current form.  In a nutshell,
-eBPF is a Linux kernel technology that supports dynamic monitoring of a production system
-through the attachment of special \enquote{hooks} called BPF programs to specific kernel
-interfaces and userspace functions. In this section, we discuss the origins of eBPF, its
+little to do with Berkeley, packets, or filtering in its current
+form~\cite{gregg2019_bpf}. In a nutshell, eBPF is a Linux kernel technology that supports
+dynamic system monitoring through the attachment of special \enquote{hooks} called BPF
+programs to specific kernel interfaces and userspace functions. In recent years, eBPF's
+role has expanded, providing an interface to make extensions to the kernel as well as the
+classic monitoring use case. In this section, we discuss the origins of eBPF, its
 components and how they work, its applications under the Linux kernel, and how it has
 evolved over time.
 
@@ -74,22 +339,21 @@ ways. Many of the reasons why classic BPF was such an improvement over the statu
 still relevant when discussing \textit{eBPF}, and so we will briefly cover them here as
 well.
 
-In essence, classic BPF is a \textit{register virtual machine} designed to take packets
-as input and produce \textit{filtering decisions} as output. These filtering decisions
-could then used to make decisions about whether a packet should be passed down to a more
-complex pipeline for further analysis. The key insight behind classic BPF is that these
-filtering decisions could be made more efficiently in \textit{kernelspace}, the part of
-the operating system that runs in protection ring 0\footnote{In practice, ring 0 is the
-highest real level of memory protection offered by the CPU (although negative rings do
-exist on modern CPUs, they are, in fact, merely partitions of ring 0)~\todo{CITE}. Code
-that runs in ring 0 is said to run with \textit{supervisor privileges}.} and which is most
-commonly associated with any parts of the operating system that do not run in
-\textit{userland} (i.e.~the context of an ordinary user process). This provides
+In essence, classic BPF is a \textit{register virtual machine} designed to take packets as
+input and produce \textit{filtering decisions} as output. These filtering decisions could
+then used to make decisions about whether a packet should be passed down to a more complex
+pipeline for further analysis. The key insight behind classic BPF is that these filtering
+decisions could be made more efficiently in \textit{kernelspace}, the part of the
+operating system that runs in protection ring 0\footnote{Code that runs in ring 0 is said
+to run with \textit{supervisor privileges} and is able to access all system memory. Ring
+0 is the highest level of memory protection provided by the CPU~\cite{jaeger2008_os_security}.}
+and which is most commonly associated with any parts of the operating system that do not
+run in \textit{userland} (i.e.~the context of an ordinary user process). This provides
 a considerable performance advantage over conventional approaches to network monitoring.
 A typical network monitor runs in \textit{userspace}, meaning that packets need to be
 copied over from kernelspace before they can be properly analyzed. This is an expensive
 operation, requiring several context switches and potentially sleeping in the event of
-a page fault~\cite{mccanne1993_bpf}. By applying filtering logic in the kernel, this
+a page fault~\cite{mccanne1993_bpf}.  By applying filtering logic in the kernel, this
 expensive copying could be skipped for packets that would be discarded or ignored by the
 network monitor anyway.
 
@@ -112,9 +376,10 @@ whether or not the packet should be forwarded to userspace~\cite{mccanne1993_bpf
 Since its original introduction in 1993, classic BPF has since been ported to a number of
 Unix-like operating systems, including Linux~\cite{linux_bpf}, OpenBSD~\cite{openbsd_bpf},
 and FreeBSD~\cite{freebsd_bpf}. Classic BPF forms the backbone of widely used traffic
-monitoring tools, most notably tcpdump~\todo{CITE tcpdump}. In Linux, the seccomp system
-call was enhanced to include classic BPF filters, allowing a user process to use classic BPF
-programs to define allowlists and denylists of system calls (c.f.~\Cref{ss:seccomp-bg}).
+monitoring tools, most notably tcpdump~\cite{tcpdump, mccanne1993_bpf}. In Linux, the
+\texttt{seccomp(2)} system call~\todo{CITE Anderson} was enhanced to include classic BPF
+filters, allowing a user process to use classic BPF programs to define allowlists and
+denylists of system calls (c.f.~\Cref{sss:seccomp}).
 
 In 2014, Alexei Starovoitov and Daniel Borkmann~\cite{starovoitov2014_ebpf} first proposed
 a total overhaul of the Linux BPF engine. Their proposal, dubbed eBPF, expanded the
@@ -134,8 +399,9 @@ BPF architecture, depicted in \Cref{fig:classic-bpf}.
   \caption[The extended BPF architecture]{The extended BPF architecture. Unlike classic
   BPF, eBPF programs are JIT compiled to the native instruction set, share data using
   specialized map data structures, and can be attached to many different kinds of system
-  events. All eBPF bytecode goes through a verification step before it can be loaded into
-  the kernel.}%
+  events. Programs can share data with each other and with the controlling userspace
+  process using specialized map data structures. All eBPF bytecode goes through
+  a verification step before it can be loaded into the kernel.}%
   \label{fig:extended-bpf}
 \end{figure}
 
@@ -155,37 +421,45 @@ eBPF programs are expressed in a virtual RISC machine language called BPF byteco
 it is technically possible to write BPF bytecode by hand, programs are most often compiled
 from a restricted subset of the C programming language\footnote{Other languages may
 eventually be used to write eBPF programs as well.  For instance, an experimental eBPF
-target for the Rust programming language has recently been proposed~\todo{CITE}. The
-important distinction here is that the set of all possible eBPF programs is a strict
-subset of the set of all possible programs.} using the LLVM toolchain. Programs can be
-loaded and attached to system events using the \texttt{bpf(2)} system call, at which point
-control passes to the eBPF verifier, which checks the programs to make sure they satisfy
-a set of safety constraints~\cite{starovoitov2014_ebpf, gregg2019_bpf}. In particular,
-eBPF programs must consist of fewer than 1 million BPF instructions and must not call into
-any kernel functions outside of the allowlisted helpers. The program is also constrained
-to a 512 byte stack size; any additional memory required by the program must come from an
-eBPF map (c.f.~\Cref{ss:bpf-maps-bg}). For safety, memory accesses into allocated buffers
-must be properly bounds checked, pointers must be null-checked before dereferencing, and
-any access to external memory (e.g.~belonging to userspace programs or to the kernel
-itself) must be read-only. Since eBPF programs must provably terminate, no back-edges are
+target for the Rust programming language has recently been
+proposed~\cite{decina2021_bpf_rust}. The important distinction here is that the set of all
+possible eBPF programs is a strict subset of the set of all possible programs.} using the
+LLVM toolchain. Programs can be loaded and attached to system events using the
+\texttt{bpf(2)} system call, at which point control passes to the eBPF verifier, which
+checks the programs to make sure they satisfy a set of safety
+constraints~\cite{starovoitov2014_ebpf, gregg2019_bpf}. In particular, eBPF programs must
+consist of fewer than 1 million BPF instructions and must not call into any kernel
+functions outside of the allowlisted helpers. The program is also constrained to a 512
+byte stack size; any additional memory required by the program must come from an eBPF map
+(c.f.~\Cref{ss:bpf-maps-bg}). For safety, memory accesses into allocated buffers must be
+properly bounds checked, pointers must be null-checked before dereferencing, and any
+access to external memory (e.g.~belonging to userspace programs or to the kernel itself)
+must be read-only. Since eBPF programs must provably terminate, no back-edges are
 permitted in their control flow and all loops must be bounded by some fixed constant $i$
 iterations.
 
 To guard against data races, eBPF programs always hold the kernel's RCU (read-copy-update)
 lock while executing, gated by the \texttt{bpf\_prog\_enter} and \texttt{bpf\_prog\_exit}
-functions in the kernel~\todo{CITE kernel code}. In simple terms, the RCU lock allows
-concurrent reads, except in the presence of updates,optimizing for read-mostly workloads
-(i.e.~precisely the sort of workload eBPF is designed for)~\cite{mckenney2007_rcu}. This
-implicitly enables BPF programs to read from many common kernel data structures without
-fear of data races and simultaneously protects reads and updates to eBPF maps, at a slight
-(albeit reasonable) performance penalty~\cite{mckenney2007_rcu}. In addition to holding
-the RCU lock, eBPF programs are not considered \textit{preemptable} by default. In
-practice, this means that eBPF programs cannot sleep and must run to termination on their
-assigned core. This property, while useful in many circumstances, enforces undesirable
-limitations on eBPF helpers, since it precludes any functionality that may cause the
-program to sleep (e.g.~a page fault). To account for use cases where sleeping is
-unavoidable, Linux 5.\todo{WHICH SUBVERSION?} introduced sleepable versions of some eBPF
-program types~\todo{CITE}.
+functions in the kernel. In simple terms, the RCU lock allows concurrent reads, except in
+the presence of updates, optimizing for read-mostly workloads (i.e.~precisely the sort of
+workload eBPF is designed for)~\cite{mckenney2007_rcu}. This implicitly enables BPF
+programs to read from many common kernel data structures without fear of data races and
+simultaneously protects reads and updates to eBPF maps, at a slight (albeit reasonable)
+performance penalty~\cite{mckenney2007_rcu}. In addition to holding the RCU lock, eBPF
+programs are not considered \textit{preemptable} by default. In practice, this means that
+eBPF programs cannot sleep and must run to termination on their assigned core. This
+property, while useful in many circumstances, enforces undesirable limitations on eBPF
+helpers, since it precludes any functionality that may cause the program to sleep (e.g.~a
+page fault). To account for use cases where sleeping is unavoidable, Linux 5.10 introduced
+sleepable versions of some eBPF program types~\cite{starovoitov2020_sleepable}.
+
+Once loaded into the kernel, eBPF programs are represented as BPF objects, each with its
+own reference count. Loading a BPF program and attaching it to a system event increments
+the reference count, while detaching and unloading the program decrements the reference
+count. The kernel also exposes a special filesystem, \textit{bpffs}, which allows BPF
+programs to be pinned. This also increments the reference count, allowing an attached
+program to outlive its controlling process (i.e.~the process that loaded and attached
+it)~\cite{gregg2019_bpf}.
 
 \subsubsection*{Working with the Verifier}
 
@@ -231,7 +505,7 @@ and their properties.
   \textit{LSM Probes}          & LSM probes~\cite{singh2019_krsi} attach to the kernel's LSM hooks and can be used to audit security events and make policy decisions.\\
   \textit{Raw Tracepoints}     & Raw tracepoint programs attach to a stable tracing interface exposed by the Linux kernel. Tracepoints are considered a stable API, but are more limiting than alternatives such as Kprobes or Fentry probes.\\
   \textit{Kprobes/Kretprobes}  & Kprobe programs can attach to any kernel function, by replacing the function with a trap into the BPF program. The BPF program has read-only access to the function arguments. Kretprobes work in the same way, but handle function returns instead of function calls.\\
-  \textit{Fentry/Fexit Probes} & A more efficient version of Kprobes and Kretprobes that directly trampoline into the BPF program instead of trapping. These programs can also be used to modify the return value of specifically allowlisted kernel functions (e.g.~system call implementations).\\
+  \textit{Fentry/Fexit Probes} & A more efficient version of Kprobes and Kretprobes that directly trampolines into the BPF program instead of trapping. These programs can also be used to modify the return value of specifically allowlisted kernel functions (e.g.~system call implementations).\\
   \textit{Uprobes/Uretprobes}  & The userspace equivalent of Kprobes and Kretprobes.\\
   \bottomrule
 \end{longtable}
@@ -243,7 +517,7 @@ It is worth spending more time focusing specifically on LSM probes, as these are
 extensively in \bpfbox{} and \bpfcontain{} to enforce policy over security-sensitive
 events. Introduced by KP Singh in his KRSI (Kernel Runtime Security Instrumentation)
 patch~\cite{singh2019_krsi}, LSM probes define a canonical framework for attaching eBPF
-programs to the Linux kernel's LSM security hooks (c.f.~\Cref{ss:linux-mac-bg}). Unlike
+programs to the Linux kernel's LSM security hooks (c.f.~\Cref{ss:mac}). Unlike
 traditional LSMs which are implemented as static kernel modules, LSM probes are
 \textit{dynamically attachable}, meaning that MAC and audit policy can be adjusted at
 runtime, simply by loading a new eBPF program.  \Cref{fig:bpf-lsm} depicts how LSM probes
@@ -252,7 +526,7 @@ integrate with the LSM framework.
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/bpf-lsm.pdf}
-  \caption{A simplified example of how eBPF LSM probes make policy decisions. Privileged userspace processes can attach one or more LSM probes to a given hook. When a userspace process requests a privileged operation, the kernel implicitly calls into the corresponding LSM hooks, which in turn invoke the logic associated with each LSM. A shim LSM is responsible for invoking each LSM probe, and any resulting policy decisions are taken together to arrive at a final decision. As with ordinary LSMs, the final decision is consensus-based. That is, if \textit{any LSMs} or \textit{any BPF LSM probes} disagree on a policy decision, the privileged operation is denied.}%
+  \caption[How eBPF LSM probes make policy decisions]{A simplified example of how eBPF LSM probes make policy decisions. Privileged userspace processes can attach one or more LSM probes to a given hook. When a userspace process requests a privileged operation, the kernel implicitly calls into the corresponding LSM hooks, which in turn invoke the logic associated with each LSM. A shim LSM is responsible for invoking each LSM probe, and any resulting policy decisions are taken together to arrive at a final decision. As with ordinary LSMs, the final decision is consensus-based. That is, if \textit{any LSMs} or \textit{any BPF LSM probes} disagree on a policy decision, the privileged operation is denied.}%
   \label{fig:bpf-lsm}
 \end{figure}
 
@@ -282,12 +556,130 @@ eBPF a particularly attractive target for developing new security solutions.
 \subsection{eBPF Maps}%
 \label{ss:bpf-maps-bg}
 
-\subsection{The BPF Type Format (BTF)}%
-\label{ss:btf-bg}
+eBPF maps serve as both a runtime data store for eBPF programs and the canonical method of
+communication between eBPF programs and other eBPF programs, and eBPF programs and
+userspace applications. Like eBPF programs, maps can be pinned to \textit{bpffs} to
+increment their reference count in the kernel. Concurrent access to eBPF maps from within
+kernelspace is protected by an implicit RCU lock, and a spinlock concurrency primitive is
+exposed via a helper function to guard map accesses between kernelspace and userspace.
+From the eBPF side, maps can be accessed using a set of provided helper functions.
+Userspace applications can access maps using the \texttt{bpf(2)} system call or through
+direct memory-mapping (only available for arrays) via
+\texttt{mmap(2)~\cite{gregg2019_bpf}}. While many eBPF maps are designed to be generic,
+others are highly specialized for specific use cases. \bpfcontain{} and \bpfbox{} make
+use of several eBPF map types, which are summarized in \Cref{tab:map-types}.
+
+\begingroup\footnotesize
+\begin{longtable}[c]{lp{3.9in}}
+\caption{A selection of relevant eBPF map types for \bpfbox{} and \bpfcontain{}.}%
+\label{tab:map-types}\\
+  \toprule
+  Map Type & Description\\
+  \midrule
+  \textit{BPF Hashmap}           & A key-value hashmap. Keys and values can be arbitrary data structures.\\
+  \textit{BPF Array}             & A fixed-size array with integer indices. Values can be arbitrary data structures.\\
+  \textit{BPF Array/Map of Maps} & A BPF array or map that stores handles into \textit{other maps}.\\
+  \textit{BPF Per-CPU Array/Map} & Like a BPF hashmap or BPF array but with a separate copy per logical CPU\@. This enables concurrent access across CPUs, but without synchronization.\\
+  \textit{BPF Local Storage}     & A dummy BPF map that provides a handle into local storage for a given kernel data structure. For instance, task local storage provides storage per-task-struct. Values can be arbitrary data structures.\\
+  \textit{BPF Ringbuf}           & A concurrent circular buffer that passes event handles from kernelspace to userspace. To communicate, eBPF programs submit events and userspace applications poll events.\\
+  \bottomrule
+\end{longtable}
+\endgroup
+
+\subsection{Userspace Front-Ends}%
+\label{ss:bpf-userspace}
+
+Although eBPF programs and maps can exist on their own after being pinned to
+\textit{bpffs}, the more common approach is to manage their lifetime using a controlling
+process. Userspace applications implementing such a controlling process typically use an
+eBPF front-end framework to facilitate loading and interacting with programs and maps.
+A number of such front-ends exist~\cite{gobpf, bcc, libbpf, libbpf-rs, libbpfgo,
+cilium-ebpf, redbpf}, some more practical than others.
+\textit{bcc}~\cite{bcc} was the first eBPF framework to offer high-level userspace tooling
+around eBPF, providing an LLVM backend for compiling eBPF programs and a Python library
+for loading and interacting with them. \textit{libbpf}~\cite{libbpf} offers a pure
+C alternative to bcc and has since been upstreamed into the Linux kernel.
+\textit{libbpf-rs}~\cite{libbpf-rs} and \textit{libbpfgo}~\cite{libbpfgo} offer Rust
+and Golang bindings for libbpf respectively. Other tooling~\cite{cilium-ebpf, redbpf}
+bypasses libbpf entirely, providing fully native eBPF bindings for Rust and Golang.
+
+\subsubsection*{Libbpf and BPF CO-RE}%
+
+Among the myriad of userspace front-ends available for eBPF, libbpf stands out as the only
+one with official upstream support from the Linux kernel. Recent improvements to libbpf
+have solidified its position as the dominant framework. In particular, libbpf supports
+a new way of compiling a loading BPF programs into the kernel, BPF CO-RE (compile-once,
+run everywhere)~\cite{gregg2020_core, nakryiko2020_core}. BPF CO-RE uses BTF (BPF Type Format) debugging information
+exposed by the kernel, along with load-time relocation logic to support loading the same
+compiled eBPF bytecode across multiple target kernels. The precise technical details of how
+CO-RE works are beyond the scope of this thesis.
+
+With libbpf and CO-RE, eBPF programs can now be compiled once and run on any target kernel
+that supports the required BPF features. This provides a powerful advantage over other
+eBPF frameworks and even alternatives to eBPF, such as loadable kernel modules. A CO-RE
+program that runs on one kernel will be guaranteed to run on another of the same version
+or higher, barring any API incompatibilities like changes in a hooker function signature.
+Such incompatibilities can be resolved with the use of built-in kernel configuration
+checks.
+
+\bpfcontain{} (c.f.~\Cref{c:bpfcontain}) leverages libbpf and CO-RE through libbpf-rs, the
+canonical Rust bindings for libbpf, providing adoptability advantages over the original
+\bpfbox{} prototype (c.f.~\Cref{c:bpfbox}), which uses bcc.
 
 \subsection{Comparing eBPF with Loadable Kernel Modules}%
 \label{ss:bpf-vs-modules}
 
-% @FIXME: This should be moved to
-%\subsection{eBPF in the Wild}%
-%\label{ss:ebpf-in-the-wild}
+Before eBPF, the primary means of modifying the Linux kernel at runtime was through the
+use of \textit{loadable kernel modules}~\cite{corbet1998_device_drivers}. A kernel module
+can be thought of as a discrete bundle of code that can be loaded into the kernel (or
+compiled into its binary image). Like other kernel code, including eBPF, modules are
+event-based and run in ring 0, responding to and handling system events as they occur.
+Since kernel modules and eBPF can serve similar (but not strictly equivalent) purposes,
+comparing the two can offer some insight about how they differ and which technology is
+better fit for a specific purpose.
+
+At a first approximation, eBPF differs from kernel modules in the following meaningful ways~\cite{gregg2019_bpf}:
+\begin{enumerate}
+  \item eBPF programs \textbf{must pass verification checks} before they can be loaded into the
+  kernel. This verification step provides assurances about program safety. For instance, eBPF
+  programs are guaranteed not to deadlock the kernel, and are far less likely to suffer from
+  memory safety issues. In contrast, misuse of kernel APIs in a kernel module can have dangerous
+  implications for system safety and security.
+
+  \item An implicit advantage provided by eBPF is that BPF programs can be \textbf{easier
+  to reason about} than other kernel code. eBPF abstracts away much of the complex
+  functionality required to make kernel code operate correctly by providing implicit
+  guarantees about program execution. Even helper functions, which offer functionality
+  beyond the scope of verifiability, must obey a predetermined contract with the verifier
+  in order to be considered safe. Thus, when an eBPF program passes verification, there is
+  a much higher likelihood that it will \enquote{just work.}
+
+  \item eBPF \textbf{exposes map-like data structures} to facilitate runtime data storage,
+  communication between eBPF programs, and communication with userspace applications. In
+  the case of kernel modules, data structures often must be implemented by hand, taking
+  great care not to introduce potential bugs or security vulnerabilities, particularly in
+  the case of memory management. Communication with userspace from a kernel module might
+  be done via netlink sockets, file operations, or similar
+  means~\cite{corbet1998_device_drivers}. These modes of communication are often less
+  streamlined and, in the case of file operations, must be implemented by hand, increasing
+  the likelihood of programmer error.
+
+  \item eBPF programs are \textbf{not Turing-complete}. Intuitively, this means that
+  the set of operations a kernel module can perform is a strict superset of eBPF. While
+  this may appear to be a hugely limiting factor, in practice eBPF programs are often
+  sufficient to implement sophisticated tracing, filtering, and policy enforcement logic.
+  Where the verifier gets in the way, the programmer can reach for a number of helper
+  functions provided by the kernel to achieve more complex behaviour.
+
+  \item eBPF is \textbf{not suitable for implementing device drivers} or other complex
+  functionality that requires ad-hoc access to various kernel facilities and write access
+  to arbitrary memory locations.
+\end{enumerate}
+
+In summary, eBPF is useful for observability use cases, or cases in which the functional
+requirements of the kernel code are not expected to be complex or might be expected to
+change frequently. eBPF programs and maps are particularly good at separation of concerns,
+composability, and modularity. eBPF maps facilitate easy communication between kernelspace
+and userspace, and provide the ability to build relationships between data from different
+program types. Kernel modules should be preferred for the implementation of more complex
+kernel functionality, such as device drivers.
