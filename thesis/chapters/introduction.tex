@@ -64,8 +64,7 @@ totally isolate containers from each other, while use cases (e.g.~microservices
 deployments) may require individual containers to communicate and cooperate with each
 other. Thus, our solution should be practical, light-weight, and flexible such that we can
 define a container-level policy enforcement mechanism that can be readily adopted in
-production use cases. A relatively new Linux technology, \textit{Extended Berkeley Packet
-Filter} (eBPF), offers the opportunity to design such a system.
+production use cases. A relatively new Linux technology, \gls{ebpf}, offers the opportunity to design such a system.
 
 To improve the status quo of confinement on Linux, we present two research prototypes,
 \bpfbox{} and its successor, \bpfcontain{}. The former is a novel application sandboxing

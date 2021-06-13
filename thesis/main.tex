@@ -10,6 +10,16 @@
 ]{scrbook}
 
 \usepackage[utf8]{inputenc}
+
+\usepackage[acronym]{glossaries}
+\makeglossaries
+\newacronym{bpf}{BPF}{Berkeley Packet Filter}
+\newacronym{ebpf}{eBPF}{Extended BPF or Extended Berkeley Packet Filter}
+\newacronym{cbpf}{cBPF}{Classic BPF or Classic Berkeley Packet Filter}
+\newacronym{dac}{DAC}{Discretionary Access Control}
+\newacronym{mac}{MAC}{Mandatory Access Control}
+\newacronym{lsm}{LSM}{Linux Security Modules}
+
 \usepackage{findlay}
 \usepackage{epigraph}
 
@@ -118,5 +128,9 @@
 \printbibliography%
 \addcontentsline{toc}{chapter}{Bibliography}%
 \nocite{*} % TODO: Remove this when finished
+
+\appendix
+%\backmatter
+\printglossary[type=\acronymtype, title=Glossary of Acronyms, toctitle=Glossary of Acronyms]
 
 \end{document}
