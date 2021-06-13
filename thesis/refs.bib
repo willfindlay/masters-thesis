@@ -1,4 +1,41 @@
 ------------------------------------------------------------------------------
+                          Operating System Security
+------------------------------------------------------------------------------
+
+Operating System Security
+@book{jaeger2008_os_security,
+  title     = {{Operating System Security}},
+  author    = {Trent Jaeger},
+  editor    = {Ravi Sandhu},
+  year      = {2008},
+  isbn      = {978-1598292121},
+  publisher = {Morgan \& Claypool Publishers}
+}
+
+Paul's book
+@book{van_oorschot2020_tools_jewels,
+  author    = {Paul C. van Oorschot},
+  title     = {Computer Security and the Internet - Tools and Jewels},
+  series    = {Information Security and Cryptography},
+  publisher = {Springer},
+  year      = {2020},
+  doi       = {10.1007/978-3-030-33649-3},
+  isbn      = {978-3-030-33648-6},
+}
+
+DoD Trusted Computer System Evaluation Criteria
+@techreport{orange_book,
+  author       = {{US Department of Defense}},
+  title        = {{Trusted Computer System Evaluation Criteria}},
+  number       = {DOD 5200.58-STD},
+  year         = {1983},
+  type         = {DOD Standard},
+}
+
+
+
+
+------------------------------------------------------------------------------
                             Process Confinement
 ------------------------------------------------------------------------------
 
@@ -41,12 +78,94 @@ Nice literature review examining security isolation techniques
 	pages    = {1--37},
 }
 
-
+@article{schneider03_least_privilege,
+  author    = {Fred B. Schneider},
+  title     = {{Least Privilege and More}},
+  journal   = {{IEEE} Secur. Priv.},
+  volume    = {1},
+  number    = {5},
+  pages     = {55--59},
+  year      = {2003},
+  doi       = {10.1109/MSECP.2003.1236236},
+}
 
 
 ------------------------------------------------------------------------------
-                Linux Virtualization/Confinement Primitives
+                        Discretionary Access Control
 ------------------------------------------------------------------------------
+
+@inproceedings{barrera2012_android,
+  author    = {David Barrera and
+               Jeremy Clark and
+               Daniel McCarney and
+               Paul C. van Oorschot},
+  editor    = {Ting Yu and
+               William Enck and
+               Xuxian Jiang},
+  title     = {{Understanding and Improving App Installation Security Mechanisms Through
+               Empirical Analysis of Android}},
+  booktitle = {SPSM'12, Proceedings of the Workshop on Security and Privacy in Smartphones
+               and Mobile Devices, Co-located with {CCS} 2012, October 19, 2012,
+               Raleigh, NC, {USA}},
+  pages     = {81--92},
+  publisher = {{ACM}},
+  year      = {2012},
+  doi       = {10.1145/2381934.2381949},
+}
+
+@inproceedings{mao2009_trojan_resistant_dac,
+  author    = {Ziqing Mao and
+               Ninghui Li and
+               Hong Chen and
+               Xuxian Jiang},
+  editor    = {Barbara Carminati and
+               James Joshi},
+  title     = {{Trojan Horse Resistant Discretionary Access Control}},
+  booktitle = {14th {ACM} Symposium on Access Control Models and Technologies, {SACMAT}
+               2009, Stresa, Italy, June 3-5, 2009, Proceedings},
+  pages     = {237--246},
+  publisher = {{ACM}},
+  year      = {2009},
+  doi       = {10.1145/1542207.1542244},
+}
+
+@inproceedings{dittmer2014_setuid,
+  author    = {Mark S. Dittmer and
+               Mahesh V. Tripunitara},
+  editor    = {Gail-Joon Ahn and
+               Moti Yung and
+               Ninghui Li},
+  title     = {{The {UNIX} Process Identity Crisis: {A} Standards-Driven Approach
+               to Setuid}},
+  booktitle = {Proceedings of the 2014 {ACM} {SIGSAC} Conference on Computer and
+               Communications Security, Scottsdale, AZ, USA, November 3-7, 2014},
+  pages     = {1391--1402},
+  publisher = {{ACM}},
+  year      = {2014},
+  doi       = {10.1145/2660267.2660333},
+}
+
+------------------------------------------------------------------------------
+                        Mandatory Access Control
+------------------------------------------------------------------------------
+
+An Empirical Study of Three Access Control Systems
+@inproceedings{hu2013_fsf,
+  author    = {Lihui Hu and
+               Jean Mayo and
+               Charles Wallace},
+  editor    = {Atilla El{\c{c}}i and
+               Manoj Singh Gaur and
+               Mehmet A. Orgun and
+               Oleg B. Makarevich},
+  title     = {{An Empirical Study of Three Access Control Systems}},
+  booktitle = {The 6th International Conference on Security of Information and Networks,
+               {SIN} '13, Aksaray, Turkey, November 26-28, 2013},
+  pages     = {287--291},
+  publisher = {{ACM}},
+  year      = {2013},
+  doi       = {10.1145/2523514.2523550},
+}
 
 
 
@@ -80,7 +199,7 @@ Extended BPF
   title  = {{Rework/optimize internal BPF interpreter's instruction set}},
   year   = 2014,
   month  = {March},
-  url    = {https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id = bd4cf0ed331a275e9bf5a49e6d0fd55dffc551b8},
+  url    = {https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=bd4cf0ed331a275e9bf5a49e6d0fd55dffc551b8},
   type   = {Kernel patch},
 }
 
@@ -141,6 +260,16 @@ RCU Lock in LWN
   url     = {https://lwn.net/Articles/262464/},
 }
 
+Sleepable BPF
+@techreport{starovoitov2020_sleepable,
+  author = {Alexei Starovoitov},
+  title  = {{Merge branch 'bpf-sleepable'}},
+  year   = 2020,
+  month  = {August},
+  url    = {https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=10496f261ed30592c6a7f8315f6b5ec055db624a},
+  type   = {Kernel patch},
+}
+
 libbpf
 @misc{libbpf,
   author  = {{Libbpf Contributors}},
@@ -150,6 +279,28 @@ libbpf
   note    = {GitHub repository}
 }
 
+Gregg BPF core
+@misc{gregg2020_core,
+  author  = {Brendan Gregg},
+  title   = {{BPF binaries: BTF, CO-RE, and the future of BPF perf tools}},
+  year    = 2020,
+  month   = {November},
+  url     = {http://www.brendangregg.com/blog/2020-11-04/bpf-co-re-btf-libbpf.html},
+  urldate = {2021-06-07},
+  note    = {Blog post}
+}
+
+Andrii BPF core
+@misc{nakryiko2020_core,
+  author  = {Andrii Nakryiko},
+  title   = {{BPF Portability and CO-RE}},
+  year    = 2020,
+  month   = {February},
+  url     = {https://facebookmicrosites.github.io/bpf/blog/2020/02/19/bpf-portability-and-co-re.html},
+  urldate = {2021-06-07},
+  note    = {Blog post}
+}
+
 libbpf-rs
 @misc{libbpf-rs,
   author  = {Daniel Xu, {Libbpf-rs Contributors}},
@@ -157,6 +308,61 @@ libbpf-rs
   url     = {https://github.com/libbpf/libbpf-rs},
   urldate = {2021-05-28},
   note    = {GitHub repository}
+}
+
+gobpf
+@misc{gobpf,
+  author  = {{IOVisor}},
+  title   = {{gobpf}},
+  url     = {https://github.com/iovisor/gobpf},
+  urldate = {2021-06-07},
+  note    = {GitHub repository}
+}
+
+bcc
+@misc{bcc,
+  author  = {{IOVisor}},
+  title   = {{bcc}},
+  url     = {https://github.com/iovisor/bcc},
+  urldate = {2021-06-07},
+  note    = {GitHub repository}
+}
+
+libbpfgo
+@misc{libbpfgo,
+  author  = {{Aqua Security}},
+  title   = {{libbpfgo}},
+  url     = {https://github.com/aquasecurity/libbpfgo},
+  urldate = {2021-06-07},
+  note    = {GitHub repository}
+}
+
+cilium-ebpf
+@misc{cilium-ebpf,
+  author  = {{Cilium} and {Cloudflare}},
+  title   = {{ebpf}},
+  url     = {https://github.com/cilium/ebpf},
+  urldate = {2021-06-07},
+  note    = {GitHub repository}
+}
+
+redbpf
+@misc{redbpf,
+  author  = {{Redbpf Authors}},
+  title   = {{redbpf}},
+  url     = {https://github.com/foniod/redbpf},
+  urldate = {2021-06-07},
+  note    = {GitHub repository}
+}
+
+Rustlang BPF
+@techreport{decina2021_bpf_rust,
+  author = {Alessandro Decina},
+  title  = {{BPF target support}},
+  year   = 2021,
+  month  = {June},
+  url    = {https://github.com/rust-lang/rust/pull/79608},
+  type   = {Patch},
 }
 
 LLVM BPF
@@ -190,6 +396,24 @@ DTrace book
 	publisher = {Prentice Hall},
 	author    = {Gregg, Brendan and Mauro, Jim},
 	year      = {2011}
+}
+
+Linux Device Drivers
+@book{corbet1998_device_drivers,
+	edition   = {3rd},
+	title     = {{Linux Device Drivers}},
+	publisher = {O'Reilly},
+	author    = {Jonathan Corbet and Alessandro Rubini and Greg Kroah-Hartman},
+	year      = {1998},
+  url       = {https://lwn.net/Kernel/LDD3/}
+}
+
+tcpdump
+@misc{tcpdump,
+  author  = {{Tcpdump Authors}},
+  title   = {{Tcpdump}},
+  url     = {https://www.tcpdump.org/},
+  urldate = {2020-06-07}
 }
 
 
@@ -312,3 +536,12 @@ Security documentation for lxc
 
 SELinux Docker security policy
   https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux_atomic_host/7/html/container_security_guide/docker_selinux_security_policy
+
+BPFRoid -- Malware detection on android
+  https://arxiv.org/abs/2105.14344
+
+FreeBSD Jails
+  https://docs.freebsd.org/en/books/handbook/jails/
+
+FileSystemFirewall FSF
+  https://dl-acm-org.proxy.library.carleton.ca/doi/pdf/10.1145/2523514.2523550

@@ -6,6 +6,9 @@
   cleardoublepage=plain,
   parskip=half-,
   DIV=10,
+  parindent,
+  appendixprefix,
+  chapterprefix,
   %final
 ]{scrbook}
 
@@ -100,9 +103,13 @@
 \label{c:introduction}
 \input{chapters/introduction}
 
-\chapter{Background}%
+\chapter{Background and Related Work}%
 \label{c:background}
 \input{chapters/background}
+
+\chapter{The Confinement Problem}%
+\label{c:confinement-problem}
+% TODO Include tex file here
 
 \chapter{\bpfbox: A Prototype Process Confinement Mechanism}%
 \label{c:bpfbox}
@@ -111,6 +118,14 @@
 \chapter{\bpfcontain: Extending \bpfbox{} to Model Containers}%
 \label{c:bpfcontain}
 \input{chapters/bpfcontain}
+
+\chapter{Evaluation}%
+\label{c:evaluation}
+% TODO Include tex file here
+
+\chapter{Case Studies}%
+\label{c:case-studies}
+% TODO Include tex file here
 
 \chapter{Discussion}%
 \label{c:discussion}
