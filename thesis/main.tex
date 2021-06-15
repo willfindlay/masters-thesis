@@ -14,14 +14,21 @@
 
 \usepackage[utf8]{inputenc}
 
-\usepackage[acronym]{glossaries}
+\usepackage[acronym, toc, numberedsection=nolabel, section=chapter]{glossaries}
 \makeglossaries
+\newacronym{os}{OS}{Operating System}
 \newacronym{bpf}{BPF}{Berkeley Packet Filter}
-\newacronym{ebpf}{eBPF}{Extended BPF or Extended Berkeley Packet Filter}
-\newacronym{cbpf}{cBPF}{Classic BPF or Classic Berkeley Packet Filter}
+\newacronym{ebpf}{eBPF}{Extended BPF}
+\newacronym{cbpf}{cBPF}{Classic BPF}
+\newacronym{btf}{BTF}{BPF Type Format}
+\newacronym{core}{CO-RE}{Compile Once Run Everywhere}
 \newacronym{dac}{DAC}{Discretionary Access Control}
 \newacronym{mac}{MAC}{Mandatory Access Control}
 \newacronym{lsm}{LSM}{Linux Security Modules}
+\newacronym{uid}{UID}{User ID}
+\newacronym{gid}{GID}{Group ID}
+\newacronym{euid}{EUID}{Effective User ID}
+\newacronym{egid}{EGID}{Effective Group ID}
 
 \usepackage{findlay}
 \usepackage{epigraph}
@@ -144,8 +151,7 @@
 \addcontentsline{toc}{chapter}{Bibliography}%
 \nocite{*} % TODO: Remove this when finished
 
-\appendix
-%\backmatter
+\appendix%
 \printglossary[type=\acronymtype, title=Glossary of Acronyms, toctitle=Glossary of Acronyms]
 
 \end{document}
