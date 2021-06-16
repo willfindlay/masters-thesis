@@ -15,20 +15,25 @@
 \usepackage[utf8]{inputenc}
 
 \usepackage[acronym, toc, numberedsection=nolabel, section=chapter]{glossaries}
+\setacronymstyle{short-long}
 \makeglossaries
 \newacronym{os}{OS}{Operating System}
 \newacronym{bpf}{BPF}{Berkeley Packet Filter}
 \newacronym{ebpf}{eBPF}{Extended BPF}
 \newacronym{cbpf}{cBPF}{Classic BPF}
 \newacronym{btf}{BTF}{BPF Type Format}
+\newacronym{jit}{JIT}{Just-In-Time}
 \newacronym{core}{CO-RE}{Compile Once Run Everywhere}
+\newacronym{bpffs}{\textit{bpffs}}{BPF Filesystem}
 \newacronym{dac}{DAC}{Discretionary Access Control}
+\newacronym{acl}{ACL}{Access Control List}
 \newacronym{mac}{MAC}{Mandatory Access Control}
 \newacronym{lsm}{LSM}{Linux Security Modules}
 \newacronym{uid}{UID}{User ID}
 \newacronym{gid}{GID}{Group ID}
 \newacronym{euid}{EUID}{Effective User ID}
 \newacronym{egid}{EGID}{Effective Group ID}
+\newacronym{tcb}{TCB}{Trusted Computing Base}
 
 \usepackage{findlay}
 \usepackage{epigraph}
@@ -152,6 +157,6 @@
 \nocite{*} % TODO: Remove this when finished
 
 \appendix%
-\printglossary[type=\acronymtype, title=Glossary of Acronyms, toctitle=Glossary of Acronyms]
+\printglossary[type=\acronymtype, title=List of Acronyms, toctitle=List of Acronyms]
 
 \end{document}

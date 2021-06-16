@@ -98,15 +98,15 @@ jaeger2008_os_security}.
 \subsubsection*{Permission Bits}
 
 Permission bits in Unix are special metadata associated with a file that determine
-coarse-grained access to the file according to a subject's \textit{user ID} (UID) and
-\textit{group ID} (GID). Permission bits are divided into three sections: \textit{User},
-\textit{Group}, and \textit{Other}. The \textit{User} bits apply to subjects whose UID
-matches the resource owner's UID, while the \textit{Group} bits consider the GID instead.
-In all other cases (i.e.~when neither the UID nor the GID matches), the \textit{Other}
-bits determine the allowed access. To determine which access should be allowed, permission
-bits encode a coarse-grained \textit{access vector}, specifying read, write, and execute
-access on a file or directory (in the case of a directory, execute access implies the
-ability to \texttt{chdir(2)} into that directory).
+coarse-grained access to the file according to a subject's \gls{uid} and \gls{gid}.
+Permission bits are divided into three sections: \textit{User}, \textit{Group}, and
+\textit{Other}. The \textit{User} bits apply to subjects whose \gls{uid} matches the
+resource owner's \gls{uid}, while the \textit{Group} bits consider the \gls{gid} instead.
+In all other cases (i.e.~when neither the \gls{uid} nor the \gls{gid} matches), the
+\textit{Other} bits determine the allowed access. To determine which access should be
+allowed, permission bits encode a coarse-grained \textit{access vector}, specifying read,
+write, and execute access on a file or directory (in the case of a directory, execute
+access implies the ability to \texttt{chdir(2)} into that directory).
 
 While convenient, permission bits are generally insufficient to provide legitimate
 security guarantees to modern systems~\cite{van_oorschot2020_tools_jewels,
@@ -121,7 +121,7 @@ violating our security assumptions.
 
 \subsubsection*{Access Control Lists}
 
-Access control lists (ACLs) offer a slightly more granular alternative to permission bits,
+\Glspl{acl} offer a slightly more granular alternative to permission bits,
 at the expense of increased complexity~\cite{jaeger2008_os_security,
 van_oorschot2020_tools_jewels}. Unlike permission bits, which rely on three coarse-grained
 subject categories (\textit{User}, \textit{Group}, and \textit{Other}), an access control
@@ -140,7 +140,7 @@ the entire system. \Cref{fig:acl} depicts this relationship.
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/acl.pdf}
   \caption[The access matrix]{
-    The access matrix and the relationship between ACLs and capability
+    The access matrix and the relationship between \glspl{acl} and capability
     lists~\cite{van_oorschot2020_tools_jewels, jaeger2008_os_security}.
   }%
   \label{fig:acl}
@@ -152,24 +152,24 @@ To alleviate concerns with discretionary access control, systems often take the 
 assigning a unique user and/or group to a specific application. Such applications are
 typically security-sensitive, such as a privileged daemon or network-facing service. This
 technique achieves a dual-purpose: firstly, the application can lock down any resources it
-owns, simply by restricting any access to its own UID; secondly, the resulting process no
-longer needs to run under the same UID as its parent. This effectively limits the amount
+owns, simply by restricting any access to its own \gls{uid}; secondly, the resulting process no
+longer needs to run under the same \gls{uid} as its parent. This effectively limits the amount
 of outside resources that the application can access (so long as permission bits are
 correctly configured).
 
-The Android operating system takes this model a step further, assigning a unique UID and
-GID to every application on the system, with optional UID sharing between applications
-that come from the same vendor. Under this model, no process' UID ever corresponds to
-a human user. While this arguably improves security, Barrera
-\etal~\cite{barrera2012_android} found weaknesses in Android's UID sharing model that can
-reduce its security to the trustworthiness of an app's signing key.
+The Android operating system takes this model a step further, assigning a unique \gls{uid}
+and \gls{gid} to every application on the system, with optional \gls{uid} sharing between
+applications that come from the same vendor. Under this model, no process' \gls{uid} ever
+corresponds to a human user. While this arguably improves security, Barrera
+\etal~\cite{barrera2012_android} found weaknesses in Android's \gls{uid} sharing model
+that can reduce its security to the trustworthiness of an app's signing key.
 
 \subsubsection*{The Superuser and Setuid}
 
 To facilitate system administration, many \gls{dac} schemes incorporate the notion of
 a \textit{superuser} or \textit{administrator role} into their model. In Unix and
-Unix-like operating systems, the superuser or \textit{root} user is denoted by the UID of
-`0`. Any process running with the effective user ID (eUID) or 0 is said to be
+Unix-like operating systems, the superuser or \textit{root} user is denoted by the
+\gls{uid} of zero. Any process running with the \gls{euid} of zero is said to be
 \textit{root-privileged}. These root-privileged processes can then override the system's
 \gls{dac} policy, bypassing permission bits and access control entries on system objects.
 
@@ -178,30 +178,87 @@ instance, a \texttt{login} program would require the ability to read security-se
 password entries in \texttt{/etc/shadow}. To achieve such functionality, Unix provides
 special \texttt{setuid} and \texttt{setgid} permission bits that implicitly set the
 effective user and group IDs of a process to those of the file owner.
-A sufficiently-privileged process may also change its own eUID or eGID at runtime using
-the \texttt{setuid(2)} and \texttt{setgid(2)} system calls. Our login program, for
-instance, could use these system calls to drop its privileges to those of the user that is
-logging in. While necessary under the Unix \gls{dac} model, setuid and setgid binaries have long
-been the target of exploitation, particularly for privilege escalation
-attacks~\cite{dittmer2014_setuid, van_oorschot2020_tools_jewels, jaeger2008_os_security}.
+A sufficiently-privileged process may also change its own \gls{euid} or \gls{egid} at
+runtime using the \texttt{setuid(2)} and \texttt{setgid(2)} family of system calls. Our
+login program, for instance, could use these system calls to drop its privileges to those
+of the user being logged in. While necessary under the Unix \gls{dac} model, setuid and
+setgid binaries have long been the target of exploitation, particularly for privilege
+escalation attacks~\cite{dittmer2014_setuid, van_oorschot2020_tools_jewels,
+jaeger2008_os_security}.
 
 \subsubsection*{POSIX Capabilities}
 
-\todo{Write this}
+POSIX capabilities~\cite{posix_capabilities, corbet2006_capabities_a,
+corbet2006_capabities_b} are highly related to Unix DAC in the sense that they were
+originally designed to break up the multitude of privileges associated with the
+\textit{root} user into more manageable pieces. In this sense, POSIX capabilities (when
+properly used) are more conducive to the principle of least-privilege. A process need not
+necessarily possess full root-level access to the system when only a small subset of those
+privileges are actually required.
+
+Originally specified in the (now withdrawn) 1003.1e POSIX standard, POSIX capabilities
+were only ever (partially) implemented on Linux~\cite{anderson2017_comparison}. Other
+Unix-like operating systems prefer alternative methods of restricting privileges, many of
+which are discussed in \Cref{ss:syscall-filtering}. POSIX capabilities specify three
+\textit{capability sets} for a given process: the \textbf{bounding set}, the
+\textbf{inheritable set}, and the \textbf{effective set}. The bounding set determines the
+set of all capabilities that a process is ever allowed to possess. The inheritable set
+determines the set of all capabilities that can be inherited across \texttt{execve} calls.
+Finally, the effective set determines the set of capabilities that a process can use
+(i.e.~which capabilities a process currently possesses).
+
+Linux exposes POSIX capabilities through extended filesystem attributes, much the same way
+that \glspl{acl} are implemented~\cite{corbet2006_capabities_b}. These file-based
+capabilities function in a similar manner to the setuid bit, implicitly setting the
+bounding, inheritable, and effective capability sets on execution. In addition so
+supporting capabilities as extended filesystem attributes, the kernel also supports
+dropping specific capabilities from each of the three sets through the \texttt{ptrctl(2)}
+system call. This enables a higher-privileged process (e.g.~running as root) to drop
+elevated privileges while retaining those it needs to function. As of Linux 5.12, the
+kernel supports 41 capabilities in total, including the all-encompassing
+\texttt{CAP\_SYS\_ADMIN}~\cite{linux_capability_h}.
+
+It is worth mentioning that the term \enquote{POSIX capabilities} does \textit{not}
+describe capabilities as they are broadly defined by operating system security
+researchers~\cite{anderson2017_comparison}. In particular, Dennis and Van
+Horn~\cite{dennis1966_semantics} first defined the notion of capabilities as a means of
+restricting access to pointers, guarding references to system objects. Unlike the
+capabilities defined by Dennis and Van Horn, POSIX capabilities are not associated with
+any given system object. Dennis and Van Horn's capabilities more closely resemble that of
+the access matrix introduced by Anderson~\cite{anderson1972_report} and similar mechanisms
+have been implemented in other systems such as FreeBSD's Capsicum~\todo{CITE} and the
+CHERI architecture~\cite{watson2015_cheri, davis2019_cheriabi}. These are discussed in
+more detail in \Cref{ss:syscall-filtering}.
 
 \subsubsection*{DAC Security Assumptions and Attacks}
 
-\todo{This probably belongs in \enquote{The Confinement Problem}?}
+Although discretionary access control provides a convenient and intuitive user-centric
+model for object ownership and permissions, it makes some dangerous assumptions about
+security that can totally invalidate the model in
+practice~\cite{shu2016_security_isolation_study}. In particular, DAC assumes that all
+processes are benign and contain no exploitable vulnerabilities. The mere existence off
+malware and exploitable vulnerabilities (e.g.~memory safety vulnerabilities) immediately
+invalidates this assumption. For instance, consider an honest but vulnerable piece of
+software running under a given \gls{uid} $X$. An attacker exploiting a vulnerability in
+this application could perform arbitrary operations on any files owned by $X$. Similarly,
+a Trojan Horse\footnote{A Trojan Horse is a piece of ostensibly benign software that
+is designed to perform some malicious action or actions in addition to its ordinary
+functionality~\cite{van_oorschot2020_tools_jewels}.}~\cite{shu2016_security_isolation_study,
+van_oorschot2020_tools_jewels} can perform arbitrary malicious operations on $X$'s files
+without needing to exploit any vulnerability. The fundamental issue with Unix \gls{dac} is
+that these files need not necessarily have \textit{anything} to do with the program in
+question.
 
-\begin{inprogress}
-  \begin{itemize}
-    \item \gls{dac} assumes that all processes are benign and contain no exploitable vulnerabilities (dangerous and invalid assumption in practice)
-    \item All setuid root binaries are part of the trusted computing base
-    \item The user has no control over which other users belong to a particular group
-    \item Trojan horse attacks, confused deputy attacks~\cite{shu2016_security_isolation_study}
-    \item Other attacks against \gls{dac}?
-  \end{itemize}
-\end{inprogress}
+Another fundamental issue with Unix \gls{dac} lies in the ultimate authority of the root
+user. Any process running with \gls{euid}=0 is immediately part of the system's
+\textit{\gls{tcb}}\footnote{The \textit{trusted computing base} is the set of all hardware
+and software that must be trusted in order for the system to be considered trusted.
+Typically, this includes system hardware, the operating system itself, and a small subset
+of userspace programs~\cite{jaeger2008_os_security}.}. The same applies to any executable
+marked as setuid root. Confused deputy attacks~\cite{hardy1988_confused_deputy,
+shu2016_security_isolation_study} can exploit privileged processes by tricking them into
+performing some undesired action. The coarse granularity of Unix \gls{dac} renders it
+particularly vulnerable against such attacks.
 
 \subsubsection*{Proposals for Alternative Schemes}
 
@@ -209,7 +266,7 @@ Academics have long recognized that weaknesses in the discretionary access contr
 must be addressed. Many have turned to mandatory access control~\todo{CITE}
 (c.f.~\Cref{ss:mac}) to solve the fundamental issues in \gls{dac}, while others have proposed
 improvements or alternative schemes for implementing discretionary access control. This
-subsection focuses on the latter.
+subsection focuses specifically on the latter.
 
 \begin{inprogress}
   \begin{itemize}
@@ -247,7 +304,7 @@ subsection focuses on the latter.
 
 
 
-\subsection{System Call Filtering}%
+\subsection{System Call Filtering and Capabilities}%
 \label{ss:syscall-filtering}
 
 \subsubsection*{Janus}
@@ -256,8 +313,24 @@ subsection focuses on the latter.
 \subsubsection*{OpenBSD Pledge and Unveil}
 \label{sss:pledge}
 
-\subsubsection*{FreeBSD Capsicum and Cherry Capabilities}
+\subsubsection*{FreeBSD Capsicum}
 \label{sss:capsicum}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item Capsicum paper by Watson \etal~\cite{watson2010_capsicum}
+  \end{itemize}
+\end{inprogress}
+
+\subsubsection*{Cheri Capabilities}
+\label{sss:cheri}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item Original Cheri paper by Watson \etal~\cite{watson2015_cheri}
+    \item Cheri ABI implementation in FreeBSD by Davis and Watson \etal~\cite{davis2019_cheriabi}
+  \end{itemize}
+\end{inprogress}
 
 \subsubsection*{Linux Seccomp and Seccomp-BPF}%
 \label{sss:seccomp}
@@ -430,7 +503,7 @@ BPF architecture, depicted in \Cref{fig:classic-bpf}.
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/ebpf.pdf}
   \caption[The extended BPF architecture]{The extended \gls{bpf} architecture. Unlike classic
-  \gls{bpf}, \gls{ebpf} programs are JIT compiled to the native instruction set, share data using
+  \gls{bpf}, \gls{ebpf} programs are \gls{jit} compiled to the native instruction set, share data using
   specialized map data structures, and can be attached to many different kinds of system
   events. Programs can share data with each other and with the controlling userspace
   process using specialized map data structures. All \gls{ebpf} bytecode goes through
@@ -447,7 +520,7 @@ very efficient monitoring software, harnessing the performance benefits of a pur
 kernelspace implementation while maintaining the flexibility of a userspace
 implementation.
 
-\subsection{\gls{ebpf} Programs}%
+\subsection{eBPF Programs}%
 \label{ss:bpf-programs-bg}
 
 \gls{ebpf} programs are expressed in a virtual RISC machine language called \gls{bpf} bytecode.  While
@@ -489,7 +562,7 @@ sleepable versions of some \gls{ebpf} program types~\cite{starovoitov2020_sleepa
 Once loaded into the kernel, \gls{ebpf} programs are represented as \gls{bpf} objects, each with its
 own reference count. Loading a \gls{bpf} program and attaching it to a system event increments
 the reference count, while detaching and unloading the program decrements the reference
-count. The kernel also exposes a special filesystem, \textit{bpffs}, which allows \gls{bpf}
+count. The kernel also exposes a special filesystem, \gls{bpffs}, which allows \gls{bpf}
 programs to be pinned. This also increments the reference count, allowing an attached
 program to outlive its controlling process (i.e.~the process that loaded and attached
 it)~\cite{gregg2019_bpf}.
@@ -517,7 +590,7 @@ using a dummy \gls{ebpf} map as a scratch buffer to reserve a larger amount of m
 allocation within the \gls{bpf} context is impossible. These dummy maps offer a way to access
 additional memory from a pool reserved at the time the map was loaded into the kernel.
 
-\subsubsection*{\gls{ebpf} Program Types and Use Cases}
+\subsubsection*{eBPF Program Types and Use Cases}
 
 Each \gls{ebpf} program has a specific \textit{program type}, which determines both the set of
 system events to which the program can attach and the set of allowed kernel helpers that
@@ -530,7 +603,7 @@ and their properties.
 
 \begingroup\footnotesize
 \begin{longtable}[c]{lp{4.2in}}
-\caption{A selection of relevant \gls{ebpf} program types for \bpfbox{} and \bpfcontain{}.}%
+\caption[A selection of relevant eBPF program types for \bpfbox{} and \bpfcontain{}]{A selection of relevant \gls{ebpf} program types for \bpfbox{} and \bpfcontain{}.}%
 \label{tab:program-types}\\
   \toprule
   Program Type & Description\\
@@ -544,7 +617,7 @@ and their properties.
 \end{longtable}
 \endgroup
 
-\subsubsection*{LSM Probes: Making Security Decisions with \gls{ebpf}}
+\subsubsection*{LSM Probes: Making Security Decisions with eBPF}
 
 It is worth spending more time focusing specifically on \gls{lsm} probes, as these are used
 extensively in \bpfbox{} and \bpfcontain{} to enforce policy over security-sensitive
@@ -559,7 +632,7 @@ integrate with the \gls{lsm} framework.
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/bpf-lsm.pdf}
-  \caption[How \gls{ebpf} LSM probes make policy decisions]{A simplified example of how \gls{ebpf} \gls{lsm} probes make policy decisions. Privileged userspace processes can attach one or more \gls{lsm} probes to a given hook. When a userspace process requests a privileged operation, the kernel implicitly calls into the corresponding \gls{lsm} hooks, which in turn invoke the logic associated with each \gls{lsm}. A shim \gls{lsm} is responsible for invoking each \gls{lsm} probe, and any resulting policy decisions are taken together to arrive at a final decision. As with ordinary \gls{lsm}s, the final decision is consensus-based. That is, if \textit{any \gls{lsm}s} or \textit{any \gls{bpf} \gls{lsm} probes} disagree on a policy decision, the privileged operation is denied.}%
+  \caption[How eBPF LSM probes make policy decisions]{A simplified example of how \gls{ebpf} \gls{lsm} probes make policy decisions. Privileged userspace processes can attach one or more \gls{lsm} probes to a given hook. When a userspace process requests a privileged operation, the kernel implicitly calls into the corresponding \gls{lsm} hooks, which in turn invoke the logic associated with each \gls{lsm}. A shim \gls{lsm} is responsible for invoking each \gls{lsm} probe, and any resulting policy decisions are taken together to arrive at a final decision. As with ordinary \gls{lsm}s, the final decision is consensus-based. That is, if \textit{any \gls{lsm}s} or \textit{any \gls{bpf} \gls{lsm} probes} disagree on a policy decision, the privileged operation is denied.}%
   \label{fig:bpf-lsm}
 \end{figure}
 
@@ -586,12 +659,12 @@ mechanism based on \gls{ebpf} does not carry the same technical baggage.  \gls{e
 to use in production and can be deployed at runtime on an unmodified kernel.  This makes
 \gls{ebpf} a particularly attractive target for developing new security solutions.
 
-\subsection{\gls{ebpf} Maps}%
+\subsection{eBPF Maps}%
 \label{ss:bpf-maps-bg}
 
 \gls{ebpf} maps serve as both a runtime data store for \gls{ebpf} programs and the canonical method of
 communication between \gls{ebpf} programs and other \gls{ebpf} programs, and \gls{ebpf} programs and
-userspace applications. Like \gls{ebpf} programs, maps can be pinned to \textit{bpffs} to
+userspace applications. Like \gls{ebpf} programs, maps can be pinned to \gls{bpffs} to
 increment their reference count in the kernel. Concurrent access to \gls{ebpf} maps from within
 kernelspace is protected by an implicit RCU lock, and a spinlock concurrency primitive is
 exposed via a helper function to guard map accesses between kernelspace and userspace.
@@ -604,7 +677,7 @@ use of several \gls{ebpf} map types, which are summarized in \Cref{tab:map-types
 
 \begingroup\footnotesize
 \begin{longtable}[c]{lp{3.9in}}
-\caption{A selection of relevant \gls{ebpf} map types for \bpfbox{} and \bpfcontain{}.}%
+\caption[A selection of relevant eBPF map types for \bpfbox{} and \bpfcontain{}]{A selection of relevant \gls{ebpf} map types for \bpfbox{} and \bpfcontain{}.}%
 \label{tab:map-types}\\
   \toprule
   Map Type & Description\\
@@ -623,7 +696,7 @@ use of several \gls{ebpf} map types, which are summarized in \Cref{tab:map-types
 \label{ss:bpf-userspace}
 
 Although \gls{ebpf} programs and maps can exist on their own after being pinned to
-\textit{bpffs}, the more common approach is to manage their lifetime using a controlling
+\gls{bpffs}, the more common approach is to manage their lifetime using a controlling
 process. Userspace applications implementing such a controlling process typically use an
 \gls{ebpf} front-end framework to facilitate loading and interacting with programs and maps.
 A number of such front-ends exist~\cite{gobpf, bcc, libbpf, libbpf-rs, libbpfgo,
@@ -659,7 +732,7 @@ checks.
 canonical Rust bindings for libbpf, providing adoptability advantages over the original
 \bpfbox{} prototype (c.f.~\Cref{c:bpfbox}), which uses bcc.
 
-\subsection{Comparing \gls{ebpf} with Loadable Kernel Modules}%
+\subsection{Comparing eBPF with Loadable Kernel Modules}%
 \label{ss:bpf-vs-modules}
 
 Before \gls{ebpf}, the primary means of modifying the Linux kernel at runtime was through the

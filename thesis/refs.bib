@@ -156,6 +156,162 @@ Nice literature review examining security isolation techniques
   doi       = {10.1145/2660267.2660333},
 }
 
+@misc{posix_capabilities,
+  title        = {{capabilities(7)}},
+  author       = {{Linux}},
+  note         = {Linux user's manual},
+  url          = {https://linux.die.net/man/7/capabilities},
+}
+
+@article{corbet2006_capabities_a,
+  title        = {{A bid to resurrect Linux capabilities}},
+  author       = {Jonathan Corbet},
+  journal      = {{LWN}},
+  year         = {2006},
+  url          = {https://lwn.net/Articles/199004/},
+}
+
+@article{corbet2006_capabities_b,
+  title        = {{File-based capabilities}},
+  author       = {Jonathan Corbet},
+  journal      = {{LWN}},
+  year         = {2006},
+  url          = {https://lwn.net/Articles/211883/},
+}
+
+@article{dennis1966_semantics,
+  author    = {Jack B. Dennis and
+               Earl C. Van Horn},
+  title     = {{Programming Semantics for Multiprogrammed Computations}},
+  journal   = {Commun. {ACM}},
+  volume    = {9},
+  number    = {3},
+  pages     = {143--155},
+  year      = {1966},
+  doi       = {10.1145/365230.365252},
+}
+
+Linux capability header
+@misc{linux_capability_h,
+  author  = {{Linux}},
+  title   = {{uapi/linux/capability.h}},
+  urldate = {2021-06-15},
+  url     = {https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/uapi/linux/capability.h?h=v5.12},
+  note    = {Linux Kernel sources}
+}
+
+@article{hardy1988_confused_deputy,
+  author    = {Norman Hardy},
+  title     = {{The Confused Deputy (or why capabilities might have been invented)}},
+  journal   = {{ACM} {SIGOPS} Oper. Syst. Rev.},
+  volume    = {22},
+  number    = {4},
+  pages     = {36--38},
+  year      = {1988},
+  doi       = {10.1145/54289.871709},
+}
+
+------------------------------------------------------------------------------
+                        System Call Filtering
+------------------------------------------------------------------------------
+
+A comparison of Unix sandboxing techniques
+Comparing seccomp-bpf, capsicum, and pledge
+@article{anderson2017_comparison,
+  author       = {Anderson, Jonathan},
+  title        = {{A Comparison of Unix Sandboxing Techniques}},
+  journaltitle = {FreeBSD Journal},
+  year         = {2017},
+  url          = {http://www.engr.mun.ca/~anderson/publications/2017/sandbox-comparison.pdf},
+}
+
+Capsicum
+@inproceedings{watson2010_capsicum,
+  author    = {Robert N. M. Watson and
+               Jonathan Anderson and
+               Ben Laurie and
+               Kris Kennaway},
+  title     = {{Capsicum: Practical Capabilities for {UNIX}}},
+  booktitle = {19th {USENIX} Security Symposium, Washington, DC, USA, August 11-13,
+               2010, Proceedings},
+  pages     = {29--46},
+  publisher = {{USENIX} Association},
+  year      = {2010},
+  url       = {http://www.usenix.org/events/sec10/tech/full\_papers/Watson.pdf},
+}
+
+Cheri
+@inproceedings{watson2015_cheri,
+  author    = {Robert N. M. Watson and
+               Jonathan Woodruff and
+               Peter G. Neumann and
+               Simon W. Moore and
+               Jonathan Anderson and
+               David Chisnall and
+               Nirav H. Dave and
+               Brooks Davis and
+               Khilan Gudka and
+               Ben Laurie and
+               Steven J. Murdoch and
+               Robert M. Norton and
+               Michael Roe and
+               Stacey D. Son and
+               Munraj Vadera},
+  title     = {{{CHERI:} {A} Hybrid Capability-System Architecture for Scalable Software
+               Compartmentalization}},
+  booktitle = {2015 {IEEE} Symposium on Security and Privacy, {SP} 2015, San Jose,
+               CA, USA, May 17-21, 2015},
+  pages     = {20--37},
+  publisher = {{IEEE} Computer Society},
+  year      = {2015},
+  doi       = {10.1109/SP.2015.9},
+}
+
+Cheri implementation on FreeBSD
+@inproceedings{davis2019_cheriabi,
+  author    = {Brooks Davis and
+               Robert N. M. Watson and
+               Alexander Richardson and
+               Peter G. Neumann and
+               Simon W. Moore and
+               John Baldwin and
+               David Chisnall and
+               James Clarke and
+               Nathaniel Wesley Filardo and
+               Khilan Gudka and
+               Alexandre Joannou and
+               Ben Laurie and
+               A. Theodore Markettos and
+               J. Edward Maste and
+               Alfredo Mazzinghi and
+               Edward Tomasz Napierala and
+               Robert M. Norton and
+               Michael Roe and
+               Peter Sewell and
+               Stacey D. Son and
+               Jonathan Woodruff},
+  editor    = {Iris Bahar and
+               Maurice Herlihy and
+               Emmett Witchel and
+               Alvin R. Lebeck},
+  title     = {{CheriABI: Enforcing Valid Pointer Provenance and Minimizing Pointer
+               Privilege in the {POSIX} {C} Run-time Environment}},
+  booktitle = {Proceedings of the Twenty-Fourth International Conference on Architectural
+               Support for Programming Languages and Operating Systems, {ASPLOS}
+               2019, Providence, RI, USA, April 13-17, 2019},
+  pages     = {379--393},
+  publisher = {{ACM}},
+  year      = {2019},
+  doi       = {10.1145/3297858.3304042},
+}
+
+------------------------------------------------------------------------------
+                        Reference Validation
+------------------------------------------------------------------------------
+
+Cheri
+https://dl-acm-org.proxy.library.carleton.ca/doi/abs/10.1145/3297858.3304042
+
 ------------------------------------------------------------------------------
                         Mandatory Access Control
 ------------------------------------------------------------------------------
@@ -470,7 +626,7 @@ Study of LSMs and LSFs for hardening Docker containers
 @inproceedings{mp2016_hardening,
   author    = {{Amith Raj MP} and A. {Kumar} and S. J. {Pai} and A. {Gopal}},
   booktitle = {2016 2nd International Conference on Applied and Theoretical Computing and Communication Technology (iCATccT)},
-  title     = {Enhancing Security of Docker Using Linux Hardening Techniques},
+  title     = {{Enhancing Security of Docker Using Linux Hardening Techniques}},
   year      = {2016},
   pages     = {94-99},
   doi       = {10.1109/ICATCCT.2016.7911971}
