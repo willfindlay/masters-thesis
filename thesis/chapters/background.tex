@@ -43,19 +43,43 @@ surveys the academic literature related to this area.
 \subsection{Virtual Memory and Memory Protection}%
 \label{ss:virtual-memory}
 
-\todo{Describe virtual memory and memory protection}
+\subsubsection*{CPU Protection Rings}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item Multics protection rings
+    \item Adoption of protection rings by modern CPUs (simplified model, rings 0-3)
+    \item CPU supports rings lower than 0 (really just virtualizing ring 0) for the hypervisor, CPU engine
+    \item Userspace, kernelspace
+  \end{itemize}
+\end{inprogress}
+
+\subsubsection*{Virtual Memory}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item Page tables, page table walk
+    \item CPU's MMU, maps virtual addresses to physical addresses
+    \item Shared memory
+    \item Memory protection bits
+    \item ASLR, KASLR
+  \end{itemize}
+\end{inprogress}
 
 \subsection{The Reference Monitor}%
 \label{ss:refmon}
 
-\todo{Describe reference monitor}
-
-\begin{inprogress}
-  \begin{itemize}
-    \item First proposed by Anderson along with access matrix~\cite{anderson1972_report}
-    \item Refer back to Paul and Jaeger book~\cite{van_oorschot2020_tools_jewels, jaeger2008_os_security}
-  \end{itemize}
-\end{inprogress}
+The \textit{reference monitor concept}, first introduced in the landmark 1972 Anderson
+Report~\cite{anderson1972_report}, was among the earliest complete descriptions of a full
+access control mechanism and remains influential in operating system design to date. The
+reference monitor is an abstract model for a secure reference validation mechanism built
+into the operating system. The model partitions the system into \textit{subjects} (users,
+processes, etc.) and \textit{objects} (system resources).  Subjects request access to
+objects and the reference monitor checks this access against a known list of allowed
+accesses, parameterized by the subject, object, and requested access. The software
+implementation of a reference monitor is known as the \textit{security kernel.}
+\Cref{fig:refmon} depicts the reference monitor concept as it was first presented by
+Anderson~\cite{anderson1972_report}.
 
 \begin{figure}[tbp]
   \centering
@@ -71,6 +95,41 @@ surveys the academic literature related to this area.
   }%
   \label{fig:refmon}
 \end{figure}
+
+While the majority of modern operating systems do not include a security kernel as
+described by Anderson, the reference monitor architecture has informed the design of
+modern access control mechanisms and models the reference validation process that occurs
+when the kernel is servicing userspace requests (i.e.~system
+calls)~\cite{van_oorschot2020_tools_jewels}. In order for such a design to be considered
+valid, Anderson enumerate three key properties: (i) Tamper Resistance; (ii) Complete
+Mediation; and (iii) Verifiability. These properties can inform the way we reason about
+and design modern access control mechanisms, even if they do not strictly adhere to the
+reference monitor model.
+
+\paragraph*{Tamper-Resistance}
+
+In order for the reference monitor to be considered \textit{tamper-resistant}, an unauthorized
+party must not be able to alter the reference monitor's code or modify any data
+(e.g.~memory, persistent storage) that the reference monitor relies on to enforce correct
+reference validation~\cite{anderson1972_report}. This property follows from the fact that
+unauthorized tampering with the reference monitor totally invalidates any security
+guarantees.
+
+\paragraph*{Complete Mediation}
+
+The property of \textit{complete mediation} means that the reference monitor should be
+invoked on all security sensitive events. It should be impossible for an attacker to
+bypass the reference monitor in any way. Any software that is not subject to reference
+validation should be considered a part of the reference
+monitor~\cite{anderson1972_report}.
+
+\paragraph*{Verifiability}
+
+\textit{Verifiability} refers to the ability to reason about or prove the correctness of
+the reference monitor (i.e. that the first two properties hold). Formal verification methods
+are the best way of achieving verifiability, although this may not necessarily be practical
+for highly complex systems. For this reason, it is recommended to design the reference monitor
+in such a way that verifiability is maximized~\cite{anderson1972_report}.
 
 \subsection{Discretionary Access Control}%
 \label{ss:dac}
@@ -141,28 +200,10 @@ the entire system. \Cref{fig:acl} depicts this relationship.
   \includegraphics[width=0.8\linewidth]{figs/background/acl.pdf}
   \caption[The access matrix]{
     The access matrix and the relationship between \glspl{acl} and capability
-    lists~\cite{van_oorschot2020_tools_jewels, jaeger2008_os_security}.
+    lists~\cite{anderson1972_report, van_oorschot2020_tools_jewels, jaeger2008_os_security}.
   }%
   \label{fig:acl}
 \end{figure}
-
-\subsubsection*{User and Group Assignment}
-
-To alleviate concerns with discretionary access control, systems often take the approach of
-assigning a unique user and/or group to a specific application. Such applications are
-typically security-sensitive, such as a privileged daemon or network-facing service. This
-technique achieves a dual-purpose: firstly, the application can lock down any resources it
-owns, simply by restricting any access to its own \gls{uid}; secondly, the resulting process no
-longer needs to run under the same \gls{uid} as its parent. This effectively limits the amount
-of outside resources that the application can access (so long as permission bits are
-correctly configured).
-
-The Android operating system takes this model a step further, assigning a unique \gls{uid}
-and \gls{gid} to every application on the system, with optional \gls{uid} sharing between
-applications that come from the same vendor. Under this model, no process' \gls{uid} ever
-corresponds to a human user. While this arguably improves security, Barrera
-\etal~\cite{barrera2012_android} found weaknesses in Android's \gls{uid} sharing model
-that can reduce its security to the trustworthiness of an app's signing key.
 
 \subsubsection*{The Superuser and Setuid}
 
@@ -185,6 +226,25 @@ of the user being logged in. While necessary under the Unix \gls{dac} model, set
 setgid binaries have long been the target of exploitation, particularly for privilege
 escalation attacks~\cite{dittmer2014_setuid, van_oorschot2020_tools_jewels,
 jaeger2008_os_security}.
+
+\subsubsection*{User and Group Assignment}
+
+To alleviate concerns with discretionary access control, systems often take the approach
+of assigning a unique user and/or group to a specific application. Such applications are
+typically security-sensitive, such as a privileged daemon or network-facing service. This
+technique achieves a dual-purpose: firstly, the application can lock down any resources it
+owns, simply by restricting any access to its own \gls{uid}; secondly, the resulting
+process no longer needs to run under the same \gls{uid} as its parent. This effectively
+limits the amount of outside resources that the application can access (so long as
+permission bits are correctly configured). In a sense, such a model approaches role-based
+access control~\todo{CITE} (covered in \Cref{ss:rbac}).
+
+The Android operating system takes this model a step further, assigning a unique \gls{uid}
+and \gls{gid} to every application on the system, with optional \gls{uid} sharing between
+applications that come from the same vendor. Under this model, no process' \gls{uid} ever
+corresponds to a human user. While this arguably improves security, Barrera
+\etal~\cite{barrera2012_android} found weaknesses in Android's \gls{uid} sharing model
+that can reduce its security to the trustworthiness of an app's signing key.
 
 \subsubsection*{POSIX Capabilities}
 
@@ -226,9 +286,9 @@ restricting access to pointers, guarding references to system objects. Unlike th
 capabilities defined by Dennis and Van Horn, POSIX capabilities are not associated with
 any given system object. Dennis and Van Horn's capabilities more closely resemble that of
 the access matrix introduced by Anderson~\cite{anderson1972_report} and similar mechanisms
-have been implemented in other systems such as FreeBSD's Capsicum~\todo{CITE} and the
-CHERI architecture~\cite{watson2015_cheri, davis2019_cheriabi}. These are discussed in
-more detail in \Cref{ss:syscall-filtering}.
+have been implemented in other systems such as FreeBSD's
+Capsicum~\cite{watson2010_capsicum} and the CHERI architecture~\cite{watson2015_cheri,
+davis2019_cheriabi}. These are discussed in more detail in \Cref{ss:syscall-filtering}.
 
 \subsubsection*{DAC Security Assumptions and Attacks}
 
@@ -241,7 +301,7 @@ malware and exploitable vulnerabilities (e.g.~memory safety vulnerabilities) imm
 invalidates this assumption. For instance, consider an honest but vulnerable piece of
 software running under a given \gls{uid} $X$. An attacker exploiting a vulnerability in
 this application could perform arbitrary operations on any files owned by $X$. Similarly,
-a Trojan Horse\footnote{A Trojan Horse is a piece of ostensibly benign software that
+a Trojan horse\footnote{A Trojan horse is a piece of ostensibly benign software that
 is designed to perform some malicious action or actions in addition to its ordinary
 functionality~\cite{van_oorschot2020_tools_jewels}.}~\cite{shu2016_security_isolation_study,
 van_oorschot2020_tools_jewels} can perform arbitrary malicious operations on $X$'s files
@@ -255,7 +315,9 @@ user. Any process running with \gls{euid}=0 is immediately part of the system's
 and software that must be trusted in order for the system to be considered trusted.
 Typically, this includes system hardware, the operating system itself, and a small subset
 of userspace programs~\cite{jaeger2008_os_security}.}. The same applies to any executable
-marked as setuid root. Confused deputy attacks~\cite{hardy1988_confused_deputy,
+marked as setuid root. Processes that run with root privileges are prime targets for
+attacker exploit, since a successful attack can effectively compromise the entire system.
+For instance, confused deputy attacks~\cite{hardy1988_confused_deputy,
 shu2016_security_isolation_study} can exploit privileged processes by tricking them into
 performing some undesired action. The coarse granularity of Unix \gls{dac} renders it
 particularly vulnerable against such attacks.
@@ -263,36 +325,97 @@ particularly vulnerable against such attacks.
 \subsubsection*{Proposals for Alternative Schemes}
 
 Academics have long recognized that weaknesses in the discretionary access control model
-must be addressed. Many have turned to mandatory access control~\todo{CITE}
-(c.f.~\Cref{ss:mac}) to solve the fundamental issues in \gls{dac}, while others have proposed
-improvements or alternative schemes for implementing discretionary access control. This
-subsection focuses specifically on the latter.
+must be addressed. Many have turned to mandatory access control~\todo{CITE ALL EXAMPLES}
+(c.f.~\Cref{ss:mac}) to solve the fundamental issues in \gls{dac}, while others have
+proposed improvements or alternative schemes for implementing discretionary access
+control~\todo{CITE ALL EXAMPLES}. This subsection focuses specifically on the latter.
+
+Mao \etal~\cite{mao2009_trojan_resistant_dac} proposed IFEDAC as an alternative \gls{dac}
+model that is resistant to Trojan horse attacks. The insight behind their work was that
+\gls{dac}'s primary weaknesses lie in the inability to distinguish requests involving
+multiple actors. Their mechanism proposes to track information flows between subjects and
+use these flows to infer a list of subjects that have influenced a request.
+
+Under the traditional Unix \gls{dac} model, only the \gls{uid} and \gls{gid} of the
+process are considered when making access control decisions; under IFEDAC, the \gls{uid}
+and \gls{gid} of the owner of the underlying executable would also be considered, along
+with any other parties that may have influenced the state of the running process. This
+approach is similar in spirit to taint tracking mechanisms~\todo{CITE}~\todo{FORWARD
+REFERENCE}. To enable programs to function correctly, IFEDAC enables the user to define
+\textit{exception policy} that specifies exceptions to IFEDAC enforcement. Mao
+\etal~recommend that application authors and OS vendors should be responsible for
+distributing such policies~\cite{mao2009_trojan_resistant_dac}.
+
+Dranger, Solworth, and Sloan~\cite{solworth2004_layered_dac, dranger2006_dac_complexity}
+presented a three-layered model of \gls{dac} mechanisms. The \textit{base layer} defines
+the general access control model, while the \textit{parameterization layer} parameterizes
+it according to deployment needs.  Finally, the \textit{local initialization layer}
+comprises the set of subjects and objects along with their associated protections. The
+authors showed that their model was generalizable and that it could be used to implement
+any \gls{dac} mechanism.
+
+Dittmer and Tripunitara~\cite{dittmer2014_setuid} examined the implementation and common
+usage patterns of the POSIX setuid and setgid API across multiple Unix-like operating
+systems. They identified weaknesses in systems that do not implement the latest POSIX
+standard revisions and suggested that mismatched semantics between various implementors
+can be a source of developer error. Finally, they presented an alternative API that
+partitions \gls{uid} changes into permanent and temporary categories. Tsafrir
+\etal~\cite{tsafrir2008_setuid} and Chen \etal~\cite{chen2002_setuid} identified the same
+fundamental issues and proposed the adoption of similar mechanisms.
+
+
+\subsection{Role-Based Access Control}%
+\label{ss:rbac}
 
 \begin{inprogress}
   \begin{itemize}
-    \item Mao \etal~\cite{mao2009_trojan_resistant_dac} proposed a new \gls{dac} model (IFEDAC) that is
-    resistant to Trojan Horse attacks.
-    \item Dittmer and Tripunitara~\cite{dittmer2014_setuid} examined the security of
-    setuid-family system calls and the setuid permission bits.
+    \item
   \end{itemize}
 \end{inprogress}
-
 
 
 
 \subsection{Mandatory Access Control}%
 \label{ss:mac}
 
-\subsubsection*{CPU Protection Rings}
+In contrast with \gls{dac}, \textit{\gls{mac}} does not delegate permission assignment to
+the resource owner~\cite{spencer1999_flask, van_oorschot2020_tools_jewels,
+jaeger2008_os_security}. In the context of Unix, this means that \gls{mac} both overrides
+traditional discretionary access controls \textit{and} applies access controls even to the
+root user. Historical implementations of \gls{mac} have focused primarily on \gls{mls}, an
+access control scheme that revolves around the \textit{secrecy} of objects and
+\textit{access level} of subjects. In \gls{mls}, a subject may access an object with
+a secrecy level less than or equal to its access level.
+Multics~\cite{vyssotsky1965_multics, corbato1965_multics} was the first operating system
+to pioneer the use of an \gls{mls} access control scheme.
+
+While \gls{mls} is primarily applicable to military contexts, \gls{mac} has since evolved
+into mainstream use through the advent of alternative implementations. The FLASK architecture
+introduced \todo{A PRACTICAL NOTION OF HOW MLS COULD BE APPLIED TO CONSUMER CONTEXTS?}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item MLS
+  \end{itemize}
+\end{inprogress}
 
 \subsubsection*{The FLASK Architecture}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item Flask~\cite{spencer1999_flask}
+  \end{itemize}
+\end{inprogress}
 
 \subsubsection*{Linux Security Modules}
 
 \begin{inprogress}
   \begin{itemize}
-    \item SELinux, Miranda
-    \item AppArmor, aa-logprof, aa-genprof, and aa-easyprof
+    \item SELinux~\cite{smalley2001_selinux}, the reference
+          policy~\cite{pebenito2006_refpol}
+    \item SELinux policy generation efforts: Madison~\cite{macmillan07_madison},
+          audit2allow~\cite{audit2allow}, guided policy generation~\cite{sniffen06_guided}
+    \item AppArmor~\cite{cowan2000_apparmor}, aa-logprof, aa-genprof, and aa-easyprof
     \item Tomoyo
     \item FBAC-LSM
     \item FSF~\cite{hu2013_fsf}
@@ -300,7 +423,6 @@ subsection focuses specifically on the latter.
     \item KRSI
   \end{itemize}
 \end{inprogress}
-
 
 
 
@@ -322,7 +444,7 @@ subsection focuses specifically on the latter.
   \end{itemize}
 \end{inprogress}
 
-\subsubsection*{Cheri Capabilities}
+\subsubsection*{CHERI Capabilities}
 \label{sss:cheri}
 
 \begin{inprogress}

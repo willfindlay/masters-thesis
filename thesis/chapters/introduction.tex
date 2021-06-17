@@ -50,21 +50,24 @@ attempted to rectify it by introducing mechanisms for automatic policy derivatio
 container images (e.g.~the Docker image manifest) or observed behaviours at
 runtime~\todo{CITE ALL EXAMPLES}. Others have attempted to introduce new layers of
 abstraction to security policies~\todo{CITE Snap et al} or into the kernel
-itself~\todo{CITE security namespaces}. \todo{WHY ARE THESE BAD IN ONE SENTENCE?} We
-propose that the heart of the problem lies in the fact that the Linux kernel itself has no
-single representation of \textit{what exactly a container is} from a security standpoint.
+itself~\todo{CITE security namespaces}. \todo{WHY ARE THESE BAD IN ONE SENTENCE?} This
+thesis proposes that the heart of the problem lies in the fact that the Linux kernel
+itself has no single representation of \textit{what exactly a container is} from
+a security standpoint.
 
-One approach would be to extend the container with a container-aware \gls{lsm}, but maintaining
-out-of-tree kernel modules is challenging, as such a module would need to be continually
-updated as the kernel evolves. Further, end-users may be reluctant to adopt and
-out-of-tree solution, particularly in production environments with low risk-tolerance.
+One approach would be to extend the container with a container-aware \gls{lsm}, but
+maintaining out-of-tree kernel modules is challenging, as such a module would need to be
+continually updated as the kernel evolves. Further, end-users may be reluctant to adopt
+and out-of-tree solution, particularly in production environments with low risk-tolerance.
 Even worse, a static security mechanism is unlikely to work well for all use
 cases\,---\,some users (e.g.~operators of multi-tenant container clouds) would like to
 totally isolate containers from each other, while use cases (e.g.~microservices
 deployments) may require individual containers to communicate and cooperate with each
 other. Thus, our solution should be practical, light-weight, and flexible such that we can
 define a container-level policy enforcement mechanism that can be readily adopted in
-production use cases. A relatively new Linux technology, \gls{ebpf}, offers the opportunity to design such a system.
+production use cases. A relatively new Linux technology,
+\gls{ebpf}~\cite{starovoitov2014_ebpf, gregg2019_bpf}, offers the opportunity to design
+such a system.
 
 To improve the status quo of confinement on Linux, we present two research prototypes,
 \bpfbox{} and its successor, \bpfcontain{}. The former is a novel application sandboxing
@@ -149,36 +152,40 @@ enforcement mechanisms.
 \label{ss:why-new}
 
 The process confinement problem dates back half a century~\cite{lampson1973_confinement}.
-Since the advent of multi-processing \todo{IN WHAT YEAR? (e.g.~with Multics in 196X) CITE},
-security experts have been concerned with designing systems in such a way that two running
-programs minimally interfere with one another. Since then, an abundance of tools and
-frameworks, some more practical than others, have been proposed to limit the damage that
-untrusted software can do to the system as a whole~\cite{shu2016_security_isolation_study}.
-These are covered in more depth in \Cref{c:background}. For now, we focus on why it might be
-prudent to design yet another confinement framework amidst this veritable ocean of prior work.
+Since the advent of multi-processing and multi-tenant systems in the 1960s and
+1970s~\cite{vyssotsky1965_multics, corbato1965_multics, ritchie1974_unix} with Multics and
+Unix, security experts have been concerned with designing systems in such a way that two
+running programs minimally interfere with one another. Since then, an abundance of tools
+and frameworks, some more practical than others, have been proposed to limit the damage
+that untrusted software can do to the system as
+a whole~\cite{shu2016_security_isolation_study}. These are covered in more depth in
+\Cref{c:background}. For now, we focus on why it might be prudent to design yet another
+confinement framework amidst this veritable ocean of prior work.
 
 The Linux kernel already provides a number of confinement primitives. Seccomp allows for
 a process to confine itself by filtering the system calls it can make. Mandatory access
-control solutions based on \gls{lsm} hooks can be configured to define
-and enforce powerful per-application policies, protecting system resources from unwanted
-access. Unix \gls{dac} restricts access to system resources according to resource owners,
-groups, permission bits, and access control lists. When applied to container security, the
-common problem faced by these security mechanisms is that they are being applied to solve
-a problem for which they were not originally designed. To solve this problem, we seek to
-design a unifying security abstraction for containers and apply this abstraction to
-enforce per-container policy in kernelspace.
+control solutions based on \gls{lsm} hooks can be configured to define and enforce
+powerful per-application policies, protecting system resources from unwanted access. Unix
+\gls{dac}~\cite{ritchie1974_unix, van_oorschot2020_tools_jewels, jaeger2008_os_security,
+shu2016_security_isolation_study} restricts access to system resources according to
+resource owners, groups, permission bits, and access control lists. When applied to
+container security, the common problem faced by these security mechanisms is that they are
+being applied to solve a problem for which they were not originally designed. To solve
+this problem, we seek to design a unifying security abstraction for containers and apply
+this abstraction to enforce per-container policy in kernelspace.
 
-From the kernel's perspective, a containerized process is just like any other. While it
-may be virtualized under one or more namespace and process control groups, there is no
-precise definition of what exactly constitutes a \textit{container}. This lack of a solid
-abstraction widens the semantic gap between traditional policy enforcement mechanisms and
-security policy designed to protect containers. In defining a new policy enforcement
-mechanism focused specifically on containers, we have an opportunity to narrow this
-semantic gap, simplify the resulting policies, and eliminate the need to combine several
-security mechanisms together to do a job that could be accomplished by just one. Since our
-proposed solution is based on \gls{ebpf}, it requires no modification of the kernel and can be
-dynamically loaded at runtime.  This means that we can provide such a unified abstraction
-without sacrificing forward or backward compatibility with alternative approaches.
+From the kernel's perspective, a containerized process is just like any
+other~\cite{sultan2019_container_security}. While it may be virtualized under one or more
+namespace and process control groups, there is no precise definition of what exactly
+constitutes a \textit{container}. This lack of a solid abstraction widens the semantic gap
+between traditional policy enforcement mechanisms and security policy designed to protect
+containers. In defining a new policy enforcement mechanism focused specifically on
+containers, we have an opportunity to narrow this semantic gap, simplify the resulting
+policies, and eliminate the need to combine several security mechanisms together to do
+a job that could be accomplished by just one. Since our proposed solution is based on
+\gls{ebpf}, it requires no modification of the kernel and can be dynamically loaded at
+runtime.  This means that we can provide such a unified abstraction without sacrificing
+forward or backward compatibility with alternative approaches.
 
 \subsection{Why eBPF?}%
 \label{ss:why-ebpf}

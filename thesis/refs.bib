@@ -45,6 +45,18 @@ Anderson Planning Study
   url       = {https://apps.dtic.mil/sti/citations/AD0758206}
 }
 
+@article{ritchie1974_unix,
+  author    = {Dennis Ritchie and
+               Ken Thompson},
+  title     = {{The {UNIX} Time-Sharing System}},
+  journal   = {Commun. {ACM}},
+  volume    = {17},
+  number    = {7},
+  pages     = {365--375},
+  year      = {1974},
+  doi       = {10.1145/361011.361061},
+}
+
 
 ------------------------------------------------------------------------------
                             Process Confinement
@@ -156,6 +168,32 @@ Nice literature review examining security isolation techniques
   doi       = {10.1145/2660267.2660333},
 }
 
+@inproceedings{chen2002_setuid,
+  author    = {Hao Chen and
+               David A. Wagner and
+               Drew Dean},
+  editor    = {Dan Boneh},
+  title     = {{Setuid Demystified}},
+  booktitle = {Proceedings of the 11th {USENIX} Security Symposium, San Francisco,
+               CA, USA, August 5-9, 2002},
+  pages     = {171--190},
+  publisher = {{USENIX}},
+  year      = {2002},
+  url       = {http://www.usenix.org/publications/library/proceedings/sec02/chen.html},
+}
+
+@article{tsafrir2008_setuid,
+  author    = {Dan Tsafrir and
+               Dilma Da Silva and
+               David A. Wagner},
+  title     = {The Murky Issue of Changing Process Identity: Revising "Setuid Demystified"},
+  journal   = {login Usenix Mag.},
+  volume    = {33},
+  number    = {3},
+  year      = {2008},
+  url       = {https://www.usenix.org/publications/login/june-2008-volume-33-number-3/murky-issue-changing-process-identity-revising},
+}
+
 @misc{posix_capabilities,
   title        = {{capabilities(7)}},
   author       = {{Linux}},
@@ -209,6 +247,41 @@ Linux capability header
   pages     = {36--38},
   year      = {1988},
   doi       = {10.1145/54289.871709},
+}
+
+@inproceedings{solworth2004_layered_dac,
+  author    = {Jon A. Solworth and
+               Robert H. Sloan},
+  title     = {{A Layered Design of Discretionary Access Controls with Decidable Safety
+               Properties}},
+  booktitle = {2004 {IEEE} Symposium on Security and Privacy (S{\&}P 2004), 9-12
+               May 2004, Berkeley, CA, {USA}},
+  pages     = {56},
+  publisher = {{IEEE} Computer Society},
+  year      = {2004},
+  doi       = {10.1109/SECPRI.2004.1301315},
+}
+
+Analyzed complexity of Solworth and Sloan
+@inproceedings{dranger2006_dac_complexity,
+  author    = {Stephen Dranger and
+               Robert H. Sloan and
+               Jon A. Solworth},
+  editor    = {Hiroshi Yoshiura and
+               Kouichi Sakurai and
+               Kai Rannenberg and
+               Yuko Murayama and
+               Shin-ichi Kawamura},
+  title     = {{The Complexity of Discretionary Access Control}},
+  booktitle = {Advances in Information and Computer Security, First International
+               Workshop on Security, {IWSEC} 2006, Kyoto, Japan, October 23-24, 2006,
+               Proceedings},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {4266},
+  pages     = {405--420},
+  publisher = {Springer},
+  year      = {2006},
+  doi       = {10.1007/11908739\_29},
 }
 
 ------------------------------------------------------------------------------
@@ -306,15 +379,37 @@ Cheri implementation on FreeBSD
 }
 
 ------------------------------------------------------------------------------
-                        Reference Validation
-------------------------------------------------------------------------------
-
-Cheri
-https://dl-acm-org.proxy.library.carleton.ca/doi/abs/10.1145/3297858.3304042
-
-------------------------------------------------------------------------------
                         Mandatory Access Control
 ------------------------------------------------------------------------------
+
+@inproceedings{vyssotsky1965_multics,
+  author    = {Victor A. Vyssotsky and
+               Fernando J. Corbat{\'{o}} and
+               Robert M. Graham},
+  editor    = {Robert W. Rector},
+  title     = {{Structure of the Multics Supervisor}},
+  booktitle = {Proceedings of the 1965 fall joint computer conference, part I, {AFIPS}
+               1965 (Fall, part I), Las Vegas, Nevada, USA, November 30 - December
+               1, 1965},
+  pages     = {203--212},
+  publisher = {{ACM}},
+  year      = {1965},
+  doi       = {10.1145/1463891.1463914},
+}
+
+@inproceedings{corbato1965_multics,
+  author    = {Fernando J. Corbat{\'{o}} and
+               Victor A. Vyssotsky},
+  editor    = {Robert W. Rector},
+  title     = {{Introduction and Overview of the Multics System}},
+  booktitle = {Proceedings of the 1965 fall joint computer conference, part I, {AFIPS}
+               1965 (Fall, part I), Las Vegas, Nevada, USA, November 30 - December
+               1, 1965},
+  pages     = {185--196},
+  publisher = {{ACM}},
+  year      = {1965},
+  doi       = {10.1145/1463891.1463912},
+}
 
 An Empirical Study of Three Access Control Systems
 @inproceedings{hu2013_fsf,
@@ -334,8 +429,80 @@ An Empirical Study of Three Access Control Systems
   doi       = {10.1145/2523514.2523550},
 }
 
+@inproceedings{spencer1999_flask,
+  author    = {Ray Spencer and
+               Stephen Smalley and
+               Peter Loscocco and
+               Mike Hibler and
+               Dave G. Andersen and
+               Jay Lepreau},
+  editor    = {G. Winfield Treese},
+  title     = {{The Flask Security Architecture: System Support for Diverse Security
+               Policies}},
+  booktitle = {Proceedings of the 8th {USENIX} Security Symposium, Washington, DC,
+               USA, August 23-26, 1999},
+  publisher = {{USENIX} Association},
+  year      = {1999},
+  url       = {https://www.usenix.org/conference/8th-usenix-security-symposium/flask-security-architecture-system-support-diverse-security},
+}
 
+SELinux
+@inproceedings{smalley2001_selinux,
+  title         = {{Implementing SELinux as a Linux security module}},
+  author        = {Smalley, Stephen and Vance, Chris and Salamon, Wayne},
+  journal       = {{NAI Labs Report}},
+  volume        = {1},
+  number        = {43},
+  pages         = {139},
+  year          = {2001},
+  url           = {https://www.cs.unibo.it/~sacerdot/doc/so/slm/selinux-module.pdf},
+}
 
+Reference Policy for SELinux
+@inproceedings{pebenito2006_refpol,
+  title        = {{Reference Policy for Security Enhanced Linux}},
+  author       = {Christopher J. PeBenito and Frank Mayer and Karl MacMillan},
+  booktitle    = {{SELinux Symposium}},
+  year         = {2006},
+  url          = {http://selinuxsymposium.org/2006/papers/05-refpol.pdf},
+}
+
+SELinux policy generation
+@inproceedings{macmillan07_madison,
+  title        = {{Madison: A New Approach to Policy Generation}},
+  author       = {MacMillan, Karl},
+  booktitle    = {{SELinux Symposium}},
+  year         = {2007},
+  url          = {http://selinuxsymposium.org/2007/papers/08-polgen.pdf},
+}
+
+audit2allow
+@misc{audit2allow,
+  title        = {{audit2allow(1)}},
+  author       = {Justin R. Smith and Yuichi Nakamura and Dan Walsh},
+  note         = {Linux user's manual},
+  url          = {http://linux.die.net/man/1/audit2allow},
+}
+
+Guided policy generation
+@inproceedings{sniffen06_guided,
+  title        = {{Guided Policy Generation for Application Authors}},
+  author       = {Sniffen, Brian T. and Harris, David R. and Ramsdell, John D.},
+  booktitle    = {{SELinux Symposium}},
+  year         = {2006},
+  url          = {http://gelit.ch/td/SELinux/Publications/Mitre_Tools.pdf},
+}
+
+AppArmor
+@InProceedings{cowan2000_apparmor,
+  author        = {Crispin Cowan and Steve Beattie and Greg Kroah-Hartman and Calton Pu and Perry Wagle and Virgil Gligor},
+  title         = {{SubDomain: Parsimonious Server Security}},
+  booktitle     = {Proceedings of the 14st Large Installation Systems Administration Conference (LISA)},
+  year          = 2000,
+  address       = {New Orleans, LA, United States},
+  publisher     = {{USENIX} Association},
+  url           = {https://www.usenix.org/legacy/event/lisa2000/full_papers/cowan/cowan.pdf},
+}
 
 ------------------------------------------------------------------------------
                                    eBPF
