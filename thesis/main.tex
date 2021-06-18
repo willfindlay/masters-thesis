@@ -9,6 +9,7 @@
   parindent,
   appendixprefix,
   chapterprefix,
+  listof=totoc,
   %final
 ]{scrbook}
 
@@ -84,18 +85,17 @@
 \frontmatter%
 
 \chapter*{Abstract}%
-\addcontentsline{toc}{chapter}{Frontmatter}%
-\addcontentsline{toc}{section}{Abstract}%
+\addcontentsline{toc}{chapter}{Abstract}%
 \todo{ABSTRACT HERE}
 \cleardoublepage%
 
 \chapter*{Acknowledgements}%
-\addcontentsline{toc}{section}{Acknowledgements}%
+\addcontentsline{toc}{chapter}{Acknowledgements}%
 \todo{ACKNOWLEDGEMENTS HERE}
 \cleardoublepage%
 
 \chapter*{Prior Publication}%
-\addcontentsline{toc}{section}{Prior Publication}%
+\addcontentsline{toc}{chapter}{Prior Publication}%
 \todo{PRIOR PUBLICATION HERE}
 \cleardoublepage%
 
@@ -103,6 +103,7 @@
 \begingroup
 \hypersetup{linkcolor=black}
 \tableofcontents
+\begingroup
 \listoffigures
 \listoftables
 \endgroup
