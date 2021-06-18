@@ -384,24 +384,85 @@ jaeger2008_os_security}. In the context of Unix, this means that \gls{mac} both 
 traditional discretionary access controls \textit{and} applies access controls even to the
 root user. Historical implementations of \gls{mac} have focused primarily on \gls{mls}, an
 access control scheme that revolves around the \textit{secrecy} of objects and
-\textit{access level} of subjects. In \gls{mls}, a subject may access an object with
-a secrecy level less than or equal to its access level.
+\textit{access level} of subjects~\cite{bell2005_blp}. In a nutshell, \gls{mls} prevents
+a subject from reading data with a higher secrecy level or writing data with a lower
+secrecy level, preventing breaches in confidentiality and
+integrity~\cite{jaeger2008_os_security}.
+
 Multics~\cite{vyssotsky1965_multics, corbato1965_multics} was the first operating system
-to pioneer the use of an \gls{mls} access control scheme.
+to pioneer the use of an \gls{mls} access control scheme. Memory in Multics was
+virtualized into \textit{segments}, each with a \textit{segment descriptor} that outlined
+protections that should be applied to that memory. To define an \gls{mls} policy, these
+protections included a secrecy level, enforced according to the subjects secrecy level.
+These \gls{mls}-style protections were complementary to discretionary \gls{acl}s defined
+for every segment along with memory protection rings (the first of their kind), enforced
+in hardware~\cite{jaeger2008_os_security}.
 
 While \gls{mls} is primarily applicable to military contexts, \gls{mac} has since evolved
-into mainstream use through the advent of alternative implementations. The Flask architecture
-introduced \todo{A PRACTICAL NOTION OF HOW MLS COULD BE APPLIED TO CONSUMER CONTEXTS?}
+into mainstream use through the advent of alternative implementations. The Flask
+microkernel~\cite{spencer1999_flask} introduced a practical architecture for \gls{mac}
+policy enforcement that was both scalable and effective. The non-discretionary components
+of the Flask security model were hugely influential in the design and implementation of
+subsequent \gls{mac} enforcement mechanisms, most notably
+SELinux~\cite{smalley2001_selinux, loscocco2001_selinux}.
 
-\subsubsection*{The Flask Architecture}
-
-\begin{inprogress}
-  \begin{itemize}
-    \item Flask~\cite{spencer1999_flask}
-  \end{itemize}
-\end{inprogress}
+The basic notion behind flask is straight-forward; the security architecture is divided
+into a security server, responsible for storing security policy, and a object manager that
+serves requests to userspace applications. When an application requests a resource, the
+object manager queries security policy from the security server and decides whether or not
+to serve the request based on the resulting enforcement decision. By designing Flask to be
+modular in this way, Spencer \etal~achieved a separation of concerns between policy
+enforcement and policy decision-making, vital for scalability~\cite{spencer1999_flask,
+smalley2001_selinux, loscocco2001_selinux}.
 
 \subsubsection*{Linux Security Modules}
+
+The NSA first introduced SELinux (Security Enhanced Linux)~\cite{smalley2001_selinux,
+loscocco2001_selinux} as a Linux kernel patch, with the goal of providing an
+implementation of the Flask security architecture~\cite{spencer1999_flask} for the Linux
+kernel. Reluctant to restrict users to just one security architecture, the kernel
+community eventually agreed that a generic security framework would provide more value
+than a single implementation, allowing for multiple upstream security implementations that
+could be selected based on the downstream use case. This effort culminated in the
+introduction of the \textit{Linux Security Modules} (\gls{lsm})~\cite{wright2002_lsm} framework.
+
+The \gls{lsm} framework consists of a set of security hooks, placed in strategic locations
+throughout the kernel~\cite{wright2002_lsm}. Hooks can roughly be divided into
+\textit{enforcement} hooks and \textit{bookkeeping} hooks. Enforcement hooks serve as
+checkpoints for security enforcement over specific access categories, while bookkeeping
+hooks enable a security module to maintain stateful information about subjects and objects
+on the system.  \gls{lsm} hooks are not considered to be static, and often change between
+kernel versions as new hooks are implemented and both new and existing hooks placed into
+various kernel functions~\cite{zhang2021_lsm_file_overhead}. The eventual goal of the
+\gls{lsm} framework is to provide complete mediation over kernel security events, however
+this is an evolving process and no formal verification exists to prove the security of
+\gls{lsm} hooks~\todo{CITE}.
+
+After the introduction of the \gls{lsm} framework, SELinux was refactored into a Linux
+security module~\cite{smalley2001_selinux} and subsequently merged into the mainline
+kernel. SELinux supports three major types of mandatory access control: (i) role-based
+access controls; (ii) type enforcement; and (iii) an optional \gls{mls} policy.
+Fundamentally, SELinux policies are based on a notion of subject and object labelling.
+A security policy assigns a specific label to subjects and objects, and then specifies
+access patterns between these labels.
+
+In an effort to simplify the SELinux policy language, a \textit{reference policy} was
+introduced by PeBenito in 2006~\cite{pebenito2006_refpol}, providing a framework for
+creating and managing reusable policy templates which can be integrated into new and
+existing security policies. SELinux reference policies can be augmented with boolean
+options, called \textit{tunables} that provide coarse-grained control over policy
+behaviour to system administrators. Sniffen~\cite{sniffen06_guided} implemented a guided
+policy generation system that walks application authors through the process of writing
+SELinux policy. This framework was further augmented by
+MacMillan~\cite{macmillan07_madison}, culminating in the eventual introduction of the
+\texttt{audit2allow}~\cite{audit2allow} command line utility for automated policy
+generation. Despite these usability improvements, the SELinux policy language is generally
+considered to be quite arcane~\cite{schreuders2012_towards}, rendering it difficult for
+non-expert users to write and audit security policy.
+
+Since the introduction of SELinux, several alternative \gls{lsm}s have been proposed, many
+of which have subsequently been merged into the mainline Linux kernel. AppArmor
+(originally called SubDomain)~\cite{cowan2000_apparmor}
 
 \begin{inprogress}
   \begin{itemize}
@@ -413,6 +474,7 @@ introduced \todo{A PRACTICAL NOTION OF HOW MLS COULD BE APPLIED TO CONSUMER CONT
     \item Tomoyo
     \item FBAC-LSM
     \item FSF~\cite{hu2013_fsf}
+    \item KernelSec~\cite{radhakrishnan2006_kernelsec}
     \item Landlock
     \item KRSI
   \end{itemize}
@@ -595,12 +657,13 @@ them to the filters. At runtime, the filter programs walk their control-flow gra
 the forwarded packets as input. As output, they return a filtering decision which controls
 whether or not the packet should be forwarded to userspace~\cite{mccanne1993_bpf}.
 
-Since its original introduction in 1993, classic \gls{bpf} has since been ported to a number of
-Unix-like operating systems, including Linux~\cite{linux_bpf}, OpenBSD~\cite{openbsd_bpf},
-and FreeBSD~\cite{freebsd_bpf}. Classic \gls{bpf} forms the backbone of widely used traffic
-monitoring tools, most notably tcpdump~\cite{tcpdump, mccanne1993_bpf}. In Linux, the
-\texttt{seccomp(2)} system call~\todo{CITE Anderson} was enhanced to include classic \gls{bpf}
-filters, allowing a user process to use classic \gls{bpf} programs to define allowlists and
+Since its original introduction in 1993, classic \gls{bpf} has since been ported to
+a number of Unix-like operating systems, including Linux~\cite{linux_bpf},
+OpenBSD~\cite{openbsd_bpf}, and FreeBSD~\cite{freebsd_bpf}. Classic \gls{bpf} forms the
+backbone of widely used traffic monitoring tools, most notably tcpdump~\cite{tcpdump,
+mccanne1993_bpf}. In Linux, the \texttt{seccomp(2)} system
+call~\cite{anderson2017_comparison} was enhanced to include classic \gls{bpf} filters,
+allowing a user process to use classic \gls{bpf} programs to define allowlists and
 denylists of system calls (c.f.~\Cref{sss:seccomp}).
 
 In 2014, Alexei Starovoitov and Daniel Borkmann~\cite{starovoitov2014_ebpf} first proposed
