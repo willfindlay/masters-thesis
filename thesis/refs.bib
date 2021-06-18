@@ -545,6 +545,27 @@ AppArmor
   url           = {https://www.usenix.org/legacy/event/lisa2000/full_papers/cowan/cowan.pdf},
 }
 
+@misc{aa_easyprof,
+  title        = {{aa-easyprof(8)}},
+  author       = {{AppArmor}},
+  note         = {Linux user's manual},
+  url          = {https://manpages.ubuntu.com/manpages/precise/man8/aa-easyprof.8.html},
+}
+
+@misc{aa_genprof,
+  title        = {{aa-genprof(8)}},
+  author       = {{AppArmor}},
+  note         = {Linux user's manual},
+  url          = {https://manpages.ubuntu.com/manpages/precise/man8/aa-genprof.8.html},
+}
+
+@misc{aa_logprof,
+  title        = {{aa-logprof(8)}},
+  author       = {{AppArmor}},
+  note         = {Linux user's manual},
+  url          = {https://manpages.ubuntu.com/manpages/precise/man8/aa-logprof.8.html},
+}
+
 KernelSec
 @inproceedings{radhakrishnan2006_kernelsec,
   author    = {Manigandan Radhakrishnan and
@@ -574,6 +595,42 @@ Usability study of AppArmor, SELinux, and FBAC-LSM
   pages        = {57--76},
   year         = {2012},
   doi          = {10.4018/jisp.2012010104},
+}
+
+@article{harada2004_tomoyo,
+  author    = {Harada, Toshiharu and Horie, Takashi and Tanaka, Kazuo},
+  year      = {2004},
+  month     = {01},
+  booktitle = {Linux Conference},
+  title     = {{Task Oriented Management Obviates Your Onus on Linux}}
+}
+
+landlock LSM
+@misc{salaun_landlockio,
+  author       = {Salaun, Mickael},
+  title        = {{landlock.io}},
+  year         = {2020},
+  url          = {https://landlock.io},
+  urldate      = {2020-12-17},
+}
+
+@techreport{salaun_landlock_patch,
+  title        = {{Landlock LSM: Toward Unprivileged Sandboxing}},
+  author       = {Salaun, Mickael},
+  journal      = {Linux Kernel Mailing List},
+  year         = {2017},
+  url          = {https://lkml.org/lkml/2017/8/20/192},
+  urldate      = {2020-12-17},
+  type         = {Kernel patch {RFC}},
+}
+
+@techreport{schaufler_smack,
+  title        = {{The Simplified Mandatory Access Control Kernel, Smack White Paper}},
+  author       = {Casey Schaufler},
+  %year         = {2017},
+  url          = {http://schaufler-ca.com/yahoo_site_admin/assets/docs/SmackWhitePaper.257153003.pdf},
+  urldate      = {2021-06-18},
+  type         = {Whitepaper},
 }
 
 ------------------------------------------------------------------------------

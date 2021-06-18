@@ -236,8 +236,7 @@ technique achieves a dual-purpose: firstly, the application can lock down any re
 owns, simply by restricting any access to its own \gls{uid}; secondly, the resulting
 process no longer needs to run under the same \gls{uid} as its parent. This effectively
 limits the amount of outside resources that the application can access (so long as
-permission bits are correctly configured). In a sense, such a model approaches role-based
-access control~\todo{CITE} (covered in \Cref{ss:rbac}).
+permission bits are correctly configured).
 
 The Android operating system takes this model a step further, assigning a unique \gls{uid}
 and \gls{gid} to every application on the system, with optional \gls{uid} sharing between
@@ -328,7 +327,9 @@ Academics have long recognized that weaknesses in the discretionary access contr
 must be addressed. Many have turned to mandatory access control~\todo{CITE ALL EXAMPLES}
 (c.f.~\Cref{ss:mac}) to solve the fundamental issues in \gls{dac}, while others have
 proposed improvements or alternative schemes for implementing discretionary access
-control~\todo{CITE ALL EXAMPLES}. This subsection focuses specifically on the latter.
+control~\cite{mao2009_trojan_resistant_dac, solworth2004_layered_dac,
+dranger2006_dac_complexity, dittmer2014_setuid, tsafrir2008_setuid, chen2002_setuid}. This
+subsection focuses specifically on the latter.
 
 Mao \etal~\cite{mao2009_trojan_resistant_dac} proposed IFEDAC as an alternative \gls{dac}
 model that is resistant to Trojan horse attacks. The insight behind their work was that
@@ -340,11 +341,11 @@ Under the traditional Unix \gls{dac} model, only the \gls{uid} and \gls{gid} of 
 process are considered when making access control decisions; under IFEDAC, the \gls{uid}
 and \gls{gid} of the owner of the underlying executable would also be considered, along
 with any other parties that may have influenced the state of the running process. This
-approach is similar in spirit to taint tracking mechanisms~\todo{CITE}~\todo{FORWARD
-REFERENCE}. To enable programs to function correctly, IFEDAC enables the user to define
-\textit{exception policy} that specifies exceptions to IFEDAC enforcement. Mao
-\etal~recommend that application authors and OS vendors should be responsible for
-distributing such policies~\cite{mao2009_trojan_resistant_dac}.
+approach is similar in spirit to taint tracking mechanisms~\todo{CITE}
+(c.f.~\Cref{ss:taint-tracking}). To enable programs to function correctly, IFEDAC enables
+the user to define \textit{exception policy} that specifies exceptions to IFEDAC
+enforcement. Mao \etal~recommend that application authors and OS vendors should be
+responsible for distributing such policies~\cite{mao2009_trojan_resistant_dac}.
 
 Dranger, Solworth, and Sloan~\cite{solworth2004_layered_dac, dranger2006_dac_complexity}
 presented a three-layered model of \gls{dac} mechanisms. The \textit{base layer} defines
@@ -364,14 +365,14 @@ partitions \gls{uid} changes into permanent and temporary categories. Tsafrir
 fundamental issues and proposed the adoption of similar mechanisms.
 
 
-\subsection{Role-Based Access Control}%
-\label{ss:rbac}
-
-\begin{inprogress}
-  \begin{itemize}
-    \item
-  \end{itemize}
-\end{inprogress}
+%\subsection{Role-Based Access Control}%
+%\label{ss:rbac}
+%
+%\begin{inprogress}
+%  \begin{itemize}
+%    \item
+%  \end{itemize}
+%\end{inprogress}
 
 
 
@@ -388,6 +389,8 @@ access control scheme that revolves around the \textit{secrecy} of objects and
 a subject from reading data with a higher secrecy level or writing data with a lower
 secrecy level, preventing breaches in confidentiality and
 integrity~\cite{jaeger2008_os_security}.
+
+\subsubsection*{Historical Approaches}
 
 Multics~\cite{vyssotsky1965_multics, corbato1965_multics} was the first operating system
 to pioneer the use of an \gls{mls} access control scheme. Memory in Multics was
@@ -415,7 +418,7 @@ modular in this way, Spencer \etal~achieved a separation of concerns between pol
 enforcement and policy decision-making, vital for scalability~\cite{spencer1999_flask,
 smalley2001_selinux, loscocco2001_selinux}.
 
-\subsubsection*{Linux Security Modules}
+\subsubsection*{Linux Security Modules, SELinux, and AppArmor}
 
 The NSA first introduced SELinux (Security Enhanced Linux)~\cite{smalley2001_selinux,
 loscocco2001_selinux} as a Linux kernel patch, with the goal of providing an
@@ -436,7 +439,21 @@ kernel versions as new hooks are implemented and both new and existing hooks pla
 various kernel functions~\cite{zhang2021_lsm_file_overhead}. The eventual goal of the
 \gls{lsm} framework is to provide complete mediation over kernel security events, however
 this is an evolving process and no formal verification exists to prove the security of
-\gls{lsm} hooks~\todo{CITE}.
+\gls{lsm} hooks~\todo{CITE}. \Cref{fig:lsm} depicts the basic \gls{lsm} architecture.
+
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/background/lsm.pdf}
+  \caption[The LSM architecture]{
+    The \gls{lsm} architecture. A single \textit{exclusive} \gls{lsm} may be loaded at a time,
+    and complemented by zero or more \textit{stackable} \gls{lsm}s. When userspace
+    requests a privileged operation (e.g.~through a system call), this operation causes one
+    or more security hooks to be invoked. These hooks in turn call into the respective
+    hook implementations provided by each loaded \gls{lsm}. Each hook returns a policy
+    decision, and these decisions are then taken together to arrive at a final decision.
+  }%
+  \label{fig:lsm}
+\end{figure}
 
 After the introduction of the \gls{lsm} framework, SELinux was refactored into a Linux
 security module~\cite{smalley2001_selinux} and subsequently merged into the mainline
@@ -462,23 +479,70 @@ non-expert users to write and audit security policy.
 
 Since the introduction of SELinux, several alternative \gls{lsm}s have been proposed, many
 of which have subsequently been merged into the mainline Linux kernel. AppArmor
-(originally called SubDomain)~\cite{cowan2000_apparmor}
+(originally called SubDomain)~\cite{cowan2000_apparmor} takes an alternative approach to
+SELinux, enforcing security policy based on \textit{pathnames} rather than security
+labels.  AppArmor policies, called \textit{profiles}, are assigned on a per-executable
+basis. Rather than being labelled, AppArmor policies identify system objects directly
+(e.g.~through pathnames, IPC categories, or network IP addresses). Each system object is
+associated with a particular access pattern, which determines the privileges for a given
+AppArmor profile. Similar to SELinux, AppArmor offers a suite of userspace tooling for
+automated and semi-automated policy generation based on enforcement
+logs~\cite{aa_easyprof, aa_genprof, aa_logprof}.
 
-\begin{inprogress}
-  \begin{itemize}
-    \item SELinux~\cite{smalley2001_selinux}, the reference
-          policy~\cite{pebenito2006_refpol}
-    \item SELinux policy generation efforts: Madison~\cite{macmillan07_madison},
-          audit2allow~\cite{audit2allow}, guided policy generation~\cite{sniffen06_guided}
-    \item AppArmor~\cite{cowan2000_apparmor}, aa-logprof, aa-genprof, and aa-easyprof
-    \item Tomoyo
-    \item FBAC-LSM
-    \item FSF~\cite{hu2013_fsf}
-    \item KernelSec~\cite{radhakrishnan2006_kernelsec}
-    \item Landlock
-    \item KRSI
-  \end{itemize}
-\end{inprogress}
+\subsubsection*{Alternative Linux Security Modules}
+
+Recognizing usability issues in the complexity of SELinux and AppArmor policies,
+Schaufler~\cite{schaufler_smack} introduced SMACK (Simplified Mandatory Access Control Kernel) to
+offer a simplified label-based enforcement scheme that focuses on expressing a minimal set
+of permissions. Like SELinux, SMACK relies on labelling filesystem objects using extended
+filesystem attributes. Policies then attach simple access specifiers to these labels, based
+on canonical Unix permissions like \texttt{read}, \texttt{write}, and \texttt{execute}. Some
+default labels are provided, which grant or revoke blanket permissions for common tasks such
+as system daemons or the \texttt{init} process.
+
+Schreuders \etal~\cite{schreuders2012_towards} designed FBAC-LSM (Functionality-Based
+Access Control LSM) with a similar goal of simplifying policy definition. Unlike SMACK,
+which is based on labelling, FBAC-LSM specifies policy in terms of desired
+\textit{functionality}. Specifically, FBAC-LSM policies define a set of high-level
+functionalities that an application should exhibit. All other functionalities are
+prohibited. Schreuders \etal~evaluated FBAC-LSM in terms of its usability and found that
+it compares favourably against AppArmor and SELinux~\cite{schreuders2012_towards}.
+
+Hu \etal~\cite{hu2013_fsf} proposed FSF (File System Firewall), which applies firewall-like
+semantics to filesystem objects. \todo{MORE HERE}
+
+The TOMOYO~\cite{harada2004_tomoyo} \gls{lsm} takes an alternative approach, emphasizing
+policy generation and building generation functionality into the \gls{lsm} directly.
+Rather than involving userspace helpers, TOMOYO generates policy by inferring
+per-application profiles through the \gls{lsm} hooks they invoke. Programs can
+additionally discard their privileges through a TOMOYO-specific system call, similar to
+the notion of dropping privileges under the POSIX capabilities model. Like AppArmor,
+TOMOYO relies on pathnames to identify resources rather than assigning security labels.
+Users have the option to edit generated policies as required, but the intent is to require
+as little user involvement as possible~\cite{harada2004_tomoyo}.
+
+The Landlock~\cite{salaun_landlockio, salaun_landlock_patch} \gls{lsm} was recently
+introduced into the mainline Linux kernel as a contemporary alternative to
+\texttt{seccomp(2)} (covered in \Cref{sss:seccomp}). Landlock was originally intended to
+allow unprivileged userspace processes to load highly restricted \gls{ebpf} programs into
+the kernel to define security filtering logic~\cite{salaun_landlock_patch}. However, due
+to concerns related to the security of unprivileged eBPF, this functionality was later
+reworked into a set of simple access rules and no longer has any association with
+\gls{ebpf}~\cite{salaun_landlockio}. Under Landlock, a process creates a \textit{ruleset}
+using the \texttt{landlock\_create\_ruleset(2)} system call, adds rules to that ruleset,
+then confines itself by committing to that ruleset. Developers may add this confinement
+logic directly into their software or may write specialized userspace wrappers to apply
+generic confinement to applications.
+
+Singh~\cite{singh2019_krsi} introduced the KRSI (Kernel Runtime Security Instrumentation)
+framework for attaching \gls{ebpf} programs to \gls{lsm} hooks with the goal of defining
+dynamic audit and policy enforcement filters. While similar in spirit to the original
+Landlock proposal~\cite{salaun_landlock_patch}, KRSI differs fundamentally in that it
+remains a \textit{privileged} \gls{lsm}; only root-privileged processes may load \gls{ebpf}
+\gls{lsm} programs into the kernel. \bpfcontain{} and \bpfbox{} are both based on the KRSI
+framework. \Cref{ss:bpf-programs-bg} examines the KRSI framework in more detail.
+
+%Radhakrishnan~\cite{radhakrishnan2006_kernelsec} \todo{DESCRIBE THIS OR DROP IT}
 
 
 
@@ -512,6 +576,11 @@ of which have subsequently been merged into the mainline Linux kernel. AppArmor
     \item Cheri ABI implementation in FreeBSD by Davis and Watson \etal~\cite{davis2019_cheriabi}
   \end{itemize}
 \end{inprogress}
+
+
+
+\subsection{Taint Tracking}%
+\label{ss:taint-tracking}
 
 
 
@@ -709,19 +778,20 @@ eventually be used to write \gls{ebpf} programs as well.  For instance, an exper
 target for the Rust programming language has recently been
 proposed~\cite{decina2021_bpf_rust}. The important distinction here is that the set of all
 possible \gls{ebpf} programs is a strict subset of the set of all possible programs.} using the
-LLVM toolchain. Programs can be loaded and attached to system events using the
+LLVM toolchain.Programs can be loaded and attached to system events using the
 \texttt{bpf(2)} system call, at which point control passes to the \gls{ebpf} verifier, which
 checks the programs to make sure they satisfy a set of safety
-constraints~\cite{starovoitov2014_ebpf, gregg2019_bpf}. In particular, \gls{ebpf} programs must
-consist of fewer than 1 million \gls{bpf} instructions and must not call into any kernel
-functions outside of the allowlisted helpers. The program is also constrained to a 512
-byte stack size; any additional memory required by the program must come from an \gls{ebpf} map
-(c.f.~\Cref{ss:bpf-maps-bg}). For safety, memory accesses into allocated buffers must be
-properly bounds checked, pointers must be null-checked before dereferencing, and any
-access to external memory (e.g.~belonging to userspace programs or to the kernel itself)
-must be read-only. Since \gls{ebpf} programs must provably terminate, no back-edges are
-permitted in their control flow and all loops must be bounded by some fixed constant $i$
-iterations.
+constraints~\cite{starovoitov2014_ebpf, gregg2019_bpf}.
+
+In particular, \gls{ebpf} programs must consist of fewer than 1 million \gls{bpf}
+instructions and must not call into any kernel functions outside of the allowlisted
+helpers. The program is also constrained to a 512 byte stack size; any additional memory
+required by the program must come from an \gls{ebpf} map (c.f.~\Cref{ss:bpf-maps-bg}). For
+safety, memory accesses into allocated buffers must be properly bounds checked, pointers
+must be null-checked before dereferencing, and any access to external memory
+(e.g.~belonging to userspace programs or to the kernel itself) must be read-only. Since
+\gls{ebpf} programs must provably terminate, no back-edges are permitted in their control
+flow and all loops must be bounded by some fixed constant $i$ iterations.
 
 To guard against data races, \gls{ebpf} programs always hold the kernel's RCU (read-copy-update)
 lock while executing, gated by the \texttt{bpf\_prog\_enter} and \texttt{bpf\_prog\_exit}
