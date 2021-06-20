@@ -483,33 +483,33 @@ of which have subsequently been merged into the mainline Linux kernel. AppArmor
 SELinux, enforcing security policy based on \textit{pathnames} rather than security
 labels.  AppArmor policies, called \textit{profiles}, are assigned on a per-executable
 basis. Rather than being labelled, AppArmor policies identify system objects directly
-(e.g.~through pathnames, IPC categories, or network IP addresses). Each system object is
-associated with a particular access pattern, which determines the privileges for a given
-AppArmor profile. Similar to SELinux, AppArmor offers a suite of userspace tooling for
-automated and semi-automated policy generation based on enforcement
+(e.g.~through pathnames, \gls{ipc} categories, or network \gls{ip} addresses). Each system
+object is associated with a particular access pattern, which determines the privileges for
+a given AppArmor profile. Similar to SELinux, AppArmor offers a suite of userspace tooling
+for automated and semi-automated policy generation based on enforcement
 logs~\cite{aa_easyprof, aa_genprof, aa_logprof}.
 
 \subsubsection*{Alternative Linux Security Modules}
 
 Recognizing usability issues in the complexity of SELinux and AppArmor policies,
-Schaufler~\cite{schaufler_smack} introduced SMACK (Simplified Mandatory Access Control Kernel) to
-offer a simplified label-based enforcement scheme that focuses on expressing a minimal set
-of permissions. Like SELinux, SMACK relies on labelling filesystem objects using extended
-filesystem attributes. Policies then attach simple access specifiers to these labels, based
-on canonical Unix permissions like \texttt{read}, \texttt{write}, and \texttt{execute}. Some
-default labels are provided, which grant or revoke blanket permissions for common tasks such
-as system daemons or the \texttt{init} process.
+Schaufler~\cite{schaufler_smack} introduced SMACK (Simplified Mandatory Access Control
+Kernel) to offer a simplified label-based enforcement scheme that focuses on expressing
+a minimal set of permissions. Like SELinux, SMACK relies on labelling filesystem objects
+using extended filesystem attributes. Policies then attach simple access specifiers to
+these labels, based on canonical Unix permissions like \texttt{read}, \texttt{write}, and
+\texttt{execute}. Some default labels are provided, which grant or revoke blanket
+permissions for common tasks such as system daemons or the \texttt{init} process.
 
 Schreuders \etal~\cite{schreuders2012_towards} designed FBAC-LSM (Functionality-Based
-Access Control LSM) with a similar goal of simplifying policy definition. Unlike SMACK,
-which is based on labelling, FBAC-LSM specifies policy in terms of desired
+Access Control \gls{lsm}) with a similar goal of simplifying policy definition. Unlike
+SMACK, which is based on labelling, FBAC-LSM specifies policy in terms of desired
 \textit{functionality}. Specifically, FBAC-LSM policies define a set of high-level
 functionalities that an application should exhibit. All other functionalities are
 prohibited. Schreuders \etal~evaluated FBAC-LSM in terms of its usability and found that
 it compares favourably against AppArmor and SELinux~\cite{schreuders2012_towards}.
 
-Hu \etal~\cite{hu2013_fsf} proposed FSF (File System Firewall), which applies firewall-like
-semantics to filesystem objects. \todo{MORE HERE}
+Hu \etal~\cite{hu2013_fsf} proposed FSF (File System Firewall), which applies
+firewall-like semantics to filesystem objects. \todo{MORE HERE}
 
 The TOMOYO~\cite{harada2004_tomoyo} \gls{lsm} takes an alternative approach, emphasizing
 policy generation and building generation functionality into the \gls{lsm} directly.
@@ -526,8 +526,8 @@ introduced into the mainline Linux kernel as a contemporary alternative to
 \texttt{seccomp(2)} (covered in \Cref{sss:seccomp}). Landlock was originally intended to
 allow unprivileged userspace processes to load highly restricted \gls{ebpf} programs into
 the kernel to define security filtering logic~\cite{salaun_landlock_patch}. However, due
-to concerns related to the security of unprivileged eBPF, this functionality was later
-reworked into a set of simple access rules and no longer has any association with
+to concerns related to the security of unprivileged \gls{ebpf}, this functionality was
+later reworked into a set of simple access rules and no longer has any association with
 \gls{ebpf}~\cite{salaun_landlockio}. Under Landlock, a process creates a \textit{ruleset}
 using the \texttt{landlock\_create\_ruleset(2)} system call, adds rules to that ruleset,
 then confines itself by committing to that ruleset. Developers may add this confinement
@@ -538,9 +538,10 @@ Singh~\cite{singh2019_krsi} introduced the KRSI (Kernel Runtime Security Instrum
 framework for attaching \gls{ebpf} programs to \gls{lsm} hooks with the goal of defining
 dynamic audit and policy enforcement filters. While similar in spirit to the original
 Landlock proposal~\cite{salaun_landlock_patch}, KRSI differs fundamentally in that it
-remains a \textit{privileged} \gls{lsm}; only root-privileged processes may load \gls{ebpf}
-\gls{lsm} programs into the kernel. \bpfcontain{} and \bpfbox{} are both based on the KRSI
-framework. \Cref{ss:bpf-programs-bg} examines the KRSI framework in more detail.
+remains a \textit{privileged} \gls{lsm}; only root-privileged processes may load
+\gls{ebpf} \gls{lsm} programs into the kernel. \bpfcontain{} and \bpfbox{} are both based
+on the KRSI framework. \Cref{ss:bpf-programs-bg} examines the KRSI framework in more
+detail.
 
 %Radhakrishnan~\cite{radhakrishnan2006_kernelsec} \todo{DESCRIBE THIS OR DROP IT}
 
@@ -852,44 +853,47 @@ integrate with the \gls{lsm} framework.
   \label{fig:bpf-lsm}
 \end{figure}
 
-As with other LSMs, LSM probes implement a form of mandatory access control. Each LSM
-probe can be attached to one or more LSM hooks defined in the kernel. When the hook fires
-(i.e.~when a task requests a privileged operation form the kernel), every attached probe
-fires as part of the normal LSM pipeline. The body of the \gls{bpf} program defines filtering
-and audit logic, optionally accessing maps to store and query persistent state. The \gls{bpf}
-program then returns a security decision about whether the requested operation should be
-allowed or denied.  In order for an operation to be allowed, \textit{all} other LSMs and
-LSM probes must agree on the policy decision and ordinary security checks performed by the
-operating system must also succeed. In other words, it is not possible to grant additional
-privileges using an LSM probe.
+As with other \gls{lsm}s, \gls{lsm} probes implement a form of mandatory access control.
+Each \gls{lsm} probe can be attached to one or more \gls{lsm} hooks defined in the kernel.
+When the hook fires (i.e.~when a task requests a privileged operation form the kernel),
+every attached probe fires as part of the normal \gls{lsm} pipeline. The body of the
+\gls{bpf} program defines filtering and audit logic, optionally accessing maps to store
+and query persistent state. The \gls{bpf} program then returns a security decision about
+whether the requested operation should be allowed or denied.  In order for an operation to
+be allowed, \textit{all} other \gls{lsm}s and \gls{lsm} probes must agree on the policy
+decision and ordinary security checks performed by the operating system must also succeed.
+In other words, it is not possible to grant additional privileges using an \gls{lsm}
+probe.
 
 Owing to the properties discussed earlier in this section, \gls{ebpf} confers a natural
-flexibility to LSM probes quite unlike that of traditional LSM-based security frameworks.
-In particular, LSM probes can be attached at runtime and can cooperate with other \gls{ebpf}
-program types using \gls{ebpf} maps (c.f.~\Cref{ss:bpf-maps-bg}). This notion of cooperating
-programs presents an opportunity to design modular policy enforcement mechanisms that
-operate beyond the scope of the LSM hooks framework itself.  Another key advantage of LSM
-probes over traditional LSMs lies in their adoptability.  While industry actors may be
-understandably reluctant to adopt \enquote{yet another out-of-tree LSM}, a security
-mechanism based on \gls{ebpf} does not carry the same technical baggage.  \gls{ebpf} programs are safe
-to use in production and can be deployed at runtime on an unmodified kernel.  This makes
-\gls{ebpf} a particularly attractive target for developing new security solutions.
+flexibility to \gls{lsm} probes quite unlike that of traditional \gls{lsm}-based security
+frameworks.  In particular, \gls{lsm} probes can be attached at runtime and can cooperate
+with other \gls{ebpf} program types using \gls{ebpf} maps (c.f.~\Cref{ss:bpf-maps-bg}).
+This notion of cooperating programs presents an opportunity to design modular policy
+enforcement mechanisms that operate beyond the scope of the \gls{lsm} hooks framework
+itself.  Another key advantage of \gls{lsm} probes over traditional \gls{lsm}s lies in
+their adoptability.  While industry actors may be understandably reluctant to adopt
+\enquote{yet another out-of-tree \gls{lsm}}, a security mechanism based on \gls{ebpf} does
+not carry the same technical baggage.  \gls{ebpf} programs are safe to use in production
+and can be deployed at runtime on an unmodified kernel.  This makes \gls{ebpf}
+a particularly attractive target for developing new security solutions.
 
 \subsection{eBPF Maps}%
 \label{ss:bpf-maps-bg}
 
-\gls{ebpf} maps serve as both a runtime data store for \gls{ebpf} programs and the canonical method of
-communication between \gls{ebpf} programs and other \gls{ebpf} programs, and \gls{ebpf} programs and
-userspace applications. Like \gls{ebpf} programs, maps can be pinned to \gls{bpffs} to
-increment their reference count in the kernel. Concurrent access to \gls{ebpf} maps from within
-kernelspace is protected by an implicit RCU lock, and a spinlock concurrency primitive is
-exposed via a helper function to guard map accesses between kernelspace and userspace.
-From the \gls{ebpf} side, maps can be accessed using a set of provided helper functions.
-Userspace applications can access maps using the \texttt{bpf(2)} system call or through
-direct memory-mapping (only available for arrays) via
-\texttt{mmap(2)~\cite{gregg2019_bpf}}. While many \gls{ebpf} maps are designed to be generic,
-others are highly specialized for specific use cases. \bpfcontain{} and \bpfbox{} make
-use of several \gls{ebpf} map types, which are summarized in \Cref{tab:map-types}.
+\gls{ebpf} maps serve as both a runtime data store for \gls{ebpf} programs and the
+canonical method of communication between \gls{ebpf} programs and other \gls{ebpf}
+programs, and \gls{ebpf} programs and userspace applications. Like \gls{ebpf} programs,
+maps can be pinned to \gls{bpffs} to increment their reference count in the kernel.
+Concurrent access to \gls{ebpf} maps from within kernelspace is protected by an implicit
+RCU lock, and a spinlock concurrency primitive is exposed via a helper function to guard
+map accesses between kernelspace and userspace.  From the \gls{ebpf} side, maps can be
+accessed using a set of provided helper functions.  Userspace applications can access maps
+using the \texttt{bpf(2)} system call or through direct memory-mapping (only available for
+arrays) via \texttt{mmap(2)~\cite{gregg2019_bpf}}. While many \gls{ebpf} maps are designed
+to be generic, others are highly specialized for specific use cases. \bpfcontain{} and
+\bpfbox{} make use of several \gls{ebpf} map types, which are summarized in
+\Cref{tab:map-types}.
 
 \begingroup\footnotesize
 \begin{longtable}[c]{lp{3.9in}}
