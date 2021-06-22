@@ -298,6 +298,81 @@ Comparing seccomp-bpf, capsicum, and pledge
   url          = {http://www.engr.mun.ca/~anderson/publications/2017/sandbox-comparison.pdf},
 }
 
+@misc{ptrace,
+  title        = {{ptrace(2)}},
+  author       = {{Linux}},
+  note         = {Linux user's manual},
+  url          = {https://linux.die.net/man/2/ptrace},
+}
+
+@article{padala2002_ptrace,
+  title        = {{Playing with ptrace, Part I}},
+  author       = {Padala, Pradeep},
+  journal      = {Linux Journal},
+  volume       = {2002},
+  number       = {103},
+  pages        = {5},
+  year         = {2002},
+  url          = {https://www.linuxjournal.com/article/6100}
+}
+
+Janus implements process confinement in userspace using an extended version
+of ptrace (ptrace++)
+@inproceedings{goldberg96_janus,
+  author       = {Ian Goldberg and David Wagner and Randi Thomas and Eric Brewer},
+  title        = {{A Secure Environment for Untrusted Helper Applications (Confining the Wily Hacker)}},
+  booktitle    = {Proceedings of the Sixth USENIX UNIX Security Symposium},
+  publisher    = {The USENIX Association},
+  year         = {1996},
+  url          = {https://www.usenix.org/legacy/publications/library/proceedings/sec96/full_papers/goldberg/goldberg.pdf},
+}
+@mastersthesis{wagner1999_janus,
+  title        = {{Janus: An Approach for Confinement of Untrusted Applications}},
+  author       = {Wagner, David A.},
+  year         = {1999},
+  school       = {University of California, Berkeley},
+  url          = {https://www2.eecs.berkeley.edu/Pubs/TechRpts/1999/CSD-99-1056.pdf},
+}
+
+System call interposition for process confinement and intrustion detection.
+@inproceedings{jain2000_filtering,
+  author    = {K. Jain and
+               R. Sekar},
+  title     = {{User-Level Infrastructure for System Call Interposition: {A} Platform
+               for Intrusion Detection and Confinement}},
+  booktitle = {Proceedings of the Network and Distributed System Security Symposium,
+               {NDSS} 2000, San Diego, California, {USA}},
+  publisher = {The Internet Society},
+  year      = {2000},
+  url       = {https://www.ndss-symposium.org/ndss2000/user-level-infrastructure-system-call-interposition-platform-intrusion-detection-and-confinement/},
+}
+
+pledge and unveil
+@misc{pledge,
+  title        = {{pledge(2)}},
+  year         = {2020},
+  month        = {July},
+  note         = {OpenBSD system calls manual},
+  url          = {https://man.openbsd.org/pledge},
+  urldate      = {2021-06-21},
+}
+@misc{unveil,
+  title        = {{unveil(2)}},
+  year         = {2020},
+  month        = {April},
+  note         = {OpenBSD system calls manual},
+  url          = {https://man.openbsd.org/unveil},
+  urldate      = {2021-06-21},
+}
+@article{corbet2018_unveil,
+  author  = {Corbet, Jonathan},
+  journal = {{LWN.net}},
+  title   = {{OpenBSD's unveil()}},
+  year    = {2018},
+  month   = {December},
+  url     = {https://lwn.net/Articles/767137/},
+}
+
 Capsicum
 @inproceedings{watson2010_capsicum,
   author    = {Robert N. M. Watson and
@@ -1022,5 +1097,5 @@ BPFRoid -- Malware detection on android
 FreeBSD Jails
   https://docs.freebsd.org/en/books/handbook/jails/
 
-FileSystemFirewall FSF
-  https://dl-acm-org.proxy.library.carleton.ca/doi/pdf/10.1145/2523514.2523550
+Sandboxing using a specialized filesystem, SandboxFS
+  https://dl-acm-org.proxy.library.carleton.ca/doi/pdf/10.1145/3265723.3265734

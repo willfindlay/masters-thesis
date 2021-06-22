@@ -134,8 +134,8 @@ in such a way that verifiability is maximized~\cite{anderson1972_report}.
 \subsection{Discretionary Access Control}%
 \label{ss:dac}
 
-\textit{Discretionary access control} (DAC) forms the most basic form of access control in
-many operating systems, including Linux and other Unix-like operating systems, and
+\textit{Discretionary access control} (DAC) comprises the most basic form of access
+control in many operating systems, including Linux, other Unix-like operating systems, and
 Microsoft Windows. First formalized in the 1983 US Department of Defense (sic)
 standard~\cite{orange_book}, a discretionary access control mechanism partitions and
 labels system objects (i.e.~resources such as files) by the subjects (i.e.~actors such as
@@ -281,7 +281,7 @@ It is worth mentioning that the term \enquote{POSIX capabilities} does \textit{n
 describe capabilities as they are broadly defined by operating system security
 researchers~\cite{anderson2017_comparison}. In particular, Dennis and Van
 Horn~\cite{dennis1966_semantics} first defined the notion of capabilities as a means of
-restricting access to pointers, guarding references to system objects. Unlike the
+restricting access to \textit{pointers}, guarding references to system objects. Unlike the
 capabilities defined by Dennis and Van Horn, POSIX capabilities are not associated with
 any given system object. Dennis and Van Horn's capabilities more closely resemble that of
 the access matrix introduced by Anderson~\cite{anderson1972_report} and similar mechanisms
@@ -509,7 +509,15 @@ prohibited. Schreuders \etal~evaluated FBAC-LSM in terms of its usability and fo
 it compares favourably against AppArmor and SELinux~\cite{schreuders2012_towards}.
 
 Hu \etal~\cite{hu2013_fsf} proposed FSF (File System Firewall), which applies
-firewall-like semantics to filesystem objects. \todo{MORE HERE}
+firewall-like semantics to filesystem objects. Their goal was to create a more usable,
+file-specific access control mechanism. FSF policies are defined in policy files,
+comprised of simple rules that specify a file along with some combination of
+\texttt{read}, \texttt{write}, and \texttt{execute} access. \textit{Redirection rules} are
+primary differentiating factor between FSF and conventional file-based access controls.
+Taking inspiration from similar functionality in network firewalls, a redirection rule can
+be used to convert one file access into another, transparently to the target application.
+Hu \etal~conducted a user study comparing their prototype to Unix \gls{dac} and SELinux
+and found that FSF performed favourably in policy comprehensibility and accuracy.
 
 The TOMOYO~\cite{harada2004_tomoyo} \gls{lsm} takes an alternative approach, emphasizing
 policy generation and building generation functionality into the \gls{lsm} directly.
@@ -550,14 +558,110 @@ detail.
 \subsection{System Call Filtering and Capabilities}%
 \label{ss:syscall-filtering}
 
-\subsubsection*{Janus}
-\label{sss:janus}
+Since system calls define the canonical interface for communication between userspace
+processes and the operating system kernel~\cite{jaeger2008_os_security}, they are
+a natural fit for defining the protection interface of a confinement mechanism. In
+particular, \textit{system call filtering} is a widely-used~\cite{} technique for application
+sandboxing and self-confinement~\cite{anderson2017_comparison}. Indeed, \gls{lsm}s,
+covered in the previous section, can be thought of as a form of system call filtering,
+although security hooks are placed manually within system call implementations and do not
+necessarily conform to the same semantics as the underlying system
+calls~\cite{wright2002_lsm}.
+
+Related to this notion of system call filtering are \textit{capabilities}\footnote{Here,
+the term \enquote{capabilities} is a disparate term from \enquote{POSIX capabilities,} covered in
+\Cref{ss:dac}.}, which guard access to a particular reference, associating privileges with
+a handle to a given object on the system. For instance, the \texttt{open(2)} system call
+returns a \textit{file descriptor}, which constitutes a reference to a particular
+filesystem object. A capability associated with this file descriptor would then restrict
+subsequent operations on the file descriptor, effectively restricting access to the
+underlying file.
+
+\subsubsection*{Ptrace}
+\label{sss:ptrace}
+
+In Unix, ptrace~\cite{ptrace, padala2002_ptrace} (short for process trace) is a mechanism
+provided by the kernel that allows one process (the tracer) to attach itself to another
+(the tracee), tracing and possibly manipulating nearly any aspect of its execution, system
+calls, memory, and registers. Originally designed as a debugging interface~\cite{ptrace,
+padala2002_ptrace}, ptrace has also been applied to implement system call
+filtering~\cite{goldberg96_janus, wagner1999_janus, jain2000_filtering}. However, ptrace
+has fallen out of favour, particularly in production use cases, due to its immensely high
+overhead (on the order of \todo{WHAT PERCENT}) and propensity to introduce undefined
+behaviour when tracing even moderately complex software~\todo{CITE}. Due to its invasive
+nature, a tracer process must either be the direct parent of a tracee or must have
+sufficient privileges to trace the child process\,---\,on Linux, this translates to either
+the \texttt{CAP\_SYS\_PTRACE} capability or the all-encompassing \texttt{CAP\_SYS\_ADMIN}.
+
+Janus~\cite{goldberg96_janus, wagner1999_janus} was an early exploration of how
+\texttt{ptrace} could be applied to confine applications by filtering system calls.  The
+original Janus prototype was designed for Oracle Solaris using its ptrace interface,
+exposed through the \texttt{procfs} virtual filesystem~\cite{goldberg96_janus}.
+A subsequent port of Janus was released for Linux~\cite{wagner1999_janus}, although it
+required invasive modifications to Linux's ptrace implementation, dubbed ptrace++ by the
+authors. Janus worked by attaching to the target process using ptrace, then tracing system
+calls made by the target process and categorizing them into groups based on functionality.
+A Janus policy could allow or deny specific categories of system call, confining the
+application in a coarse-grained manner. The tracer process, called the \textit{supervisor
+process}, would then be able to kill the offending process or inject failure into the
+offending system call when it detected a policy violation.  Jain and
+Sekar~\cite{jain2000_filtering} implemented a similar system call monitor, adding the
+ability to modify system call arguments and using a different policy language design.
+
+\todo{Maybe other examples here}
 
 \subsubsection*{OpenBSD Pledge and Unveil}
 \label{sss:pledge}
 
+OpenBSD's \texttt{pledge(2)} and \texttt{unveil(2)} system calls
+
+\begin{inprogress}
+\begin{itemize}
+  \item pledge(2)~\cite{pledge}
+  \begin{itemize}
+    \item Takes a list of \textit{promises}, high-level privileges that are similar in
+          spirit to Janus~\cite{goldberg96_janus, wagner1999_janus}
+    \item \texttt{stdio} promise allows 69 total system calls, enabling any stdio functionality from libc
+    \item others like \texttt{chown} are more conservative, allowing only one (albeit very powerful) system call
+    \item In addition to promises, a call to pledge may also specify a set of promises to
+    be applied after an \texttt{execve}, enabling a wrapper application to sandbox another application for instance
+    \item Subsequent calls to pledge take the union of new promises and existing promises, preventing privilege escalation
+    \item Pledge has been criticized for being overly-permissive~\cite{anderson2017_comparison}
+  \end{itemize}
+
+  \item unveil(2)~\cite{unveil, corbet2018_unveil}
+  \begin{itemize}
+    \item Like pledge, the unveil system call can be used to make a promise about how the process will behave
+    \item Unlike pledge, unveil operates on specific filesystem paths, applying some
+    combination of four permissions:
+    \begin{itemize}
+      \item read
+      \item write
+      \item execute
+      \item create/delete
+    \end{itemize}
+    \item An unveil on a directory unveils all inodes under that directory, recursively
+    \item Symlinks could be a concern here
+  \end{itemize}
+\end{itemize}
+\end{inprogress}
+
 \subsubsection*{Linux Seccomp and Seccomp-BPF}%
 \label{sss:seccomp}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item \texttt{seccomp(2)} \todo{CITATION FOR SECCOMP} allows a Linux process to
+    confine itself by restricting the system calls it can make
+    \item Originally, seccomp was highly limited, restricting a process to only four system calls:
+    \begin{itemize}
+      \item read
+      \item write
+      \item sigreturn (to handle signals)
+      \item exit (to quit)
+    \end{itemize}
+  \end{itemize}
+\end{inprogress}
 
 \subsubsection*{FreeBSD Capsicum}
 \label{sss:capsicum}
