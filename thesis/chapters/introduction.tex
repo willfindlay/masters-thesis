@@ -17,12 +17,12 @@ misunderstandings about the security of a system. From first principles, a conta
 nothing more than a group of associated processes (and system resources) managed by some
 container management engine (e.g.~Docker or \textit{lxc}). While often used for dependency
 management, containers also offer lightweight virtualization and confinement using
-a series primitives exposed by the \gls{os} kernel. Namespaces and cgroups
-virtualize system resources while confinement layers such as \texttt{seccomp(2)} provide
-some degree of isolation from the rest of the system~\todo{CITE}. Unfortunately, while
-virtualization primitives are widely used in container deployments, the use of confinement
-primitives is often overlooked, oversimplified, or overly permissive (i.e.~misconfigured)
-in practice~\todo{CITE}.
+a series primitives exposed by the \gls{os} kernel. Namespaces and cgroups virtualize
+system resources while confinement layers such as \texttt{seccomp(2)} provide some degree
+of isolation from the rest of the system~\cite{sultan2019_container_security}.
+Unfortunately, while virtualization primitives are widely used in container deployments,
+the use of confinement primitives is often overlooked, oversimplified, or overly
+permissive (i.e.~misconfigured) in practice~\cite{sultan2019_container_security}.
 
 Despite their name, containers do a very poor job of actually \textit{containing}
 a running process.  The Linux kernel already supports a set of strong virtualization

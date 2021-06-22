@@ -323,11 +323,13 @@ particularly vulnerable against such attacks.
 
 \subsubsection*{Proposals for Alternative Schemes}
 
-Academics have long recognized that weaknesses in the discretionary access control model
-must be addressed. Many have turned to mandatory access control~\todo{CITE ALL EXAMPLES}
-(c.f.~\Cref{ss:mac}) to solve the fundamental issues in \gls{dac}, while others have
-proposed improvements or alternative schemes for implementing discretionary access
-control~\cite{mao2009_trojan_resistant_dac, solworth2004_layered_dac,
+Both industry and academia have long recognized that weaknesses in the Unix discretionary
+access control model must be addressed. Many have turned to mandatory access
+control~\cite{spencer1999_flask, smalley2001_selinux, wright2002_lsm, cowan2000_apparmor,
+schaufler_smack, schreuders2012_towards, hu2013_fsf, harada2004_tomoyo, salaun_landlockio,
+singh2019_krsi} (c.f.~\Cref{ss:mac}) to solve the fundamental issues in \gls{dac}, while
+others have proposed improvements or alternative schemes for implementing discretionary
+access control~\cite{mao2009_trojan_resistant_dac, solworth2004_layered_dac,
 dranger2006_dac_complexity, dittmer2014_setuid, tsafrir2008_setuid, chen2002_setuid}. This
 subsection focuses specifically on the latter.
 
@@ -561,7 +563,7 @@ detail.
 Since system calls define the canonical interface for communication between userspace
 processes and the operating system kernel~\cite{jaeger2008_os_security}, they are
 a natural fit for defining the protection interface of a confinement mechanism. In
-particular, \textit{system call filtering} is a widely-used~\cite{} technique for application
+particular, \textit{system call filtering} is a widely-used technique for application
 sandboxing and self-confinement~\cite{anderson2017_comparison}. Indeed, \gls{lsm}s,
 covered in the previous section, can be thought of as a form of system call filtering,
 although security hooks are placed manually within system call implementations and do not
@@ -587,8 +589,8 @@ calls, memory, and registers. Originally designed as a debugging interface~\cite
 padala2002_ptrace}, ptrace has also been applied to implement system call
 filtering~\cite{goldberg96_janus, wagner1999_janus, jain2000_filtering}. However, ptrace
 has fallen out of favour, particularly in production use cases, due to its immensely high
-overhead (on the order of \todo{WHAT PERCENT}) and propensity to introduce undefined
-behaviour when tracing even moderately complex software~\todo{CITE}. Due to its invasive
+overhead (on the order of several thousand percent~\cite{zinke2009_overhead}) and propensity to introduce undefined
+behaviour when tracing even moderately complex software~\cite{swiecki2017_promises}. Due to its invasive
 nature, a tracer process must either be the direct parent of a tracee or must have
 sufficient privileges to trace the child process\,---\,on Linux, this translates to either
 the \texttt{CAP\_SYS\_PTRACE} capability or the all-encompassing \texttt{CAP\_SYS\_ADMIN}.
@@ -608,97 +610,201 @@ offending system call when it detected a policy violation.  Jain and
 Sekar~\cite{jain2000_filtering} implemented a similar system call monitor, adding the
 ability to modify system call arguments and using a different policy language design.
 
-\todo{Maybe other examples here}
+\todo{Provos' Systrace}
 
 \subsubsection*{OpenBSD Pledge and Unveil}
 \label{sss:pledge}
 
-OpenBSD's \texttt{pledge(2)} and \texttt{unveil(2)} system calls
+OpenBSD's \texttt{pledge(2)} and \texttt{unveil(2)} system calls form the backbone of its
+built-in sandboxing framework. A pledge~\cite{pledge} consists of a list of
+\textit{promises}, high-level descriptions of what behaviours a program expects to exhibit
+in the future, similar in spirit to Janus' high-level categories~\cite{goldberg96_janus,
+wagner1999_janus}. The pledge system call takes two space-separated lists of promises, one
+to be applied immediately and another to be applied upon making an \texttt{execve(2)}
+call. To prevent privilege escalation, subsequent calls to \texttt{pledge(2)} take the
+union of existing promises and new promises, precluding a process from escaping its
+initial bounding set~\cite{pledge}.
 
-\begin{inprogress}
-\begin{itemize}
-  \item pledge(2)~\cite{pledge}
-  \begin{itemize}
-    \item Takes a list of \textit{promises}, high-level privileges that are similar in
-          spirit to Janus~\cite{goldberg96_janus, wagner1999_janus}
-    \item \texttt{stdio} promise allows 69 total system calls, enabling any stdio functionality from libc
-    \item others like \texttt{chown} are more conservative, allowing only one (albeit very powerful) system call
-    \item In addition to promises, a call to pledge may also specify a set of promises to
-    be applied after an \texttt{execve}, enabling a wrapper application to sandbox another application for instance
-    \item Subsequent calls to pledge take the union of new promises and existing promises, preventing privilege escalation
-    \item Pledge has been criticized for being overly-permissive~\cite{anderson2017_comparison}
-  \end{itemize}
+Promises vary in granularity; the most coarse-grained promise, \texttt{stdio}, allows
+a total of 69 distinct system calls, enabling the full suite of C standard library
+stdio-family calls. Others, like \texttt{chown}, are more conservative, enabling only one
+(albeit in this case very powerful) system call. In total, \texttt{pledge(2)} includes 33
+distinct promises, as of OpenBSD 6.9~\cite{pledge}. Due to its coarse granularity and lack
+of concern for specific system objects, pledge has been criticized as being
+overly-permissive~\cite{anderson2017_comparison}.
 
-  \item unveil(2)~\cite{unveil, corbet2018_unveil}
-  \begin{itemize}
-    \item Like pledge, the unveil system call can be used to make a promise about how the process will behave
-    \item Unlike pledge, unveil operates on specific filesystem paths, applying some
-    combination of four permissions:
-    \begin{itemize}
-      \item read
-      \item write
-      \item execute
-      \item create/delete
-    \end{itemize}
-    \item An unveil on a directory unveils all inodes under that directory, recursively
-    \item Symlinks could be a concern here
-  \end{itemize}
-\end{itemize}
-\end{inprogress}
+Unlike pledge, \texttt{unveil(2)}~\cite{unveil, corbet2018_unveil} operates on specific
+filesystem paths, making a promise about the kinds of operations the process will perform
+on file descriptors associated with these paths. Specifically, unveil is concerned with
+four kinds of permissions: read, write, execute, and create/delete. Unveiling a directory
+unveils all files and directories underneath, recursively. Although this approach is
+finer-grained than pledge, it is file-specific and offers a trade-off between granularity
+and usability. The official manual page for unveil~\cite{unveil} recommends that
+developers use it at the granularity of directories, despite the fact that this may result
+in overpermission in practice. For instance, consider a hard link to the root of the
+filesystem placed by an attacker within some unveiled directory. The unveiling process
+would now have full access to the entire filesystem, constituting a sandbox escape.
 
-\subsubsection*{Linux Seccomp and Seccomp-BPF}%
+\subsubsection*{Linux Seccomp and seccomp-BPF}%
 \label{sss:seccomp}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item \texttt{seccomp(2)} \todo{CITATION FOR SECCOMP} allows a Linux process to
-    confine itself by restricting the system calls it can make
-    \item Originally, seccomp was highly limited, restricting a process to only four system calls:
-    \begin{itemize}
-      \item read
-      \item write
-      \item sigreturn (to handle signals)
-      \item exit (to quit)
-    \end{itemize}
-  \end{itemize}
-\end{inprogress}
+In Linux, the primary facility for direct system call filtering is
+\texttt{seccomp(2)}~\cite{anderson2017_comparison, seccomp, prctl, edge2015_seccomp}.
+Unlike OpenBSD's pledge and unveil~\cite{pledge, unveil}, seccomp filters directly over
+system calls, without any blanket categorization. Initially, seccomp was highly limited,
+restricting a process to only four system calls: \texttt{read(2)} and \texttt{write(2)}
+for reading and writing open file descriptors, \texttt{sigreturn(2)} for handling signals,
+and \texttt{exit(2)} to enable self-termination. Using any other system call would result
+in an immediate SIGKILL delivered from the kernel, forcefully ending the offending
+process.
 
-\subsubsection*{FreeBSD Capsicum}
+Later, seccomp was extended to enable processes to define custom allowlists, denylists,
+and enforcement actions using classic \gls{bpf} filters~\cite{edge2015_seccomp}. This new
+incarnation was dubbed seccomp-BPF. While allowing for much finer-grained confinement
+policy than pledge and unveil, seccomp-BPF has its own limitations which can result in
+ineffective (and possibly dangerous) policies. In seccomp-BPF, filters are defined over
+system call numbers and (optionally) arguments. Unless the developer takes great care to
+correlate system call numbers with the specific target architecture, the resulting policy
+may allow and deny incorrect system calls, resulting in broken policies that break
+applications in the best case and expose security vulnerabilities in the worst case.
+
+Another innate problem with seccomp arises due to its fine-granularity. Paradoxically,
+avoiding system call categorization can expose vulnerabilities, due to system call
+equivalence classes. For instance, the \texttt{openat(2)} system call can perform the same
+functionality as the \texttt{open(2)} system call, with slightly different API semantics.
+A seccomp-BPF filter allowing one system call but denying the other is now totally broken
+and vulnerable to sandbox escape.  Similarly, argument checking on pathnames or file
+descriptors can be vulnerable to \gls{toctou} race conditions in practice, rendering such
+policies ineffective~\cite{anderson2017_comparison}.
+
+A final consideration for seccomp-BPF is that the development of seccomp-BPF policies
+requires knowledge of the relatively arcane \gls{cbpf} syntax. This problem is somewhat
+alleviated by the existence of library wrappers~\cite{libseccomp} around seccomp-BPF
+functionality, although the usability of these solutions remains somewhat questionable,
+particularly given the many pitfalls of seccomp-BPF policy
+authorship~\cite{anderson2017_comparison}.
+
+\subsubsection*{FreeBSD Capsicum and CHERI Capabilities}
 \label{sss:capsicum}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item Capsicum paper by Watson \etal~\cite{watson2010_capsicum}
-  \end{itemize}
-\end{inprogress}
+Unlike the system call filters presented earlier in this section, FreeBSD's
+\texttt{capsicum(2)} \cite{watson2010_capsicum, anderson2017_comparison} is a true
+implementation of capabilities as they were originally described by Dennis and Van
+Horn~\cite{dennis1966_semantics}. Specifically, capsicum capabilities are an extension on
+top of Unix file descriptors, the canonical reference to files and file-like objects such
+as network sockets and character devices. Capsicum adds an unforgeable access token to
+each file descriptor, granting the corresponding process specific access rights over that
+file descriptor. Whereas alternatives like seccomp-bpf~\cite{seccomp} and
+pledge~\cite{pledge} restrict access at the system-call-level, capsicum restricts access
+at the resource-level and enforces this access within the system call layer.
 
-\subsubsection*{CHERI Capabilities}
-\label{sss:cheri}
+To confine processes, capsicum exposes a special \texttt{cap\_enter(2)} system call which
+causes a process to enter \textit{capability mode}. A process in capability mode no longer
+has access to global namespaces (e.g.~the PID namespace) and may only make a subset of
+system calls which do not directly access these global namespaces. Other system calls are
+constrained so that they may only operate under the context of an open capability
+descriptor (a file descriptor which has been extended with capability
+information)~\cite{watson2010_capsicum}. The end-result is an expressive and fine-grained
+self-confinement framework for FreeBSD applications, which comes at a small usability cost
+compared with coarser-grained alternatives like \texttt{pledge(2)}~\cite{pledge}.
 
-\begin{inprogress}
-  \begin{itemize}
-    \item Original Cheri paper by Watson \etal~\cite{watson2015_cheri}
-    \item Cheri ABI implementation in FreeBSD by Davis and Watson \etal~\cite{davis2019_cheriabi}
-  \end{itemize}
-\end{inprogress}
+In 2015, Watson \etal~designed CHERI~\cite{watson2015_cheri} as an extension to the MIPS
+\gls{isa} enabling the capability-based protection of memory pages. Under CHERI, the
+operating system kernel and userspace runtime extend the traditional memory model with
+capabilities using the CHERI \gls{isa}. This enables generic capability-based protection at
+the level of memory pages. While powerful, this extension requires dedicated hardware
+support. Watson \etal~implemented their prototype on an \gls{fpga}~\cite{watson2015_cheri}
+and later extended the FreeBSD \gls{abi} to work with CHERI capabilities~\cite{davis2019_cheriabi}.
 
 
 
 \subsection{Taint Tracking}%
 \label{ss:taint-tracking}
 
+\textit{Taint tracking}~\cite{livshits2012_dynamic} describes the notion of tracking
+changes to memory containing application data as it is mutated, copied, and moved by the
+underlying application. Such data is considered \textit{tainted} when it is modified by
+some external source in such a way as the data can no longer be trusted.  For instance,
+a buffer might be populated by an external network connection or local user input. The
+security benefits of such a mechanism are obvious. An active attack requires some user
+input into a program in order to exploit a vulnerability; by tracking untrusted user input
+and treating it as untrusted, developers can avoid attacker exploitation of sensitive code
+paths. Beginning with Perl's \textit{taint mode}~\cite{hurst2004_perl}, taint tracking has
+enjoyed a rich body of literature~\cite{livshits2012_dynamic, conti2010_taint,
+bello2012_taint, ermolinskiy2010_towards, zavou2011_taint, yin2007_panorama,
+zhu2011_taint_eraser, cheng2006_taint, clause2007_taint, chin2009_efficient} since its
+inception.
+
+In Perl's taint mode~\cite{hurst2004_perl}, a special command line flag triggers the
+interpreter to flag untrusted user input and prevent it from being passed as input to
+functions explicitly marked as \textit{unsafe}. To circumvent this restriction,
+a developer could perform a pre-determined set of sanity checks on the data to
+\textit{untaint} it. Rather than acting as an outright security mechanism, the goal was to
+encourage developers to take care in processing untrusted data. Incorrect or insufficient
+sanity checks on the data or running the Perl interpreter without the taint flag would
+result in no additional security benefits whatsoever. After Perl, similar taint tracking
+mechanisms have been added to other interpreters and language runtimes, including Ruby,
+PHP, and Python~\cite{conti2010_taint}.
+
+Conti, Bello, and Russo~\cite{conti2010_taint, bello2012_taint} implemented more advanced
+taint tracking functionality for the Python programming language as a library that
+developers could use directly. Their argument was that implementing such a taint mechanism
+at the language-level rather than at the interpreter-level could enrich the traditional
+taint-tracking approach with use-case-specific metadata and facilitate extensions to
+support complex data types.
+
+With the goal of creating a generic and reusable taint tracking mechanism, several
+researchers have proposed application-transparent taint tracking. Many have turned to
+virtualization or emulation runtimes~\cite{ermolinskiy2010_towards, zavou2011_taint,
+yin2007_panorama} such as QEMU, KVM, or Xen, using built-in introspection features to
+track the propagation of data within (and even between) running processes. Others have
+proposed the adoption of static analysis or library
+instrumentation~\cite{zhu2011_taint_eraser, cheng2006_taint, clause2007_taint} techniques
+to reduce overhead and eliminate the need to run applications under expensive
+virtualization monitors. Others have built taint tracking logic into existing language
+runtimes, such as the Java Virtual Machine~\cite{chin2009_efficient}.
+
 
 
 \subsection{Process-Level Virtualization}%
 \label{ss:virtualization}
 
+We now step away from \textit{confinement} to focus on process-level
+\textit{virtualization} primitives employed in Unix-like operating systems. Whereas
+confinement primitives have the goal of restricting a process' behaviour, virtualization
+primitives instead limit the process' ability to see the world around it.
+
 \subsubsection*{Chroots and Chroot Jails}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item
+  \end{itemize}
+\end{inprogress}
 
 \subsubsection*{FreeBSD Jails}
 
+\begin{inprogress}
+  \begin{itemize}
+    \item
+  \end{itemize}
+\end{inprogress}
+
 \subsubsection*{Linux Namespaces}
 
+\begin{inprogress}
+  \begin{itemize}
+    \item
+  \end{itemize}
+\end{inprogress}
+
 \subsubsection*{Linux Cgroups}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item
+  \end{itemize}
+\end{inprogress}
 
 
 

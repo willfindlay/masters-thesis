@@ -305,6 +305,55 @@ Comparing seccomp-bpf, capsicum, and pledge
   url          = {https://linux.die.net/man/2/ptrace},
 }
 
+@inproceedings{zinke2009_overhead,
+  title     = {{System Call Tracing Overhead}},
+  author    = {Zinke, J{\"o}rg},
+  booktitle = {{The International Linux System Technology Conference (Linux Kongress)}},
+  year      = {2009},
+  url       = {http://www.linux-kongress.org/2009/slides/system_call_tracing_overhead_joerg_zinke.pdf},
+  urldate   = {2021-06-22},
+  note      = {Presentation slides},
+}
+
+@misc{swiecki2017_promises,
+  title     = {{Promises and Pitfalls of Sandboxes}},
+  author    = {Swiecki, Robert},
+  year      = {2017},
+  publisher = {{CONFidence}},
+  url       = {http://www.swiecki.net/resources/Promises%20and%20pitfalls%20of%20sandboxes.pdf},
+  urldate   = {2021-06-22},
+  note      = {Presentation slides},
+}
+
+@misc{prctl,
+  title        = {{ptctl(2)}},
+  author       = {{Linux}},
+  note         = {Linux user's manual},
+  url          = {https://linux.die.net/man/2/prctl},
+}
+
+@misc{seccomp,
+  title        = {{seccomp(2)}},
+  author       = {{Linux}},
+  note         = {Linux user's manual},
+  url          = {https://man7.org/linux/man-pages/man2/seccomp.2.html},
+}
+
+@article{edge2015_seccomp,
+  author       = {Jake Edge},
+  title        = {{A Seccomp Overview}},
+  journaltitle = {{LWN.net}},
+  year         = {2015},
+  url          = {https://lwn.net/Articles/656307/},
+}
+
+@misc{libseccomp,
+  author        = {{Seccomp Contributors}},
+  title         = {{libseccomp}},
+  url           = {https://github.com/seccomp/libseccomp},
+  urldate       = {2021-06-22},
+}
+
 @article{padala2002_ptrace,
   title        = {{Playing with ptrace, Part I}},
   author       = {Padala, Pradeep},
@@ -385,7 +434,7 @@ Capsicum
   pages     = {29--46},
   publisher = {{USENIX} Association},
   year      = {2010},
-  url       = {http://www.usenix.org/events/sec10/tech/full\_papers/Watson.pdf},
+  url       = {https://www.usenix.org/legacy/event/sec10/tech/full_papers/Watson.pdf},
 }
 
 Cheri
@@ -451,6 +500,168 @@ Cheri implementation on FreeBSD
   publisher = {{ACM}},
   year      = {2019},
   doi       = {10.1145/3297858.3304042},
+}
+
+------------------------------------------------------------------------------
+                              Taint Tracking
+------------------------------------------------------------------------------
+
+@techreport{ermolinskiy2010_towards,
+  title       = {{Towards Practical Taint Tracking}},
+  author      = {Ermolinskiy, Andrey and Katti, Sachin and Shenker, Scott and Fowler, L and McCauley, Murphy},
+  year        = {2010},
+  institution = {UC Berkeley},
+  number      = {UCB/EECS-2010-92},
+  url         = {http://www.eecs.berkeley.edu/Pubs/TechRpts/2010/EECS-2010-92.html},
+}
+
+@techreport{livshits2012_dynamic,
+  title       = {{Dynamic Taint Tracking in Managed Runtimes}},
+  author      = {Benjamin Livshits},
+  year        = {2012},
+  institution = {Microsoft Research},
+  number      = {MSR-TR-2012-114},
+  url         = {https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-6.pdf},
+}
+
+@inproceedings{zavou2011_taint,
+  author    = {Angeliki Zavou and
+               Georgios Portokalidis and
+               Angelos D. Keromytis},
+  editor    = {Tetsu Iwata and
+               Masakatsu Nishigaki},
+  title     = {{Taint-Exchange: {A} Generic System for Cross-Process and Cross-Host
+               Taint Tracking}},
+  booktitle = {Advances in Information and Computer Security - 6th International
+               Workshop, {IWSEC} 2011, Tokyo, Japan, November 8-10, 2011. Proceedings},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {7038},
+  pages     = {113--128},
+  publisher = {Springer},
+  year      = {2011},
+  doi       = {10.1007/978-3-642-25141-2\_8},
+}
+
+@inproceedings{cheng2006_taint,
+  author    = {Winnie Cheng and
+               Qin Zhao and
+               Bei Yu and
+               Scott Hiroshige},
+  editor    = {Paolo Bellavista and
+               Chi-Ming Chen and
+               Antonio Corradi and
+               Mahmoud Daneshmand},
+  title     = {{TaintTrace: Efficient Flow Tracing with Dynamic Binary Rewriting}},
+  booktitle = {Proceedings of the 11th {IEEE} Symposium on Computers and Communications
+               (ISCC 2006), 26-29 June 2006, Cagliari, Sardinia, Italy},
+  pages     = {749--754},
+  publisher = {{IEEE} Computer Society},
+  year      = {2006},
+  doi       = {10.1109/ISCC.2006.158},
+}
+
+@inproceedings{clause2007_taint,
+  author    = {James A. Clause and
+               Wanchun Li and
+               Alessandro Orso},
+  editor    = {David S. Rosenblum and
+               Sebastian G. Elbaum},
+  title     = {{Dytan: A Generic Dynamic Taint Analysis Framework}},
+  booktitle = {Proceedings of the {ACM/SIGSOFT} International Symposium on Software
+               Testing and Analysis, {ISSTA} 2007, London, UK, July 9-12, 2007},
+  pages     = {196--206},
+  publisher = {{ACM}},
+  year      = {2007},
+  doi       = {10.1145/1273463.1273490},
+}
+
+@inproceedings{yin2007_panorama,
+  author    = {Heng Yin and
+               Dawn Xiaodong Song and
+               Manuel Egele and
+               Christopher Kruegel and
+               Engin Kirda},
+  editor    = {Peng Ning and
+               Sabrina De Capitani di Vimercati and
+               Paul F. Syverson},
+  title     = {{Panorama: Capturing System-Wide Information Flow for Malware Detection
+               and Analysis}},
+  booktitle = {Proceedings of the 2007 {ACM} Conference on Computer and Communications
+               Security, {CCS} 2007, Alexandria, Virginia, USA, October 28-31, 2007},
+  pages     = {116--127},
+  publisher = {{ACM}},
+  year      = {2007},
+  doi       = {10.1145/1315245.1315261},
+}
+
+@inproceedings{chin2009_efficient,
+  author    = {Erika Chin and
+               David A. Wagner},
+  editor    = {Ernesto Damiani and
+               Seth Proctor and
+               Anoop Singhal},
+  title     = {{Efficient Character-Level Taint Tracking for Java}},
+  booktitle = {Proceedings of the 6th {ACM} Workshop On Secure Web Services, {SWS}
+               2009, Chicago, Illinois, USA, November 13, 2009},
+  pages     = {3--12},
+  publisher = {{ACM}},
+  year      = {2009},
+  doi       = {10.1145/1655121.1655125},
+}
+
+@article{zhu2011_taint_eraser,
+  author    = {David (Yu) Zhu and
+               Jaeyeon Jung and
+               Dawn Song and
+               Tadayoshi Kohno and
+               David Wetherall},
+  title     = {{TaintEraser: Protecting Sensitive Data Leaks Using Application-Level
+               Taint Tracking}},
+  journal   = {{ACM} {SIGOPS} Oper. Syst. Rev.},
+  volume    = {45},
+  number    = {1},
+  pages     = {142--154},
+  year      = {2011},
+  doi       = {10.1145/1945023.1945039},
+}
+
+@misc{hurst2004_perl,
+  title  = {{Analysis of Perl’s Taint Mode}},
+  author = {Hurst, Andrew},
+  year   = {2004},
+  url    = {http://hurstdog.org/papers/hurst04taint.pdf}
+}
+
+@inproceedings{bello2012_taint,
+  author    = {Luciano Bello and
+               Alejandro Russo},
+  editor    = {Sergio Maffeis and
+               Tamara Rezk},
+  title     = {{Towards a Taint Mode for Cloud Computing Web Applications}},
+  booktitle = {Proceedings of the 2012 Workshop on Programming Languages and Analysis
+               for Security, {PLAS} 2012, Beijing, China, 15 June, 2012},
+  pages     = {7},
+  publisher = {{ACM}},
+  year      = {2012},
+  doi       = {10.1145/2336717.2336724},
+}
+
+@inproceedings{conti2010_taint,
+  author    = {Juan Jos{\'{e}} Conti and
+               Alejandro Russo},
+  editor    = {Tuomas Aura and
+               Kimmo J{\"{a}}rvinen and
+               Kaisa Nyberg},
+  title     = {{A Taint Mode for Python via a Library}},
+  booktitle = {Information Security Technology for Applications - 15th Nordic Conference
+               on Secure {IT} Systems, NordSec 2010, Espoo, Finland, October 27-29,
+               2010, Revised Selected Papers},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {7127},
+  pages     = {210--222},
+  publisher = {Springer},
+  year      = {2010},
+  doi       = {10.1007/978-3-642-27937-9\_15},
 }
 
 ------------------------------------------------------------------------------
@@ -1099,3 +1310,6 @@ FreeBSD Jails
 
 Sandboxing using a specialized filesystem, SandboxFS
   https://dl-acm-org.proxy.library.carleton.ca/doi/pdf/10.1145/3265723.3265734
+
+Promises and pitfalls on sandboxes
+  http://www.swiecki.net/resources/Promises%20and%20pitfalls%20of%20sandboxes.pdf
