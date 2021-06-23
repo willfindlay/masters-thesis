@@ -579,7 +579,7 @@ filesystem object. A capability associated with this file descriptor would then 
 subsequent operations on the file descriptor, effectively restricting access to the
 underlying file.
 
-\subsubsection*{Ptrace}
+\subsubsection*{System Call Tracing}
 \label{sss:ptrace}
 
 In Unix, ptrace~\cite{ptrace, padala2002_ptrace} (short for process trace) is a mechanism
@@ -610,7 +610,22 @@ offending system call when it detected a policy violation.  Jain and
 Sekar~\cite{jain2000_filtering} implemented a similar system call monitor, adding the
 ability to modify system call arguments and using a different policy language design.
 
-\todo{Provos' Systrace}
+Provos' Systrace~\cite{provos2003_systrace} uses ptrace to analyze per-process system
+calls and generate a system-call-level policy. Unlike Janus~\cite{goldberg96_janus,
+wagner1999_janus} and Jain~\etal~\cite{jain2000_filtering}, Systrace supports intrusion
+detection, policy generation, and audit logging, providing a mechanism to automatically
+analyze process behaviour. Systrace also supports one highly unconventional feature, which
+Provos calls \textit{privilege elevation}. The notion behind privilege elevation is to
+allow a program to escalate its privileges selectively for specific system call access
+patterns, preventing the need for coarse-grained privilege escalation such as setuid root.
+
+Forrest, Somayaji, and Hofmeyr~\cite{forrest1996_sense_of_self} implement an intrusion
+detection system, pH (process Homeostasis), based on system call sequences, although it
+does not rely on ptrace and analyzes system call sequences instead of individual call
+patterns. Rather than as a confinement solution, pH was strictly designed as a behavioural
+anomaly detection system, although this approaches confinement as profile accuracy
+improves.  Findlay~\cite{findlay2020_ebph} (the author of this thesis) later ported pH to
+use \gls{ebpf} to analyze system call sequences.
 
 \subsubsection*{OpenBSD Pledge and Unveil}
 \label{sss:pledge}
@@ -814,8 +829,50 @@ primitives instead limit the process' ability to see the world around it.
 \section{Containers and Container Security}%
 \label{s:container-security-bg}
 
+This section introduces the concept of containers, examines how they compare with
+alternatives like hypervisor-based virtual machines, discusses the area of container
+security, and surveys related work in the container security space.
+
 \subsection{Containers}%
 \label{ss:containers-bg}
+
+A \textit{container} is nothing more than a collection of related processes operating on
+the same host. These processes share resources
+
+\begin{inprogress}
+\begin{itemize}
+  \item Nothing more than a collection of related processes, operating on the same host
+  \item These processes may be isolated using a combination of confinement and
+  virtualization primitives, discussed earlier in this chapter
+  \item In Linux, it boils down to namespaces and cgroups, with option support for
+  seccomp-bpf filters, uid remapping, and generic LSM policies to provide confinement
+  \item Three primary goals (my opinion)
+  \begin{itemize}
+    \item Dependency management
+    \item Virtualization
+    \item Confinement
+  \end{itemize}
+  \item These goals are also ordered by how much they are prioritized
+  \item container security is really an afterthought
+  \item The primary goal here is dependency management, and virtualization helps to
+  achieve that goal by isolating dependencies and runtimes from each other
+  \item Selectively, containers may ignore isolation boundaries and share underlying resources as required
+  \item Containers vs HVMs
+  \begin{itemize}
+    \item Containers share the underlying operating system with other containers and host processes
+    \item Sharing the operating system kernel removes a layer of indirection from the equation
+    \item Rather than going through a hypercall either directly to hardware or to a subsequent system call,
+    containers go directly through system calls to the host operating system
+    \item This means that containers are necessarily lighter-weight than VMs, as they no
+    longer need to bundle a full operating system, particularly the kernelspace components
+    \item However, this also results in increased security concerns
+    \item Removing a layer of indirection implies one less hurdle that adversaries need to get through to successfully mount an attack
+    \item Since containers share the host OS kernel, kernel vulnerabilities now become a concern
+    \item Container escape can impact other containers or host processes, possibly resulting in
+    exfiltration of sensitive data, tampering, data corruption, and/or privilege escalation
+  \end{itemize}
+\end{itemize}
+\end{inprogress}
 
 \begin{figure}[tbp]
   \centering
