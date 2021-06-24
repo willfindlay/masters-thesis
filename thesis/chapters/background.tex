@@ -3,8 +3,20 @@ technologies in Linux and other Unix-like operating systems. It also presents a 
 history and examination of \gls{ebpf} and discusses its applications in the domains of computer
 security, performance monitoring, and beyond.
 
-\section{Process-Level Virtualization and Confinement}%
+%\section{Process-Level Virtualization and Confinement}%
+\section{Classic Unix Process Security Model}%
 \label{s:virtualization-and-confinement}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item We review these foundational concepts in OS (particularly Unix) security
+    \item This is pretty mainstream, you can find it anywhere you look
+    \item Readers with an intermediate to advanced knowledge of operating systems can skip this section
+  \end{itemize}
+\end{inprogress}
+
+\begin{inprogress}
+  \todo{REDO THE FOLLOWING, MOVE SOME OR MOST DOWN TO NEXT SECTION}
 
 Unlike virtual machines, containers are nothing but a collection of related processes
 (sometimes just one process, but often more) running on the host operating system. These
@@ -39,32 +51,8 @@ techniques has culminated in a wealth of knowledge and prior artifacts, some of 
 seen widespread deployment and remain relevant to date. The rest of this section presents
 technical background on such process-level virtualization confinement mechanisms and
 surveys the academic literature related to this area.
-
-\subsection{Virtual Memory and Memory Protection}%
-\label{ss:virtual-memory}
-
-\subsubsection*{CPU Protection Rings}
-
-\begin{inprogress}
-  \begin{itemize}
-    \item Multics protection rings
-    \item Adoption of protection rings by modern CPUs (simplified model, rings 0-3)
-    \item CPU supports rings lower than 0 (really just virtualizing ring 0) for the hypervisor, CPU engine
-    \item Userspace, kernelspace
-  \end{itemize}
 \end{inprogress}
 
-\subsubsection*{Virtual Memory}
-
-\begin{inprogress}
-  \begin{itemize}
-    \item Page tables, page table walk
-    \item CPU's MMU, maps virtual addresses to physical addresses
-    \item Shared memory
-    \item Memory protection bits
-    \item ASLR, KASLR
-  \end{itemize}
-\end{inprogress}
 
 \subsection{The Reference Monitor}%
 \label{ss:refmon}
@@ -130,6 +118,32 @@ the reference monitor (i.e. that the first two properties hold). Formal verifica
 are the best way of achieving verifiability, although this may not necessarily be practical
 for highly complex systems. For this reason, it is recommended to design the reference monitor
 in such a way that verifiability is maximized~\cite{anderson1972_report}.
+
+\subsection{Virtual Memory and Memory Protection}%
+\label{ss:virtual-memory}
+
+\subsubsection*{CPU Protection Rings}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item Multics protection rings
+    \item Adoption of protection rings by modern CPUs (simplified model, rings 0-3)
+    \item CPU supports rings lower than 0 (really just virtualizing ring 0) for the hypervisor, CPU engine
+    \item Userspace, kernelspace
+  \end{itemize}
+\end{inprogress}
+
+\subsubsection*{Virtual Memory}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item Page tables, page table walk
+    \item CPU's MMU, maps virtual addresses to physical addresses
+    \item Shared memory
+    \item Memory protection bits
+    \item ASLR, KASLR
+  \end{itemize}
+\end{inprogress}
 
 \subsection{Discretionary Access Control}%
 \label{ss:dac}
@@ -245,50 +259,6 @@ corresponds to a human user. While this arguably improves security, Barrera
 \etal~\cite{barrera2012_android} found weaknesses in Android's \gls{uid} sharing model
 that can reduce its security to the trustworthiness of an app's signing key.
 
-\subsubsection*{POSIX Capabilities}
-
-POSIX capabilities~\cite{posix_capabilities, corbet2006_capabities_a,
-corbet2006_capabities_b} are highly related to Unix DAC in the sense that they were
-originally designed to break up the multitude of privileges associated with the
-\textit{root} user into more manageable pieces. In this sense, POSIX capabilities (when
-properly used) are more conducive to the principle of least-privilege. A process need not
-necessarily possess full root-level access to the system when only a small subset of those
-privileges are actually required.
-
-Originally specified in the (now withdrawn) 1003.1e POSIX standard, POSIX capabilities
-were only ever (partially) implemented on Linux~\cite{anderson2017_comparison}. Other
-Unix-like operating systems prefer alternative methods of restricting privileges, many of
-which are discussed in \Cref{ss:syscall-filtering}. POSIX capabilities specify three
-\textit{capability sets} for a given process: the \textbf{bounding set}, the
-\textbf{inheritable set}, and the \textbf{effective set}. The bounding set determines the
-set of all capabilities that a process is ever allowed to possess. The inheritable set
-determines the set of all capabilities that can be inherited across \texttt{execve} calls.
-Finally, the effective set determines the set of capabilities that a process can use
-(i.e.~which capabilities a process currently possesses).
-
-Linux exposes POSIX capabilities through extended filesystem attributes, much the same way
-that \glspl{acl} are implemented~\cite{corbet2006_capabities_b}. These file-based
-capabilities function in a similar manner to the setuid bit, implicitly setting the
-bounding, inheritable, and effective capability sets on execution. In addition so
-supporting capabilities as extended filesystem attributes, the kernel also supports
-dropping specific capabilities from each of the three sets through the \texttt{ptrctl(2)}
-system call. This enables a higher-privileged process (e.g.~running as root) to drop
-elevated privileges while retaining those it needs to function. As of Linux 5.12, the
-kernel supports 41 capabilities in total, including the all-encompassing
-\texttt{CAP\_SYS\_ADMIN}~\cite{linux_capability_h}.
-
-It is worth mentioning that the term \enquote{POSIX capabilities} does \textit{not}
-describe capabilities as they are broadly defined by operating system security
-researchers~\cite{anderson2017_comparison}. In particular, Dennis and Van
-Horn~\cite{dennis1966_semantics} first defined the notion of capabilities as a means of
-restricting access to \textit{pointers}, guarding references to system objects. Unlike the
-capabilities defined by Dennis and Van Horn, POSIX capabilities are not associated with
-any given system object. Dennis and Van Horn's capabilities more closely resemble that of
-the access matrix introduced by Anderson~\cite{anderson1972_report} and similar mechanisms
-have been implemented in other systems such as FreeBSD's
-Capsicum~\cite{watson2010_capsicum} and the CHERI architecture~\cite{watson2015_cheri,
-davis2019_cheriabi}. These are discussed in more detail in \Cref{ss:syscall-filtering}.
-
 \subsubsection*{DAC Security Assumptions and Attacks}
 
 Although discretionary access control provides a convenient and intuitive user-centric
@@ -343,7 +313,7 @@ Under the traditional Unix \gls{dac} model, only the \gls{uid} and \gls{gid} of 
 process are considered when making access control decisions; under IFEDAC, the \gls{uid}
 and \gls{gid} of the owner of the underlying executable would also be considered, along
 with any other parties that may have influenced the state of the running process. This
-approach is similar in spirit to taint tracking mechanisms~\todo{CITE}
+approach is similar in spirit to taint tracking mechanisms~\cite{livshits2012_dynamic}
 (c.f.~\Cref{ss:taint-tracking}). To enable programs to function correctly, IFEDAC enables
 the user to define \textit{exception policy} that specifies exceptions to IFEDAC
 enforcement. Mao \etal~recommend that application authors and OS vendors should be
@@ -377,6 +347,53 @@ fundamental issues and proposed the adoption of similar mechanisms.
 %\end{inprogress}
 
 
+
+\section{Extensions to the Unix Security Model}%
+\label{s:extensions-bg}
+
+\subsection{POSIX Capabilities}
+
+POSIX capabilities~\cite{posix_capabilities, corbet2006_capabities_a,
+corbet2006_capabities_b} are highly related to Unix DAC in the sense that they were
+originally designed to break up the multitude of privileges associated with the
+\textit{root} user into more manageable pieces. In this sense, POSIX capabilities (when
+properly used) are more conducive to the principle of least-privilege. A process need not
+necessarily possess full root-level access to the system when only a small subset of those
+privileges are actually required.
+
+Originally specified in the (now withdrawn) 1003.1e POSIX standard, POSIX capabilities
+were only ever (partially) implemented on Linux~\cite{anderson2017_comparison}. Other
+Unix-like operating systems prefer alternative methods of restricting privileges, many of
+which are discussed in \Cref{ss:syscall-filtering}. POSIX capabilities specify three
+\textit{capability sets} for a given process: the \textbf{bounding set}, the
+\textbf{inheritable set}, and the \textbf{effective set}. The bounding set determines the
+set of all capabilities that a process is ever allowed to possess. The inheritable set
+determines the set of all capabilities that can be inherited across \texttt{execve} calls.
+Finally, the effective set determines the set of capabilities that a process can use
+(i.e.~which capabilities a process currently possesses).
+
+Linux exposes POSIX capabilities through extended filesystem attributes, much the same way
+that \glspl{acl} are implemented~\cite{corbet2006_capabities_b}. These file-based
+capabilities function in a similar manner to the setuid bit, implicitly setting the
+bounding, inheritable, and effective capability sets on execution. In addition so
+supporting capabilities as extended filesystem attributes, the kernel also supports
+dropping specific capabilities from each of the three sets through the \texttt{ptrctl(2)}
+system call. This enables a higher-privileged process (e.g.~running as root) to drop
+elevated privileges while retaining those it needs to function. As of Linux 5.12, the
+kernel supports 41 capabilities in total, including the all-encompassing
+\texttt{CAP\_SYS\_ADMIN}~\cite{linux_capability_h}.
+
+It is worth mentioning that the term \enquote{POSIX capabilities} does \textit{not}
+describe capabilities as they are broadly defined by operating system security
+researchers~\cite{anderson2017_comparison}. In particular, Dennis and Van
+Horn~\cite{dennis1966_semantics} first defined the notion of capabilities as a means of
+restricting access to \textit{pointers}, guarding references to system objects. Unlike the
+capabilities defined by Dennis and Van Horn, POSIX capabilities are not associated with
+any given system object. Dennis and Van Horn's capabilities more closely resemble that of
+the access matrix introduced by Anderson~\cite{anderson1972_report} and similar mechanisms
+have been implemented in other systems such as FreeBSD's
+Capsicum~\cite{watson2010_capsicum} and the CHERI architecture~\cite{watson2015_cheri,
+davis2019_cheriabi}. These are discussed in more detail in \Cref{ss:syscall-filtering}.
 
 \subsection{Mandatory Access Control}%
 \label{ss:mac}
@@ -441,7 +458,7 @@ kernel versions as new hooks are implemented and both new and existing hooks pla
 various kernel functions~\cite{zhang2021_lsm_file_overhead}. The eventual goal of the
 \gls{lsm} framework is to provide complete mediation over kernel security events, however
 this is an evolving process and no formal verification exists to prove the security of
-\gls{lsm} hooks~\todo{CITE}. \Cref{fig:lsm} depicts the basic \gls{lsm} architecture.
+\gls{lsm} hooks~\cite{ganapathy2005_lsm}. \Cref{fig:lsm} depicts the basic \gls{lsm} architecture.
 
 \begin{figure}[tbp]
   \centering
@@ -589,11 +606,12 @@ calls, memory, and registers. Originally designed as a debugging interface~\cite
 padala2002_ptrace}, ptrace has also been applied to implement system call
 filtering~\cite{goldberg96_janus, wagner1999_janus, jain2000_filtering}. However, ptrace
 has fallen out of favour, particularly in production use cases, due to its immensely high
-overhead (on the order of several thousand percent~\cite{zinke2009_overhead}) and propensity to introduce undefined
-behaviour when tracing even moderately complex software~\cite{swiecki2017_promises}. Due to its invasive
-nature, a tracer process must either be the direct parent of a tracee or must have
-sufficient privileges to trace the child process\,---\,on Linux, this translates to either
-the \texttt{CAP\_SYS\_PTRACE} capability or the all-encompassing \texttt{CAP\_SYS\_ADMIN}.
+overhead (on the order of several thousand percent~\cite{zinke2009_overhead}) and
+propensity to introduce undefined behaviour when tracing even moderately complex
+software~\cite{swiecki2017_promises}. Due to its invasive nature, a tracer process must
+either be the direct parent of a tracee or must have sufficient privileges to trace the
+child process\,---\,on Linux, this translates to either the \texttt{CAP\_SYS\_PTRACE}
+capability or the all-encompassing \texttt{CAP\_SYS\_ADMIN}.
 
 Janus~\cite{goldberg96_janus, wagner1999_janus} was an early exploration of how
 \texttt{ptrace} could be applied to confine applications by filtering system calls.  The
@@ -660,7 +678,7 @@ in overpermission in practice. For instance, consider a hard link to the root of
 filesystem placed by an attacker within some unveiled directory. The unveiling process
 would now have full access to the entire filesystem, constituting a sandbox escape.
 
-\subsubsection*{Linux Seccomp and seccomp-BPF}%
+\subsubsection*{Linux Seccomp and Seccomp-BPF}%
 \label{sss:seccomp}
 
 In Linux, the primary facility for direct system call filtering is
@@ -781,8 +799,8 @@ runtimes, such as the Java Virtual Machine~\cite{chin2009_efficient}.
 
 
 
-\subsection{Process-Level Virtualization}%
-\label{ss:virtualization}
+\section{Process-Level Virtualization}%
+\label{s:virtualization}
 
 We now step away from \textit{confinement} to focus on process-level
 \textit{virtualization} primitives employed in Unix-like operating systems. Whereas
@@ -826,14 +844,14 @@ primitives instead limit the process' ability to see the world around it.
 
 
 
-\section{Containers and Container Security}%
+\section{Virtualization, Containers, and Container Security}%
 \label{s:container-security-bg}
 
 This section introduces the concept of containers, examines how they compare with
 alternatives like hypervisor-based virtual machines, discusses the area of container
 security, and surveys related work in the container security space.
 
-\subsection{Containers}%
+\subsection{Containers and Virtual Machines}%
 \label{ss:containers-bg}
 
 A \textit{container} is nothing more than a collection of related processes operating on
