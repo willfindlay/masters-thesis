@@ -1,19 +1,22 @@
-This chapter presents background information on virtualization and confinement
-technologies in Linux and other Unix-like operating systems. It also presents a detailed
-history and examination of \gls{ebpf} and discusses its applications in the domains of computer
-security, performance monitoring, and beyond.
+\begin{inprogress}
+  This chapter presents background information on virtualization and confinement
+  technologies in Linux and other Unix-like operating systems. It also presents a detailed
+  history and examination of \gls{ebpf} and discusses its applications in the domains of
+  computer security, performance monitoring, and beyond.
+\end{inprogress}
 
 %\section{Process-Level Virtualization and Confinement}%
 \section{Classic Unix Process Security Model}%
 \label{s:virtualization-and-confinement}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item We review these foundational concepts in OS (particularly Unix) security
-    \item This is pretty mainstream, you can find it anywhere you look
-    \item Readers with an intermediate to advanced knowledge of operating systems can skip this section
-  \end{itemize}
-\end{inprogress}
+This section reviews foundational concepts in \gls{os} (particularly Unix-like \gls{os}s
+and Linux) security. In particular, we discuss the \textit{reference monitor concept},
+\textit{virtual memory and user processes}, and \textit{discretionary access control} and
+how these concepts interact to form the backbone of process-level security in Unix.
+Background information in this section is considered core knowledge in operating systems
+security literature. Readers with intermediate to advanced knowledge of operating systems
+security can skip this section in favour of \Cref{s:extensions-bg} which examines more
+advanced security mechanisms and discusses related work.
 
 \begin{inprogress}
   \todo{REDO THE FOLLOWING, MOVE SOME OR MOST DOWN TO NEXT SECTION}
@@ -89,9 +92,9 @@ described by Anderson, the reference monitor architecture has informed the desig
 modern access control mechanisms and models the reference validation process that occurs
 when the kernel is servicing userspace requests (i.e.~system
 calls)~\cite{van_oorschot2020_tools_jewels}. In order for such a design to be considered
-valid, Anderson enumerate three key properties: (i) Tamper Resistance; (ii) Complete
-Mediation; and (iii) Verifiability. These properties can inform the way we reason about
-and design modern access control mechanisms, even if they do not strictly adhere to the
+valid, Anderson enumerates three key properties: (i) Tamper Resistance; (ii) Complete
+Mediation; and (iii) Verifiability. These properties facilitate reasoning about the
+security of modern access control mechanisms, even if they do not strictly adhere to the
 reference monitor model.
 
 \paragraph*{Tamper-Resistance}
@@ -122,18 +125,22 @@ in such a way that verifiability is maximized~\cite{anderson1972_report}.
 \subsection{Virtual Memory and Memory Protection}%
 \label{ss:virtual-memory}
 
-\subsubsection*{CPU Protection Rings}
+Virtual memory forms the backbone of isolation between \gls{cots}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item Multics protection rings
-    \item Adoption of protection rings by modern CPUs (simplified model, rings 0-3)
-    \item CPU supports rings lower than 0 (really just virtualizing ring 0) for the hypervisor, CPU engine
-    \item Userspace, kernelspace
-  \end{itemize}
-\end{inprogress}
-
-\subsubsection*{Virtual Memory}
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/background/rings.pdf}
+  \caption[Protection rings on modern CPUs]{
+    A visualization of protection rings on modern CPUs. Ring 3 contains
+    \textit{userspace}, the address space of ordinary applications that run in user mode.
+    Ring 0 container \textit{kernselspace}, the address space of kernel code, running in
+    supervisor mode. Rings 1--2 are generally unused by \glsentryfull{cots} operating systems.
+    Modern CPUs often implement \enquote{lower} rings (-1, -2, etc.) by virtualizing
+    ring 0 in firmware.  These are typically reserved for CPU features such as the Intel
+    Management Engine~\todo{CITE}.
+  }%
+  \label{fig:rings}
+\end{figure}
 
 \begin{inprogress}
   \begin{itemize}
@@ -142,6 +149,15 @@ in such a way that verifiability is maximized~\cite{anderson1972_report}.
     \item Shared memory
     \item Memory protection bits
     \item ASLR, KASLR
+  \end{itemize}
+\end{inprogress}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item Multics protection rings
+    \item Adoption of protection rings by modern CPUs (simplified model, rings 0-3)
+    \item CPU supports rings lower than 0 (really just virtualizing ring 0) for the hypervisor, CPU engine
+    \item Userspace, kernelspace
   \end{itemize}
 \end{inprogress}
 
