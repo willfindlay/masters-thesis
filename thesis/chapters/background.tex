@@ -815,23 +815,30 @@ prevent unwanted behaviour.
 
 \subsubsection*{Chroots and Chroot Jails}
 
-To virtualize the filesystem, Unix has classically supported the \texttt{chroot(2)} system call~\todo{CITE}
+To virtualize the filesystem, Unix has classically supported the \texttt{chroot(2)} system
+call~\cite{mcfearin2011_chroot_jails}, used to change the filesystem root (\texttt{'/'})
+to some directory, specified as an argument. From the process' point of view, this
+directory becomes its new filesystem root. However, chroot suffers from several issues
+that render it totally ineffective as a security mechanism. Chroot escapes, path
+traversals, spurious access to special filesystems and devices, and superuser privileges
+all totally invalidate chroot as an isolation mechanism~\cite{mcfearin2011_chroot_jails}.
 
-\begin{inprogress}
-  \begin{itemize}
-    \item chroot
-    \begin{itemize}
-      \item
-    \end{itemize}
-
-    \item chroot jails~\cite{mcfearin2011_chroot_jails}
-    \begin{itemize}
-      \item
-    \end{itemize}
-  \end{itemize}
-\end{inprogress}
+For instance, consider a call to \texttt{chroot("/my/new/root")}. Without a follow-up call
+to \texttt{chdir(2)} to change the process' current working directory, a simple call to
+\texttt{chdir("..")} is enough to escape the chroot jail. Even with the aforementioned
+precautions, a process that has or is able to obtain superuser privileges can simply
+create a new directory, re-invoke chroot, and perform the same escape as
+before~\cite{mcfearin2011_chroot_jails}. Without the proper confinement mechanisms and
+necessary precautions to prevent such escapes, chroot cannot be considered an effective
+isolation technique. In fact, chroot escapes have been a source of many vulnerabilities
+with container management engines like Docker in the past~\cite{combe2016_to_docker}.
+McFearin~\cite{mcfearin2011_chroot_jails} proposed updates to the POSIX standard that fix
+many of chroot's security flaws, but these have not been adopted.
 
 \subsubsection*{FreeBSD Jails and Solaris Zones}
+
+Kamp \etal~\cite{kamp2000_jails} presented FreeBSD's \texttt{jail(2)} as a more secure
+alternative to \texttt{chroot(2)} jails.
 
 \begin{inprogress}
   \begin{itemize}
