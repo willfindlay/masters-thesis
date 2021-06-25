@@ -59,6 +59,41 @@ Anderson Planning Study
 
 
 ------------------------------------------------------------------------------
+                              Virtual Memory
+------------------------------------------------------------------------------
+
+@article{denning1970_virtual,
+  author    = {Peter J. Denning},
+  title     = {{Virtual Memory}},
+  journal   = {{ACM} Comput. Surv.},
+  volume    = {2},
+  number    = {3},
+  pages     = {153--189},
+  year      = {1970},
+  doi       = {10.1145/356571.356573},
+}
+
+@inproceedings{lee2018_lotr,
+  author    = {Hojoon Lee and
+               Chihyun Song and
+               Brent ByungHoon Kang},
+  editor    = {David Lie and
+               Mohammad Mannan and
+               Michael Backes and
+               XiaoFeng Wang},
+  title     = {{Lord of the x86 Rings: {A} Portable User Mode Privilege Separation
+               Architecture on x86}},
+  booktitle = {Proceedings of the 2018 {ACM} {SIGSAC} Conference on Computer and
+               Communications Security, {CCS} 2018, Toronto, ON, Canada, October
+               15-19, 2018},
+  pages     = {1441--1454},
+  publisher = {{ACM}},
+  year      = {2018},
+  doi       = {10.1145/3243734.3243748},
+}
+
+
+------------------------------------------------------------------------------
                             Process Confinement
 ------------------------------------------------------------------------------
 
@@ -281,7 +316,7 @@ Analyzed complexity of Solworth and Sloan
   pages     = {405--420},
   publisher = {Springer},
   year      = {2006},
-  doi       = {10.1007/11908739\_29},
+  doi       = {10.1007/11908739_29},
 }
 
 ------------------------------------------------------------------------------
@@ -572,7 +607,7 @@ Cheri implementation on FreeBSD
   pages     = {113--128},
   publisher = {Springer},
   year      = {2011},
-  doi       = {10.1007/978-3-642-25141-2\_8},
+  doi       = {10.1007/978-3-642-25141-2_8},
 }
 
 @inproceedings{cheng2006_taint,
@@ -694,7 +729,7 @@ Cheri implementation on FreeBSD
   pages     = {210--222},
   publisher = {Springer},
   year      = {2010},
-  doi       = {10.1007/978-3-642-27937-9\_15},
+  doi       = {10.1007/978-3-642-27937-9_15},
 }
 
 ------------------------------------------------------------------------------
@@ -969,6 +1004,133 @@ landlock LSM
   type         = {Whitepaper},
 }
 
+
+------------------------------------------------------------------------------
+                            Process-Level Virtualization
+------------------------------------------------------------------------------
+
+@incollection{mcfearin2011_chroot_jails,
+  author    = {Lee D. McFearin},
+  editor    = {Henk C. A. van Tilborg and
+               Sushil Jajodia},
+  title     = {{Chroot Jail}},
+  booktitle = {Encyclopedia of Cryptography and Security, 2nd Ed},
+  pages     = {206--207},
+  publisher = {Springer},
+  year      = {2011},
+  doi       = {10.1007/978-1-4419-5906-5_778},
+}
+
+@inproceedings{kamp2000_jails,
+  title     = {{Jails: Confining the Omnipotent Root}},
+  author    = {Kamp, Poul-Henning and Watson, Robert NM},
+  booktitle = {Proceedings of the 2nd International SANE Conference},
+  volume    = {43},
+  pages     = {116},
+  year      = {2000},
+  url       = {https://ivanlef0u.fr/repo/madchat/sysadm/bsd/kamp.pdf},
+}
+
+
+------------------------------------------------------------------------------
+                            Container Security
+------------------------------------------------------------------------------
+
+Container security survey
+@article{sultan2019_container_security,
+  author    = {Sari Sultan and
+               Imtiaz Ahmad and
+               Tassos Dimitriou},
+  title     = {{Container Security: Issues, Challenges, and the Road Ahead}},
+  journal   = {{IEEE} Access},
+  volume    = {7},
+  pages     = {52976--52996},
+  year      = {2019},
+  doi       = {10.1109/ACCESS.2019.2911732},
+}
+
+Hypervisor vs Container Virtualization
+@article{eder2016_hypervisor_container,
+  title   = {{Hypervisor- vs. Container-Based Virtualization}},
+  author  = {Eder, Michael},
+  journal = {Future Internet (FI) and Innovative Internet Technologies and Mobile Communications (IITM)},
+  volume  = {1},
+  year    = {2016},
+  doi     = {10.2313/NET-2016-07-1_01},
+}
+
+Study of container security vulnerabilities, attacks, countermeasures
+  - Important finding -> However, the interdependence and mutual-influence relationship
+    among these kernel security mechanisms may make them fall into the "short board effect"
+    and impair their protection capability.
+@inproceedings{xin2018_container_security,
+  author    = {Lin, Xin and Lei, Lingguang and Wang, Yuewu and Jing, Jiwu and Sun, Kun and Zhou, Quan},
+  title     = {{A Measurement Study on Linux Container Security: Attacks and Countermeasures}},
+  year      = {2018},
+  isbn      = {9781450365697},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  doi       = {10.1145/3274694.3274720},
+  booktitle = {Proceedings of the 34th Annual Computer Security Applications Conference},
+  pages     = {418–429},
+  numpages  = {12},
+  location  = {San Juan, PR, USA},
+  series    = {ACSAC '18}
+}
+
+Study of LSMs and LSFs for hardening Docker containers
+@inproceedings{mp2016_hardening,
+  author    = {{Amith Raj MP} and A. {Kumar} and S. J. {Pai} and A. {Gopal}},
+  booktitle = {2016 2nd International Conference on Applied and Theoretical Computing and Communication Technology (iCATccT)},
+  title     = {{Enhancing Security of Docker Using Linux Hardening Techniques}},
+  year      = {2016},
+  pages     = {94-99},
+  doi       = {10.1109/ICATCCT.2016.7911971}
+}
+
+Study of security measures for containerized applications in docker
+@article{mullinix2020_security_measures,
+  author    = {Samuel P. Mullinix and
+               Erikton Konomi and
+               Renee Davis Townsend and
+               Reza M. Parizi},
+  title     = {{On Security Measures for Containerized Applications Imaged with Docker}},
+  journal   = {CoRR},
+  volume    = {abs/2008.04814},
+  year      = {2020},
+  url       = {https://arxiv.org/abs/2008.04814},
+}
+
+Security analysis of Docker security
+@article{bui2015_docker_analysis,
+  author    = {Thanh Bui},
+  title     = {{Analysis of Docker Security}},
+  journal   = {CoRR},
+  volume    = {abs/1501.02967},
+  year      = {2015},
+  url       = {http://arxiv.org/abs/1501.02967},
+  archivePrefix = {arXiv},
+  eprint    = {1501.02967},
+}
+
+Docker AppArmor documentation
+@misc{docker_apparmor,
+  author  = {{Docker Developers}},
+  title   = {{AppArmor security profiles for Docker}},
+  url     = {https://docs.docker.com/engine/security/apparmor/},
+  urldate = {2021-05-29},
+  note    = {Developer documenation},
+}
+
+Docker default AppArmor profile
+@misc{docker_default_apparmor,
+  author  = {{Docker Developers}},
+  title   = {{profiles/apparmor/template.go}},
+  url     = {https://github.com/moby/moby/blob/master/profiles/apparmor/template.go},
+  urldate = {2021-05-29},
+  note    = {Github repository},
+}
+
 ------------------------------------------------------------------------------
                                    eBPF
 ------------------------------------------------------------------------------
@@ -1216,96 +1378,6 @@ tcpdump
 }
 
 
-
-
-------------------------------------------------------------------------------
-                            Container Security
-------------------------------------------------------------------------------
-
-Container security survey
-@article{sultan2019_container_security,
-  author    = {Sari Sultan and
-               Imtiaz Ahmad and
-               Tassos Dimitriou},
-  title     = {{Container Security: Issues, Challenges, and the Road Ahead}},
-  journal   = {{IEEE} Access},
-  volume    = {7},
-  pages     = {52976--52996},
-  year      = {2019},
-  doi       = {10.1109/ACCESS.2019.2911732},
-}
-
-Study of container security vulnerabilities, attacks, countermeasures
-  - Important finding -> However, the interdependence and mutual-influence relationship
-    among these kernel security mechanisms may make them fall into the "short board effect"
-    and impair their protection capability.
-@inproceedings{xin2018_container_security,
-  author    = {Lin, Xin and Lei, Lingguang and Wang, Yuewu and Jing, Jiwu and Sun, Kun and Zhou, Quan},
-  title     = {{A Measurement Study on Linux Container Security: Attacks and Countermeasures}},
-  year      = {2018},
-  isbn      = {9781450365697},
-  publisher = {Association for Computing Machinery},
-  address   = {New York, NY, USA},
-  doi       = {10.1145/3274694.3274720},
-  booktitle = {Proceedings of the 34th Annual Computer Security Applications Conference},
-  pages     = {418–429},
-  numpages  = {12},
-  location  = {San Juan, PR, USA},
-  series    = {ACSAC '18}
-}
-
-Study of LSMs and LSFs for hardening Docker containers
-@inproceedings{mp2016_hardening,
-  author    = {{Amith Raj MP} and A. {Kumar} and S. J. {Pai} and A. {Gopal}},
-  booktitle = {2016 2nd International Conference on Applied and Theoretical Computing and Communication Technology (iCATccT)},
-  title     = {{Enhancing Security of Docker Using Linux Hardening Techniques}},
-  year      = {2016},
-  pages     = {94-99},
-  doi       = {10.1109/ICATCCT.2016.7911971}
-}
-
-Study of security measures for containerized applications in docker
-@article{mullinix2020_security_measures,
-  author    = {Samuel P. Mullinix and
-               Erikton Konomi and
-               Renee Davis Townsend and
-               Reza M. Parizi},
-  title     = {{On Security Measures for Containerized Applications Imaged with Docker}},
-  journal   = {CoRR},
-  volume    = {abs/2008.04814},
-  year      = {2020},
-  url       = {https://arxiv.org/abs/2008.04814},
-}
-
-Security analysis of Docker security
-@article{bui2015_docker_analysis,
-  author    = {Thanh Bui},
-  title     = {{Analysis of Docker Security}},
-  journal   = {CoRR},
-  volume    = {abs/1501.02967},
-  year      = {2015},
-  url       = {http://arxiv.org/abs/1501.02967},
-  archivePrefix = {arXiv},
-  eprint    = {1501.02967},
-}
-
-Docker AppArmor documentation
-@misc{docker_apparmor,
-  author  = {{Docker Developers}},
-  title   = {{AppArmor security profiles for Docker}},
-  url     = {https://docs.docker.com/engine/security/apparmor/},
-  urldate = {2021-05-29},
-  note    = {Developer documenation},
-}
-
-Docker default AppArmor profile
-@misc{docker_default_apparmor,
-  author  = {{Docker Developers}},
-  title   = {{profiles/apparmor/template.go}},
-  url     = {https://github.com/moby/moby/blob/master/profiles/apparmor/template.go},
-  urldate = {2021-05-29},
-  note    = {Github repository},
-}
 
 
 

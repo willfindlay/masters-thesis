@@ -12,50 +12,12 @@
 This section reviews foundational concepts in \gls{os} (particularly Unix-like \gls{os}s
 and Linux) security. In particular, we discuss the \textit{reference monitor concept},
 \textit{virtual memory and user processes}, and \textit{discretionary access control} and
-how these concepts interact to form the backbone of process-level security in Unix.
-Background information in this section is considered core knowledge in operating systems
-security literature. Readers with intermediate to advanced knowledge of operating systems
-security can skip this section in favour of \Cref{s:extensions-bg} which examines more
-advanced security mechanisms and discusses related work.
-
-\begin{inprogress}
-  \todo{REDO THE FOLLOWING, MOVE SOME OR MOST DOWN TO NEXT SECTION}
-
-Unlike virtual machines, containers are nothing but a collection of related processes
-(sometimes just one process, but often more) running on the host operating system. These
-processes share the same kernel as other running containers and as \enquote{native}
-processes running outside of a container. While these properties can help containers to be
-lighter-weight than virtual machines, they also necessitate the usage of process-level
-virtualization and confinement primitives to isolate containers from one
-another~\cite{sultan2019_container_security}.  \Cref{s:container-security-bg} covers
-containers and container security in greater detail, further differentiating them from
-VMs. For the purposes of this section, it is enough to know that containerized processes
-run directly on the host, share the host kernel, and use virtualization and confinement
-primitives to achieve isolation.
-
-While containers rely on virtualization and confinement primitives to facilitate normal
-operation, this notion of process isolation predates the advent of containers by decades.
-Isolation of processes, particularly in the case of multi-tenant and network-facing
-systems, makes a lot of sense from the persecutive of security best-practices. Locking
-down a program such that it can only perform the actions required for it to function
-correctly can help reduce attack surface and minimize the potential for damage to the rest
-of the system in the event of compromise. This notion of restricting a program's
-capabilities to the minimal viable set has a name in the security literature: the
-\textit{principle of least-privilege}~\cite{schneider03_least_privilege,
-van_oorschot2020_tools_jewels}.
-
-Researchers have been studying confinement for decades~\cite{lampson1973_confinement}, and
-have been designing and applying confinement primitives since the early days of
-time-sharing computers and multi-tenant systems~\cite{shu2016_security_isolation_study}.
-Process-level virtualization has become similarly important, but for subtly different
-reasons\,---\,namely, for the purpose of restricting and modifying a process' visibility
-into the rest of the system.  Decades of research into virtualization and confinement
-techniques has culminated in a wealth of knowledge and prior artifacts, some of which have
-seen widespread deployment and remain relevant to date. The rest of this section presents
-technical background on such process-level virtualization confinement mechanisms and
-surveys the academic literature related to this area.
-\end{inprogress}
-
+how these concepts interact to form the backbone of process-level security in Unix.  The
+goal of this section is to help the reader build a mental model of how operating systems
+isolate and protect processes and system resources at the most fundamental level. Readers
+with intermediate to advanced knowledge of operating systems security can skip this
+section in favour of \Cref{s:extensions-bg} which examines more advanced security
+mechanisms and discusses related work.
 
 \subsection{The Reference Monitor}%
 \label{ss:refmon}
@@ -125,7 +87,51 @@ in such a way that verifiability is maximized~\cite{anderson1972_report}.
 \subsection{Virtual Memory and Memory Protection}%
 \label{ss:virtual-memory}
 
-Virtual memory forms the backbone of isolation between \gls{cots}
+Virtual memory~\cite{denning1970_virtual} is a mechanism for mapping \textit{virtual}
+memory addresses to \textit{physical} machine addresses. First introduced in the 1950s,
+the original goal of virtual memory was to make it easier for programmers to manipulate
+memory without worrying about the underlying details of storage
+configuration~\cite{denning1970_virtual}. With the advent of multi-processing systems,
+virtual memory took on a new role\,---\,separation of memory resources between distinct
+user processes. This separation is a fundamental notion for secure multi-processing; two
+user processes should not be able to interfere with each other's memory, and a user
+process should not be able to interfere with the \gls{os} kernel.
+
+By partitioning memory into virtual address spaces, virtual memory forms the most
+fundamental isolation barrier between user processes. To accomplish this goal, a hardware
+mechanism, the \gls{mmu}, translates virtual addresses to physical addresses using
+a \textit{page table} maintained by the operating system in main memory. To accelerate the
+translation of memory addresses, modern processors cache this mapping in a specialized
+cache area called the \gls{tlb}.  In Unix, each user process gets its own virtual address
+space by default, maintained in a per-process page table. Where necessary, this isolation
+may be voluntarily broken using memory sharing mechanisms provided by the \gls{os} kernel
+(e.g.~multi-threading or shared memory mappings). The kernel also gets its own address
+space which maps the entirety of physical memory.
+
+While virtual memory can help isolate user processes from each other and user process from
+the kernel, additional protection mechanisms are required to strengthen this isolation. To
+this end, the CPU \gls{isa} generally defines memory protection bits that can be applied
+to physical pages and enforced in the \gls{mmu}. For instance, individual pages can be
+marked as readable, writable, and/or executable depending on how the memory is to be used.
+How these protections are used is generally up to the operating system; for instance,
+modern operating systems often enforce a W$\oplus$X memory protection policy, meaning this
+pages marked writable and not allowed to be marked executable and vice versa. This helps
+to prevent the most baroque code execution attacks. Another important protection mechanism
+employed by the operating system is \gls{aslr}, which slightly randomizes virtual address
+space mappings, making them unpredictable and thus harder for attackers to exploit
+consistently. A similar mechanism, \gls{kaslr}, protects the kernel.
+
+Additional protections are afforded by \textit{memory protection rings}, a concept first
+introduced by Multics~\cite{vyssotsky1965_multics, corbato1965_multics} in the mid-1960s.
+In the original design, 64 protection rings were defined in hardware, numbered from 0--63.
+A task running in a higher-numbered protection ring would be unable to access any memory
+marked with a lower-numbered protection ring, effectively isolating sensitive code and
+data from unprivileged tasks. Modern CPUs carry forward this notion of protection rings,
+although a typical modern processor only defines \textit{four} protection rings rather
+than 64. Modern \gls{os}s, including Linux, generally only use \textit{two} of these
+rings, ring 0 and ring 3 for kernelspace and userspace respectively. \Cref{fig:rings}
+depicts this design. Lee \etal~\cite{lee2018_lotr} have proposed using the remaining two
+rings for finer-grained isolation on x86.
 
 \begin{figure}[tbp]
   \centering
@@ -133,33 +139,14 @@ Virtual memory forms the backbone of isolation between \gls{cots}
   \caption[Protection rings on modern CPUs]{
     A visualization of protection rings on modern CPUs. Ring 3 contains
     \textit{userspace}, the address space of ordinary applications that run in user mode.
-    Ring 0 container \textit{kernselspace}, the address space of kernel code, running in
-    supervisor mode. Rings 1--2 are generally unused by \glsentryfull{cots} operating systems.
-    Modern CPUs often implement \enquote{lower} rings (-1, -2, etc.) by virtualizing
-    ring 0 in firmware.  These are typically reserved for CPU features such as the Intel
-    Management Engine~\todo{CITE}.
+    Ring 0 contains \textit{kernselspace}, the kernel's address space. Code running in
+    ring 0 is said to run in \textit{supervisor mode}. Rings 1--2 are generally unused by
+    \glsentryfull{cots} operating systems.  Modern CPUs often implement \enquote{lower}
+    rings (-1, -2, etc.) by virtualizing ring 0 in firmware. These are typically reserved
+    for the hypervisor and other hardware-backed features like Intel Management Engine.
   }%
   \label{fig:rings}
 \end{figure}
-
-\begin{inprogress}
-  \begin{itemize}
-    \item Page tables, page table walk
-    \item CPU's MMU, maps virtual addresses to physical addresses
-    \item Shared memory
-    \item Memory protection bits
-    \item ASLR, KASLR
-  \end{itemize}
-\end{inprogress}
-
-\begin{inprogress}
-  \begin{itemize}
-    \item Multics protection rings
-    \item Adoption of protection rings by modern CPUs (simplified model, rings 0-3)
-    \item CPU supports rings lower than 0 (really just virtualizing ring 0) for the hypervisor, CPU engine
-    \item Userspace, kernelspace
-  \end{itemize}
-\end{inprogress}
 
 \subsection{Discretionary Access Control}%
 \label{ss:dac}
@@ -821,33 +808,38 @@ runtimes, such as the Java Virtual Machine~\cite{chin2009_efficient}.
 We now step away from \textit{confinement} to focus on process-level
 \textit{virtualization} primitives employed in Unix-like operating systems. Whereas
 confinement primitives have the goal of restricting a process' behaviour, virtualization
-primitives instead limit the process' ability to see the world around it.
+primitives instead limit the process' ability to see the world around it. This property
+should not be confused with \textit{isolation}. True isolation requires a mixture of both
+virtualization and confinement mechanisms to restrict access to system resources and
+prevent unwanted behaviour.
 
 \subsubsection*{Chroots and Chroot Jails}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item
-  \end{itemize}
-\end{inprogress}
-
-\subsubsection*{FreeBSD Jails}
+To virtualize the filesystem, Unix has classically supported the \texttt{chroot(2)} system call~\todo{CITE}
 
 \begin{inprogress}
   \begin{itemize}
-    \item
+    \item chroot
+    \begin{itemize}
+      \item
+    \end{itemize}
+
+    \item chroot jails~\cite{mcfearin2011_chroot_jails}
+    \begin{itemize}
+      \item
+    \end{itemize}
   \end{itemize}
 \end{inprogress}
 
-\subsubsection*{Linux Namespaces}
+\subsubsection*{FreeBSD Jails and Solaris Zones}
 
 \begin{inprogress}
   \begin{itemize}
-    \item
+    \item FreeBSD Jails~\cite{kamp2000_jails}
   \end{itemize}
 \end{inprogress}
 
-\subsubsection*{Linux Cgroups}
+\subsubsection*{Linux Namespaces and Cgroups}
 
 \begin{inprogress}
   \begin{itemize}
@@ -866,6 +858,31 @@ primitives instead limit the process' ability to see the world around it.
 This section introduces the concept of containers, examines how they compare with
 alternatives like hypervisor-based virtual machines, discusses the area of container
 security, and surveys related work in the container security space.
+
+\begin{inprogress}
+Unlike virtual machines, containers are nothing but a collection of related processes
+(sometimes just one process, but often more) running on the host operating system. These
+processes share the same kernel as other running containers and as \enquote{native}
+processes running outside of a container. While these properties can help containers to be
+lighter-weight than virtual machines, they also necessitate the usage of process-level
+virtualization and confinement primitives to isolate containers from one
+another~\cite{sultan2019_container_security}.  \Cref{s:container-security-bg} covers
+containers and container security in greater detail, further differentiating them from
+VMs. For the purposes of this section, it is enough to know that containerized processes
+run directly on the host, share the host kernel, and use virtualization and confinement
+primitives to achieve isolation.
+
+While containers rely on virtualization and confinement primitives to facilitate normal
+operation, this notion of process isolation predates the advent of containers by decades.
+Isolation of processes, particularly in the case of multi-tenant and network-facing
+systems, makes a lot of sense from the persecutive of security best-practices. Locking
+down a program such that it can only perform the actions required for it to function
+correctly can help reduce attack surface and minimize the potential for damage to the rest
+of the system in the event of compromise. This notion of restricting a program's
+capabilities to the minimal viable set has a name in the security literature: the
+\textit{principle of least-privilege}~\cite{schneider03_least_privilege,
+van_oorschot2020_tools_jewels}.
+\end{inprogress}
 
 \subsection{Containers and Virtual Machines}%
 \label{ss:containers-bg}
