@@ -838,61 +838,159 @@ many of chroot's security flaws, but these have not been adopted.
 \subsubsection*{FreeBSD Jails and Solaris Zones}
 
 Kamp \etal~\cite{kamp2000_jails} presented FreeBSD's \texttt{jail(2)} as a more secure
-alternative to \texttt{chroot(2)} jails.
+alternative to \texttt{chroot(2)} jails. In particular, the jail system call is a heavily
+extended wrapper around FreeBSD's chroot implementation. A call to jail begins by
+allocating and populating a \texttt{prison} data structure that maintains metadata related
+to the jailed process group, and finishes by simply invoking the standard chroot
+implementation. Unlike chroot, Jails take care to avoid the standard pitfalls that may
+result in a chroot escape and heavily limit the privileges of the root user within the
+jail. In this respect, the jail system call can be seen as a hybrid between
+a virtualization and confinement mechanism, approaching a full solution.
 
-\begin{inprogress}
-  \begin{itemize}
-    \item FreeBSD Jails~\cite{kamp2000_jails}
-  \end{itemize}
-\end{inprogress}
+Jails take the approach of defining a clear security boundary around a collection of
+processes, filesystem resources, and network resources~\cite{kamp2000_jails}. A process
+existing within this boundary (i.e.~a member of the jail) enjoys the standard set of Unix
+permissions on resources within the jail. Access to resources outside of the jail is
+forbidden, including access by the root user. Visibility is similarly restricted by
+remapping namespaces in such a way as outside resources are effectively invisible.
+Defining a clear protection boundary enables the jail to enforce sensible security policy
+without burdening the administrator with the details of writing such
+a policy~\cite{kamp2000_jails}.
+
+Solaris Zones~\cite{price2004_zones} later arose as a commercial solution for
+process-level virtualization. The goal was to implement namespace remapping and security
+isolation for commercial server deployments in (possibly multi-tenant) Solaris
+environments. The implementation details of Solaris' Zones are similar to those of
+FreeBSD's Jails; a per-task data structure manages the associate between tasks and Zones,
+allowing the kernel to perform the necessary remapping and security checks.
 
 \subsubsection*{Linux Namespaces and Cgroups}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item
-  \end{itemize}
-\end{inprogress}
+Unlike FreeBSD~\cite{kamp2000_jails} and Solaris~\cite{price2004_zones}, Linux takes
+a different approach to process-level virtualization. In particular, Linux's
+virtualization strategy consists of two separate mechanisms, \textit{namespaces} and
+\textit{cgroups} (short for process control groups). These mechanisms, in turn, can be
+further subdivided into specific types, targeting different kinds of system resources.
+Notably, namespaces and cgroups are \textit{not} confinement mechanisms in and of
+themselves. This property is in stark contrast with Jails and Zones, which were designed
+to offer strong confinement guarantees over their respective security boundaries.
+As the canonical process-level virtualization building blocks in Linux, namespaces and
+cgroups form the backbone of Linux containers (c.f.~\Cref{s:container-security-bg}).
+
+Linux namespaces~\cite{biederman2006_namespaces, linux_namespaces} limit the visibility of
+system resource by providing a virtual remapping of global resource identifiers to
+a process or process group. Such identifiers include process IDs, user IDs, filesystem
+mounts, IPC objects, and network interfaces, among others. Linux supports namespace
+creation and entry via the \texttt{clone(2)} and \texttt{unshare(2)} system calls, for
+isolating child processes and existing processes respectively. As of version 5.13, the
+Linux kernel supports eight distinct namespaces, depicted in \Cref{tab:namespaces}. Other
+namespaces have been proposed and/or planned for inclusion, including a security
+namespace~\cite{sun2018_security_namespace} for virtualizing \gls{lsm} hooks.
+
+\begin{table}
+\begin{tabular}{lp{3in}}
+    \toprule
+    Namespace & Isolates \\
+    \midrule
+    \multirow{1}{*}{PID} & Process IDs (PIDs)\\
+    \multirow{1}{*}{Mount} & Filesystem mountpoints\\
+    \multirow{1}{*}{Network} & Networking stack\\
+    \multirow{1}{*}{UTS} & Host and domain names\\
+    \multirow{1}{*}{IPC} & Inter-process communication objects\\
+    \multirow{1}{*}{User} & User IDs (UIDs) and group IDs (GIDs)\\
+    \multirow{1}{*}{Time} & System time\\
+    \multirow{1}{*}{Cgroup} & Cgroup membership\\
+    \bottomrule
+\end{tabular}
+\caption{Linux namespaces (as of kernel version 5.13) and what they can be used to isolate~\cite{linux_namespaces}.}
+\label{tab:namespaces}
+\end{table}
+
+Complementary to namespaces, cgroups~\cite{cgroups, gao2019_houdini} divide processes into hierarchical
+groups, performing resource accounting and restricting access to quantifiable resources
+such as memory, CPU clock cycles, block I/O, and device drivers. From a security
+perspective, such restrictions are useful to prevent resource starvation attacks against
+the host. However, Gao \etal~\cite{gao2019_houdini} found that this protection is
+incomplete and often misleading, allowing up to 200$\times$ the allotted resource limits
+by exploiting out-of-band resource consumption techniques. To interact with the cgroup hierarchy,
+Linux exposes a virtual filesystem which encodes cgroup membership in its directory structure.
+Cgroup membership visibility can be virtualized using the cgroup namespace~\cite{cgroups}.
 
 
 
-
-
-
-\section{Virtualization, Containers, and Container Security}%
+\section{Containers and Virtual Machines}%
 \label{s:container-security-bg}
 
-This section introduces the concept of containers, examines how they compare with
-alternatives like hypervisor-based virtual machines, discusses the area of container
-security, and surveys related work in the container security space.
+%This section introduces the concept of containers, examines how they compare with
+%alternatives like hypervisor-based virtual machines, discusses the area of container
+%security, and surveys related work in the container security space.
 
-\begin{inprogress}
-Unlike virtual machines, containers are nothing but a collection of related processes
-(sometimes just one process, but often more) running on the host operating system. These
-processes share the same kernel as other running containers and as \enquote{native}
-processes running outside of a container. While these properties can help containers to be
-lighter-weight than virtual machines, they also necessitate the usage of process-level
-virtualization and confinement primitives to isolate containers from one
-another~\cite{sultan2019_container_security}.  \Cref{s:container-security-bg} covers
-containers and container security in greater detail, further differentiating them from
-VMs. For the purposes of this section, it is enough to know that containerized processes
-run directly on the host, share the host kernel, and use virtualization and confinement
-primitives to achieve isolation.
+Classically, virtualization of a system has been accomplished by means of
+a hypervisor~\cite{eder2016_hypervisor_container, sultan2019_container_security}.
+Hypervisors implement an interface which virtualizes the underlying system hardware,
+enabling one or more \textit{guest operating systems} to be installed on a single physical
+host. These guest systems are then called \textit{virtual machines}. Due to the level of
+indirection provided by the hypervisor and the guest operating system kernel, virtual
+machines are generally considered to be quite \textit{strongly isolated} from each other,
+but this isolation comes at the cost of much higher overhead, both in terms of storage and
+performance~\cite{eder2016_hypervisor_container, sultan2019_container_security}.
+Hypervisors can be classified into one of two types, depending on how they are deployed
+and implemented.  Type I hypervisors are implemented directly on top of hardware, whereas
+type II hypervisors run on top of a host operating system. This results in a further layer
+of indirection between the guest and the system hardware and thus a further degradation in
+performance.
 
-While containers rely on virtualization and confinement primitives to facilitate normal
-operation, this notion of process isolation predates the advent of containers by decades.
-Isolation of processes, particularly in the case of multi-tenant and network-facing
-systems, makes a lot of sense from the persecutive of security best-practices. Locking
-down a program such that it can only perform the actions required for it to function
-correctly can help reduce attack surface and minimize the potential for damage to the rest
-of the system in the event of compromise. This notion of restricting a program's
-capabilities to the minimal viable set has a name in the security literature: the
-\textit{principle of least-privilege}~\cite{schneider03_least_privilege,
-van_oorschot2020_tools_jewels}.
-\end{inprogress}
+\textit{Containers}  have emerged as a new unit of computation in recent years, providing
+a lighter-weight alternative to full hypervisor-based
+virtualization~\cite{sultan2019_container_security, eder2016_hypervisor_container}.
+Unlike virtual machines, containers run directly on the host operating system and share
+the host operating system kernel with each other and with ordinary host processes. In
+fact, a container is nothing more than a discrete collection of processes (sometimes only
+one process) that share some common isolation from the rest of the system by way of
+virtualization and confinement primitives. These primitives typically include namespaces
+and cgroups, along with optional confinement mechanisms like seccomp-\gls{bpf} and Linux
+\gls{mac} policy. Since they directly share the host \gls{os} kernel and do not require
+a guest operating system, containers are significantly lighter-weight and more performant
+than virtual machines, but at the cost of weaker isolation. \Cref{fig:virt} and
+\Cref{tab:virt-comparison} illustrate the major differences between containers and virtual
+machines.
 
-\subsection{Containers and Virtual Machines}%
-\label{ss:containers-bg}
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/background/virtualization.pdf}
+  \caption[A comparison of virtual machine and container architectures]{
+    A comparison of virtual machine and container
+    architectures~\cite{sultan2019_container_security, eder2016_hypervisor_container}.
+    Containers \textbf{(a)} achieve virtualization using a thin layer provided by the host
+    \gls{os} itself. They share the underlying operating system kernel and resources,
+    requiring no guest \gls{os}. Type I hypervisors \textbf{(b)} virtualize and control
+    the underlying hardware directly, but require full guest operating systems on top of
+    the virtualization layer. Type II hypervisors \textbf{(c)} run on top of a host
+    operating system but still require full guest operating systems above the
+    virtualization layer.
+  }%
+  \label{fig:virt}
+\end{figure}
+
+\begin{table}[htbp]
+  \centering
+  \caption[A high-level comparison of hypervisors and containers]{
+    A high-level comparison of hypervisors and containers. \fullc{} means property fully
+    satisfied; \halfc{} means property somewhat satisfied; and \emptyc{} means property
+    not satisfied.
+  }%
+  \label{tab:virt-comparison}
+  \begin{tabular}{lllcccp{1.6em}}
+  \toprule
+  & Deployment & Implementation & \rot{60}{1.6em}{Host-Isolated} & \rot{60}{1.6em}{Light-Weight} & \rot{60}{1.6em}{High-Performance} & \\
+  \midrule
+  Type I \glsentryshort{vm}  & Hardware & Guest \glsentryshort{os} & \fullc  & \halfc  & \halfc  & \\
+  Type II \glsentryshort{vm} & Host OS  & Guest \glsentryshort{os} & \halfc  & \emptyc & \emptyc & \\
+  Containers                 & Host OS  & Namespaces + Cgroups     & \emptyc & \fullc  & \fullc  & \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
 
 A \textit{container} is nothing more than a collection of related processes operating on
 the same host. These processes share resources
@@ -931,21 +1029,6 @@ the same host. These processes share resources
   \end{itemize}
 \end{itemize}
 \end{inprogress}
-
-\begin{figure}[tbp]
-  \centering
-  \includegraphics[width=0.8\linewidth]{figs/background/virtualization.pdf}
-  \caption[A comparison of virtual machine and container architectures]{
-    A comparison of virtual machine and container architectures. Containers \textbf{(a)}
-    achieve virtualization using a thin layer provided by the host \gls{os}
-    itself. They share the underlying operating system kernel and resources, requiring no
-    guest \gls{os}. Type I hypervisors \textbf{(b)} virtualize and control the
-    underlying hardware directly, but require full guest operating systems on top of the
-    virtualization layer. Type II hypervisors \textbf{(c)} run on top of a host operating
-    system but still require full guest operating systems above the virtualization layer.
-  }%
-  \label{fig:virt}
-\end{figure}
 
 \subsection{Container Security}%
 \label{ss:container-security-bg}

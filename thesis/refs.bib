@@ -231,7 +231,6 @@ Nice literature review examining security isolation techniques
 
 @misc{posix_capabilities,
   title        = {{capabilities(7)}},
-  author       = {{Linux}},
   note         = {Linux user's manual},
   url          = {https://linux.die.net/man/7/capabilities},
 }
@@ -266,7 +265,6 @@ Nice literature review examining security isolation techniques
 
 Linux capability header
 @misc{linux_capability_h,
-  author  = {{Linux}},
   title   = {{uapi/linux/capability.h}},
   urldate = {2021-06-15},
   url     = {https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/uapi/linux/capability.h?h=v5.12},
@@ -335,7 +333,6 @@ Comparing seccomp-bpf, capsicum, and pledge
 
 @misc{ptrace,
   title        = {{ptrace(2)}},
-  author       = {{Linux}},
   note         = {Linux user's manual},
   url          = {https://linux.die.net/man/2/ptrace},
 }
@@ -395,14 +392,12 @@ Comparing seccomp-bpf, capsicum, and pledge
 
 @misc{prctl,
   title        = {{ptctl(2)}},
-  author       = {{Linux}},
   note         = {Linux user's manual},
   url          = {https://linux.die.net/man/2/prctl},
 }
 
 @misc{seccomp,
   title        = {{seccomp(2)}},
-  author       = {{Linux}},
   note         = {Linux user's manual},
   url          = {https://man7.org/linux/man-pages/man2/seccomp.2.html},
 }
@@ -416,7 +411,6 @@ Comparing seccomp-bpf, capsicum, and pledge
 }
 
 @misc{libseccomp,
-  author        = {{Seccomp Contributors}},
   title         = {{libseccomp}},
   url           = {https://github.com/seccomp/libseccomp},
   urldate       = {2021-06-22},
@@ -1031,6 +1025,85 @@ landlock LSM
   url       = {https://ivanlef0u.fr/repo/madchat/sysadm/bsd/kamp.pdf},
 }
 
+@inproceedings{price2004_zones,
+  author    = {Daniel Price and
+               Andrew Tucker},
+  editor    = {Lee Damon},
+  title     = {{Solaris Zones: Operating System Support for Consolidating Commercial
+               Workloads}},
+  booktitle = {Proceedings of the 18th Conference on Systems Administration (LISA
+               2004), Atlanta, USA, November 14-19, 2004},
+  pages     = {241--254},
+  publisher = {{USENIX}},
+  year      = {2004},
+  url       = {http://www.usenix.org/publications/library/proceedings/lisa04/tech/price.html},
+}
+
+@inproceedings{biederman2006_namespaces,
+  title        = {{Multiple Instances of the Global Linux Namespaces}},
+  author       = {Biederman, Eric W},
+  booktitle    = {Proceedings of the Linux Symposium},
+  volume       = {1},
+  pages        = {101--112},
+  year         = {2006},
+  publisher    = {Linux Symposium},
+  url          = {https://www.kernel.org/doc/ols/2006/ols2006v1-pages-101-112.pdf},
+}
+
+Namespace manpage
+@misc{linux_namespaces,
+  title   = {{namespaces(7)}},
+  url     = {https://man7.org/linux/man-pages/man7/namespaces.7.html},
+  urldate = {2021-06-26},
+  note    = {Linux Programmer's Manual},
+}
+
+Security comparison of different virtualization technologies,
+Also likely useful for container security
+@inproceedings{reshtovka14_virtualization_security,
+  author    = {Elena Reshetova and
+               Janne Karhunen and
+               Thomas Nyman and
+               N. Asokan},
+  editor    = {Karin Bernsmed and
+               Simone Fischer-H{\"{u}}bner},
+  title     = {{Security of OS-Level Virtualization Technologies}},
+  booktitle = {Secure {IT} Systems - 19th Nordic Conference, NordSec 2014, Troms{\o},
+               Norway, October 15-17, 2014, Proceedings},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {8788},
+  pages     = {77--93},
+  publisher = {Springer},
+  year      = {2014},
+  doi       = {10.1007/978-3-319-11599-3_5},
+}
+
+@inproceedings{gao2019_houdini,
+  author    = {Xing Gao and
+               Zhongshu Gu and
+               Zhengfa Li and
+               Hani Jamjoom and
+               Cong Wang},
+  editor    = {Lorenzo Cavallaro and
+               Johannes Kinder and
+               XiaoFeng Wang and
+               Jonathan Katz},
+  title     = {{Houdini's Escape: Breaking the Resource Rein of Linux Control Groups}},
+  booktitle = {Proceedings of the 2019 {ACM} {SIGSAC} Conference on Computer and
+               Communications Security, {CCS} 2019, London, UK, November 11-15, 2019},
+  pages     = {1073--1086},
+  publisher = {{ACM}},
+  year      = {2019},
+  doi       = {10.1145/3319535.3354227},
+}
+
+@misc{cgroups,
+  title   = {{Control Group v2}},
+  url     = {https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html},
+  urldate = {2021-06-26},
+  note    = {Linux Kernel Documentation},
+}
+
 
 ------------------------------------------------------------------------------
                             Container Security
@@ -1059,6 +1132,19 @@ Hypervisor vs Container Virtualization
   doi     = {10.2313/NET-2016-07-1_01},
 }
 
+Docker security analysis
+@article{bui2015_docker_analysis,
+  author    = {Thanh Bui},
+  title     = {{Analysis of Docker Security}},
+  journal   = {CoRR},
+  volume    = {abs/1501.02967},
+  year      = {2015},
+  url       = {http://arxiv.org/abs/1501.02967},
+  archivePrefix = {arXiv},
+  eprint    = {1501.02967},
+}
+
+Another Docker security analysis
 @article{combe2016_to_docker,
   author    = {Th{\'{e}}o Combe and
                Antony Martin and
@@ -1114,18 +1200,6 @@ Study of security measures for containerized applications in docker
   url       = {https://arxiv.org/abs/2008.04814},
 }
 
-Security analysis of Docker security
-@article{bui2015_docker_analysis,
-  author    = {Thanh Bui},
-  title     = {{Analysis of Docker Security}},
-  journal   = {CoRR},
-  volume    = {abs/1501.02967},
-  year      = {2015},
-  url       = {http://arxiv.org/abs/1501.02967},
-  archivePrefix = {arXiv},
-  eprint    = {1501.02967},
-}
-
 Docker AppArmor documentation
 @misc{docker_apparmor,
   author  = {{Docker Developers}},
@@ -1143,6 +1217,28 @@ Docker default AppArmor profile
   urldate = {2021-05-29},
   note    = {Github repository},
 }
+
+Security namespace
+@inproceedings{sun2018_security_namespace,
+  author    = {Yuqiong Sun and
+               David Safford and
+               Mimi Zohar and
+               Dimitrios Pendarakis and
+               Zhongshu Gu and
+               Trent Jaeger},
+  editor    = {William Enck and
+               Adrienne Porter Felt},
+  title     = {{Security Namespace: Making Linux Security Frameworks Available to
+               Containers}},
+  booktitle = {27th {USENIX} Security Symposium, {USENIX} Security 2018, Baltimore,
+               MD, USA, August 15-17, 2018},
+  pages     = {1423--1439},
+  publisher = {{USENIX} Association},
+  year      = {2018},
+  url       = {https://www.usenix.org/conference/usenixsecurity18/presentation/sun},
+}
+
+
 
 ------------------------------------------------------------------------------
                                    eBPF
@@ -1179,28 +1275,25 @@ Extended BPF
 
 FreeBSD BPF
 @misc{freebsd_bpf,
-  author  = {{FreeBSD}},
   title   = {{bpf(4)}},
   url     = {https://www.unix.com/man-page/FreeBSD/4/bpf},
-  urldate = {2020-12-13},
+  urldate = {2021-06-08},
   note    = {BSD Kernel Interfaces Manual},
 }
 
 OpenBSD BPF
 @misc{openbsd_bpf,
-  author  = {{OpenBSD}},
   title   = {{bpf(4)}},
   url     = {https://man.openbsd.org/bpf},
-  urldate = {2020-12-13},
+  urldate = {2021-06-08},
   note    = {Device Drivers Manual},
 }
 
 Linux BPF
 @misc{linux_bpf,
-  author  = {{Linux}},
   title   = {{bpf(2)}},
   url     = {https://www.man7.org/linux/man-pages/man2/bpf.2.html},
-  urldate = {2020-12-13},
+  urldate = {2021-06-08},
   note    = {Linux Programmer's Manual},
 }
 
@@ -1246,7 +1339,6 @@ Sleepable BPF
 
 libbpf
 @misc{libbpf,
-  author  = {{Libbpf Contributors}},
   title   = {{libbpf}},
   url     = {https://github.com/libbpf/libbpf},
   urldate = {2020-12-13},
@@ -1277,7 +1369,7 @@ Andrii BPF core
 
 libbpf-rs
 @misc{libbpf-rs,
-  author  = {Daniel Xu, {Libbpf-rs Contributors}},
+  author  = {Daniel Xu},
   title   = {{libbpf-rs}},
   url     = {https://github.com/libbpf/libbpf-rs},
   urldate = {2021-05-28},

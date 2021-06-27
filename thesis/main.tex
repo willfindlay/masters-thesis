@@ -49,6 +49,7 @@
 \newacronym{kaslr}{KASLR}{Kernel \glsentryshort{aslr}}
 \newacronym{mmu}{MMU}{Memory Management Unit}
 \newacronym{tlb}{TLB}{Translation Lookaside Buffer}
+\newacronym{vm}{VM}{Virtual Machine}
 
 \usepackage{findlay}
 \usepackage{epigraph}
@@ -87,9 +88,12 @@
 
 \hyphenation{App-Armor}
 
-% Remove spurious dot in figure captions
+% Remove spurious dot in figure/table captions
 \renewcommand*{\figureformat}{%
   \figurename~\thefigure%
+}
+\renewcommand*{\tableformat}{%
+  \tablename~\thetable%
 }
 
 \begin{document}
