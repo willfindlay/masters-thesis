@@ -6,8 +6,9 @@
 \end{inprogress}
 
 %\section{Process-Level Virtualization and Confinement}%
+%\label{s:virtualization-and-confinement}
 \section{Classic Unix Process Security Model}%
-\label{s:virtualization-and-confinement}
+\label{s:process-security-model}
 
 This section reviews foundational concepts in \gls{os} (particularly Unix-like \gls{os}s
 and Linux) security. In particular, we discuss the \textit{reference monitor concept},
@@ -352,7 +353,7 @@ fundamental issues and proposed the adoption of similar mechanisms.
 
 
 \section{Extensions to the Unix Security Model}%
-\label{s:extensions-bg}
+\label{s:security-extensions}
 
 \subsection{POSIX Capabilities}
 
@@ -919,7 +920,7 @@ Cgroup membership visibility can be virtualized using the cgroup namespace~\cite
 
 
 \section{Containers and Virtual Machines}%
-\label{s:container-security-bg}
+\label{s:containers-bg}
 
 %This section introduces the concept of containers, examines how they compare with
 %alternatives like hypervisor-based virtual machines, discusses the area of container
@@ -940,7 +941,7 @@ type II hypervisors run on top of a host operating system. This results in a fur
 of indirection between the guest and the system hardware and thus a further degradation in
 performance.
 
-\textit{Containers}  have emerged as a new unit of computation in recent years, providing
+\textit{Containers} have emerged as a new unit of computation in recent years, providing
 a lighter-weight alternative to full hypervisor-based
 virtualization~\cite{sultan2019_container_security, eder2016_hypervisor_container}.
 Unlike virtual machines, containers run directly on the host operating system and share
@@ -991,9 +992,45 @@ machines.
   \end{tabular}
 \end{table}
 
+Linux containers have three broad goals. In order of perceived importance and prioritization in existing
+container implementations, they are:
+\begin{enumerate}
+  \item \textbf{Dependency Management / Reproducibility.}
+    Containers should provide an easy and robust framework for creating reproducible
+    development environments. Dependencies should be maximally self-contained such that
+    a containerized environment \enquote{just works} to the maximum possible extent. We
+    can see examples of this property in Docker, the predominant container framework to
+    date~\todo{CITE}. Docker Hub~\todo{CITE} allows self-contained container images to be
+    pulled from the Internet, recombined, and used to create further self-contained
+    images. The end result is a flexible framework for creating and distributing reproducible
+    development environments.
 
-A \textit{container} is nothing more than a collection of related processes operating on
-the same host. These processes share resources
+  \item \textbf{Virtualization.}
+    Containers should virtualize system resources, creating the illusion of running on
+    a separate physical machine. Where possible, resources should be transparently reused
+    between multiple containers (e.g.~sharing a single base copy of the same shared
+    library between two container images). To achieve virtualization, containers generally
+    rely on the namespaces and cgroups primitives provided by the Linux kernel. Overlay
+    filesystems~\todo{CITE} combined with the mount namespace aid containers in sharing
+    read-only filesystem resources.
+
+  \item \textbf{Confinement.}
+    Containerized processes should be confined by default. That is, a containerized
+    process should have access to the minimal set of privileges required for it to operate
+    normally. The extent to which this property is achieved by conventional container
+    frameworks varies greatly, both by framework and by individual
+    deployment~\cite{sultan2019_container_security, xin2018_container_security,
+    bui2015_docker_analysis}.
+\end{enumerate}
+
+Unfortunately, the aforementioned goals are not only ordered by their decreasing
+prioritization in extant container management frameworks, but they are also ordered by
+increasing relevance to container security. That is to say, existing frameworks generally
+prioritize goals unrelated to security and leave security as an afterthought. Since
+containers are necessarily less isolated from the host system than virtual
+machines~\cite{sultan2019_container_security, eder2016_hypervisor_container}, one might
+expect container security to be of paramount importance. This motivates the need to
+revisit container security and approach it from a confinement-first perspective.
 
 \begin{inprogress}
 \begin{itemize}
@@ -1033,6 +1070,41 @@ the same host. These processes share resources
 \subsection{Container Security}%
 \label{ss:container-security-bg}
 
+Existing container security on Linux is supported by a number of fundamental
+virtualization and confinement mechanisms, covered in \Cref{s:process-security-model} and
+\Cref{s:security-extensions}. Namespaces virtualize and limit the visibility of global
+resource identifiers and cgroups virtualize and limit the available quantities of system
+resources. Dropped POSIX capabilities allow the container to partition coarse-grained root
+privileges into finer components. Seccomp-bpf filters limit the availability of system
+calls to the container, while Linux \gls{mac} policies, enforced by an \gls{lsm} restrict
+the container's access to system resources. Unix \gls{dac}, possibly accompanied by a new
+user namespace, can limit the container's access as well, when properly configured.
+
+\begin{inprogress}
+  \todo{Refactor and move this into The Confinement Problem?}
+
+  While containers are lighter-weight than virtual machines, they are necessarily less
+  secure, since they share and interact directly with the host operating system kernel.
+  While hypervisor escapes are not unheard of~\todo{CITE}, they are far less common than
+  container escapes, particularly given the fact that variabilities in container
+  configuration can easily introduce holes in
+  confinement~\cite{sultan2019_container_security}.
+
+  Container security policies, where they even exist, are often overly-generic and
+  ill-suited to fine-grained confinement. To achieve confinement in the first place,
+  container frameworks cobble together existing confinement technologies and apply them in
+  confusing and difficult-to-audit ways, overlapping and recombining default and generated
+  policies. The end result is a complex security soup with little room for policy
+  customization or auditability. \todo{Examples here}
+
+  Even worse, many container management systems operate under a fail-open approach when the
+  necessary security mechanisms are not supported. This results in low-security deployments,
+  often without even notifying the user that there may be such a configuration. Since the
+  end-user generally doesn't even participate in the policy authorship process, they may not
+  even be aware of the level of protection that is being applied, resulting in a dangerous
+  false sense of security. \todo{Examples here}
+\end{inprogress}
+
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/container_security.pdf}
@@ -1043,6 +1115,8 @@ the same host. These processes share resources
   \label{fig:containersec}
 \end{figure}
 
+\subsubsection{Solutions Proposed in Academia}%
+\label{sss:container-security-academia}
 
 
 
