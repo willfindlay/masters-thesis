@@ -14,3 +14,20 @@ seen widespread deployment and remain relevant to date. The rest of this section
 technical background on such process-level virtualization confinement mechanisms and
 surveys the academic literature related to this area.
 \end{inprogress}
+
+
+\begin{inprogress}
+  Container security policies, where they even exist, are often overly-generic and
+  ill-suited to fine-grained confinement. To achieve confinement in the first place,
+  container frameworks cobble together existing confinement technologies and apply them in
+  confusing and difficult-to-audit ways, overlapping and recombining default and generated
+  policies. The end result is a complex security soup with little room for policy
+  customization or auditability. \todo{Examples here}
+
+  Even worse, many container management systems operate under a fail-open approach when the
+  necessary security mechanisms are not supported. This results in low-security deployments,
+  often without even notifying the user that there may be such a configuration. Since the
+  end-user generally doesn't even participate in the policy authorship process, they may not
+  even be aware of the level of protection that is being applied, resulting in a dangerous
+  false sense of security. \todo{Examples here}
+\end{inprogress}

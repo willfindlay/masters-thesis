@@ -1011,15 +1011,15 @@ container implementations, they are:
     between multiple containers (e.g.~sharing a single base copy of the same shared
     library between two container images). To achieve virtualization, containers generally
     rely on the namespaces and cgroups primitives provided by the Linux kernel. Overlay
-    filesystems~\todo{CITE} combined with the mount namespace aid containers in sharing
-    read-only filesystem resources.
+    filesystems~\todo{CITE} combined with the mount namespace aid containers one-way
+    sharing of  filesystem resources.
 
   \item \textbf{Confinement.}
     Containerized processes should be confined by default. That is, a containerized
     process should have access to the minimal set of privileges required for it to operate
     normally. The extent to which this property is achieved by conventional container
     frameworks varies greatly, both by framework and by individual
-    deployment~\cite{sultan2019_container_security, xin2018_container_security,
+    deployment~\cite{sultan2019_container_security, lin2018_container_security,
     bui2015_docker_analysis}.
 \end{enumerate}
 
@@ -1031,41 +1031,6 @@ containers are necessarily less isolated from the host system than virtual
 machines~\cite{sultan2019_container_security, eder2016_hypervisor_container}, one might
 expect container security to be of paramount importance. This motivates the need to
 revisit container security and approach it from a confinement-first perspective.
-
-\begin{inprogress}
-\begin{itemize}
-  \item Nothing more than a collection of related processes, operating on the same host
-  \item These processes may be isolated using a combination of confinement and
-  virtualization primitives, discussed earlier in this chapter
-  \item In Linux, it boils down to namespaces and cgroups, with option support for
-  seccomp-bpf filters, uid remapping, and generic LSM policies to provide confinement
-  \item Three primary goals (my opinion)
-  \begin{itemize}
-    \item Dependency management
-    \item Virtualization
-    \item Confinement
-  \end{itemize}
-  \item These goals are also ordered by how much they are prioritized
-  \item container security is really an afterthought
-  \item The primary goal here is dependency management, and virtualization helps to
-  achieve that goal by isolating dependencies and runtimes from each other
-  \item Selectively, containers may ignore isolation boundaries and share underlying resources as required
-  \item Containers vs HVMs
-  \begin{itemize}
-    \item Containers share the underlying operating system with other containers and host processes
-    \item Sharing the operating system kernel removes a layer of indirection from the equation
-    \item Rather than going through a hypercall either directly to hardware or to a subsequent system call,
-    containers go directly through system calls to the host operating system
-    \item This means that containers are necessarily lighter-weight than VMs, as they no
-    longer need to bundle a full operating system, particularly the kernelspace components
-    \item However, this also results in increased security concerns
-    \item Removing a layer of indirection implies one less hurdle that adversaries need to get through to successfully mount an attack
-    \item Since containers share the host OS kernel, kernel vulnerabilities now become a concern
-    \item Container escape can impact other containers or host processes, possibly resulting in
-    exfiltration of sensitive data, tampering, data corruption, and/or privilege escalation
-  \end{itemize}
-\end{itemize}
-\end{inprogress}
 
 \subsection{Container Security}%
 \label{ss:container-security-bg}
@@ -1080,30 +1045,26 @@ calls to the container, while Linux \gls{mac} policies, enforced by an \gls{lsm}
 the container's access to system resources. Unix \gls{dac}, possibly accompanied by a new
 user namespace, can limit the container's access as well, when properly configured.
 
-\begin{inprogress}
-  \todo{Refactor and move this into The Confinement Problem?}
+While containers are lighter-weight than virtual machines, they are necessarily less
+secure, since they share and interact directly with the host operating system kernel.
+Although hypervisor escapes are not unheard of~\todo{CITE}, they are far less common than
+container escapes, particularly given the fact that variabilities in container
+configuration can easily introduce holes in
+confinement~\cite{sultan2019_container_security}. Rather than going through a hypervisor
+(either directly to hardware or to a subsequent system call), containers directly make
+system calls to the host kernel. Not only does this make the probability of container
+escape more likely, but it also increases the host-to-container and container-to-host
+attack surface. Every system call is an opportunity to exploit a kernel vulnerability;
+over-zealous resource-sharing is an opportunity to establish a covert channel, or perform
+a confused deputy attack~\cite{hardy1988_confused_deputy} against a privileged
+application. The cost to mount such attacks rapidly decreases as isolation from the host
+operating system decreases.
 
-  While containers are lighter-weight than virtual machines, they are necessarily less
-  secure, since they share and interact directly with the host operating system kernel.
-  While hypervisor escapes are not unheard of~\todo{CITE}, they are far less common than
-  container escapes, particularly given the fact that variabilities in container
-  configuration can easily introduce holes in
-  confinement~\cite{sultan2019_container_security}.
-
-  Container security policies, where they even exist, are often overly-generic and
-  ill-suited to fine-grained confinement. To achieve confinement in the first place,
-  container frameworks cobble together existing confinement technologies and apply them in
-  confusing and difficult-to-audit ways, overlapping and recombining default and generated
-  policies. The end result is a complex security soup with little room for policy
-  customization or auditability. \todo{Examples here}
-
-  Even worse, many container management systems operate under a fail-open approach when the
-  necessary security mechanisms are not supported. This results in low-security deployments,
-  often without even notifying the user that there may be such a configuration. Since the
-  end-user generally doesn't even participate in the policy authorship process, they may not
-  even be aware of the level of protection that is being applied, resulting in a dangerous
-  false sense of security. \todo{Examples here}
-\end{inprogress}
+\todo{Outline threat model for containers, rework this and update the figure}
+The threat model for container security consists of a few different attack surfaces and
+corresponding attack vectors. \Cref{fig:containersec} depicts a high-level overview of
+this threat model. Containers can attack other containers, host processes, the host
+operating system kernel, or mount privilege escalation attacks against the host.
 
 \begin{figure}[tbp]
   \centering
@@ -1115,11 +1076,112 @@ user namespace, can limit the container's access as well, when properly configur
   \label{fig:containersec}
 \end{figure}
 
-\subsubsection{Solutions Proposed in Academia}%
+\subsubsection{Container Security in Industry}%
+\label{sss:container-security-industry}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item OCI
+
+    \item Docker~\cite{bui2015_docker_analysis, combe2016_to_docker}
+
+    \item LXC
+
+    \item OpenShift
+  \end{itemize}
+\end{inprogress}
+
+\subsubsection{Container Security in Academia}%
 \label{sss:container-security-academia}
 
+Sultan \etal~\cite{sultan2019_container_security} published a comprehensive review of
+container security, including a threat model and comparison with full-virtualization
+solutions like type I and type II hypervisors. Their work outlined four distinct cases and
+presented a survey of existing security mechanisms targeting each case: (i)
+a containerized attacking the container; (ii) a container attacking other containers;
+(iii) a container attacking the host; and (iv) the host attacking a container. Their
+recommendations included an increased adoption of trusted computing technologies to solve
+case iv and that work towards a container-specific \gls{lsm} would be necessary to harden
+against cases i--iii. \bpfcontain{}, one of the two research systems presented in this thesis,
+represents a step towards such a container-specific \gls{lsm}.
 
+Lin \etal~\cite{lin2018_container_security} presented a measurement study on container
+security measures and attacks. They hand-crafted an exploit data set consisting of 233
+exploits and used it to test the security defaults employed by Docker. Their findings
+indicated that inter-dependence and mutual-influence among several disparate kernel
+security mechanisms resulted in weaknesses in protection. Motivated by their findings,
+they developed a simple kernel patch hardening the \texttt{commit\_creds()} function
+against simple privilege escalation attacks mounted from containers.
 
+Combe \etal~\cite{combe2016_to_docker} and Bui~\cite{bui2015_docker_analysis} presented
+informal security analyses of Docker's default security configurations and Docker security
+in general. Combe \etal~\cite{combe2016_to_docker} found that Docker configurations are
+weak to supply-chain attacks involving malicious images and configurations on Docker Hub.
+Additionally, they found that, while Docker's default configuration is relatively secure,
+container misconfiguration, or the absence of security mechanisms such as AppArmor on the
+host leaves the host vulnerable to attack. They also found that the default mandatory
+access control policies employed by Docker were overly-permissive and far too generalized
+to provide practical protection.
+
+Bui~\cite{bui2015_docker_analysis} found that, while Docker does offer inadequate
+protection against many sophisticated attacks, it still yielded security benefits over
+running applications natively on the host. Bui recommends that containers be run under
+virtual machines to add an additional layer of isolation from the host system. These
+findings, however, demonstrate a lax attitude toward container security, opting to rely on
+additional layers of indirection to provide real security guarantees and positing that at
+least some protection is better than none at all.
+Eder~\cite{eder2016_hypervisor_container} compared hypervisor- and container-based
+virtualization and found that hypervisors are naturally more secure due to increased
+levels of independence and isolation.
+
+Babar \etal~\cite{babar2017_understanding}, and Mullinix
+\etal~\cite{mullinix2020_security_measures} studied the container security mechanisms
+underlying the Linux container infrastructure. Their findings separately indicate that
+existing security mechanisms provided by the kernel are insufficient to offer full
+protection from container vulnerabilities, particularly given the unique nature of the
+attack surface exposed by the container running directly on the host operating system.
+
+To address limitations imposed by container security defaults and alleviate concerns about
+poor security practices in default configurations, many researchers have turned to
+automatic policy generation~\cite{loukidis2018_dockersec, ghavamania2020_confine}.
+Dockersec~\cite{loukidis2018_dockersec} uses a combination of static analysis techniques
+on existing security profiles and a dynamic training process to automatically infer
+AppArmor profiles for containers.  These inferred profiles provide greater protection than
+the generic default profile since they are finer-grained and tailored to the container's
+access patterns. In addition to generating \gls{mac} policy, others have focused on
+generating seccomp-bpf policy to reduce the kernel's attack surface from within
+a container. Confine~\cite{ghavamania2020_confine} uses static binary analysis and library
+call instrumentation to generate seccomp-bpf policy for container images.  Their results
+showed that they were able to significantly reduce the attack surface for kernel
+exploitation in many of the most popular Docker images. While not an automated approach in
+and of itself, Sun \etal~\cite{sun2018_security_namespace} proposed the inclusion of
+a security namespace into the kernel, allowing individual containers to load their own
+independent \gls{mac} policy. Security namespaces could be used in combination with policy
+generation mechanisms to allow containers to easily confine themselves.
+
+Vulnerability analysis of container images~\cite{shu2017_image_vuln, kwon2020_divds,
+brady2020_docker_cloud} can be an effective technique for identifying weaknesses in
+container deployments. Unlike policy generation, vulnerability analysis is a strictly
+informative tool, allowing security experts to identify weaknesses in production
+deployments and fix them. Shu \etal~\cite{shu2017_image_vuln} presented DIVA, a framework
+for analyzing vulnerabilities in images deployed from Docker Hub. They aggregated data
+from over 350,000 container images and found that images contained an average of 180
+security vulnerabilities. Kwon and Lee~\cite{kwon2020_divds} proposed DIVDS, which
+extends prior work by providing an interface to compare and allow specific image
+vulnerabilities.  Brady \etal~\cite{brady2020_docker_cloud} applied similar vulnerability
+scanning techniques to a continuous integration pipeline, flagging and fixing image
+vulnerabilities during development.
+
+\gls{ebpf} is seeing increasing prominence within the container security space. Besides
+\bpfbox{} and \bpfcontain{}, other projects have arisen over the past few years, albeit
+with a general focus on observability rather than policy enforcement. Tracee~\todo{CITE}
+is a container observability tool developed by Aqua Security that can watch system calls
+made by a container, along with other security-sensitive events, and generate audit logs
+for further analysis. Cilium~\todo{CITE} is a popular security daemon for the Kubernetes
+container orchestration framework, with a focus on network security for distributed
+container deployments. Cilium provides observability metrics through a configurable audit
+framework and allows the end-user to define network policy for telemetry, performance
+optimization, and security.
 
 \section{Extended BPF}%
 \label{s:ebpf-bg}

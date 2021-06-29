@@ -1162,7 +1162,7 @@ Study of container security vulnerabilities, attacks, countermeasures
   - Important finding -> However, the interdependence and mutual-influence relationship
     among these kernel security mechanisms may make them fall into the "short board effect"
     and impair their protection capability.
-@inproceedings{xin2018_container_security,
+@inproceedings{lin2018_container_security,
   author    = {Lin, Xin and Lei, Lingguang and Wang, Yuewu and Jing, Jiwu and Sun, Kun and Zhou, Quan},
   title     = {{A Measurement Study on Linux Container Security: Attacks and Countermeasures}},
   year      = {2018},
@@ -1187,6 +1187,14 @@ Study of LSMs and LSFs for hardening Docker containers
   doi       = {10.1109/ICATCCT.2016.7911971}
 }
 
+@techreport{babar2017_understanding,
+  title        = {{Understanding Container Isolation Mechanisms for Building Security-Sensitive Private Cloud}},
+  author       = {Babar, M Ali and Ramsey, Ben},
+  institution  = {CREST, The University of Adelaide, Australia},
+  year         = {2017},
+  url          = {https://malibabar.files.wordpress.com/2017/04/container_isolation_secure_cloud_2017.pdf},
+}
+
 Study of security measures for containerized applications in docker
 @article{mullinix2020_security_measures,
   author    = {Samuel P. Mullinix and
@@ -1200,22 +1208,71 @@ Study of security measures for containerized applications in docker
   url       = {https://arxiv.org/abs/2008.04814},
 }
 
-Docker AppArmor documentation
-@misc{docker_apparmor,
-  author  = {{Docker Developers}},
-  title   = {{AppArmor security profiles for Docker}},
-  url     = {https://docs.docker.com/engine/security/apparmor/},
-  urldate = {2021-05-29},
-  note    = {Developer documenation},
+@inproceedings{brady2020_docker_cloud,
+  author    = {Kelly Brady and
+               Seung Moon and
+               Tuan Nguyen and
+               Joel Coffman},
+  title     = {Docker Container Security in Cloud Computing},
+  booktitle = {10th Annual Computing and Communication Workshop and Conference},
+  pages     = {975--980},
+  publisher = {{IEEE}},
+  year      = {2020},
+  doi       = {10.1109/CCWC47524.2020.9031195},
 }
 
-Docker default AppArmor profile
-@misc{docker_default_apparmor,
-  author  = {{Docker Developers}},
-  title   = {{profiles/apparmor/template.go}},
-  url     = {https://github.com/moby/moby/blob/master/profiles/apparmor/template.go},
-  urldate = {2021-05-29},
-  note    = {Github repository},
+@inproceedings{shu2017_image_vuln,
+  author    = {Rui Shu and
+               Xiaohui Gu and
+               William Enck},
+  title     = {{A Study of Security Vulnerabilities on Docker Hub}},
+  booktitle = {Proceedings of the Seventh {ACM} Conference on Data and Application
+               Security and Privacy},
+  pages     = {269--280},
+  publisher = {{ACM}},
+  year      = {2017},
+  doi       = {10.1145/3029806.3029832},
+}
+
+@article{kwon2020_divds,
+  author    = {Soonhong Kwon and
+               Jong-Hyouk Lee},
+  title     = {{DIVDS:} Docker Image Vulnerability Diagnostic System},
+  journal   = {{IEEE} Access},
+  volume    = {8},
+  pages     = {42666--42673},
+  year      = {2020},
+  doi       = {10.1109/ACCESS.2020.2976874},
+}
+
+@inproceedings{loukidis2018_dockersec,
+  author    = {Fotis Loukidis-Andreou and
+               Ioannis Giannakopoulos and
+               Katerina Doka and
+               Nectarios Koziris},
+  title     = {{Docker-Sec: A Fully Automated Container Security Enhancement Mechanism}},
+  booktitle = {38th {IEEE} International Conference on Distributed Computing Systems},
+  pages     = {1561--1564},
+  publisher = {{IEEE} Computer Society},
+  year      = {2018},
+  doi       = {10.1109/ICDCS.2018.00169},
+}
+
+@inproceedings{ghavamania2020_confine,
+  author    = {Seyedhamed Ghavamnia and
+               Tapti Palit and
+               Azzedine Benameur and
+               Michalis Polychronakis},
+  editor    = {Manuel Egele and
+               Leyla Bilge},
+  title     = {{Confine: Automated System Call Policy Generation for Container Attack
+               Surface Reduction}},
+  booktitle = {23rd International Symposium on Research in Attacks, Intrusions and
+               Defenses, {RAID} 2020, San Sebastian, Spain, October 14-15, 2020},
+  pages     = {443--458},
+  publisher = {{USENIX} Association},
+  year      = {2020},
+  url       = {https://www.usenix.org/conference/raid2020/presentation/ghavanmnia},
 }
 
 Security namespace
@@ -1236,6 +1293,24 @@ Security namespace
   publisher = {{USENIX} Association},
   year      = {2018},
   url       = {https://www.usenix.org/conference/usenixsecurity18/presentation/sun},
+}
+
+Docker AppArmor documentation
+@misc{docker_apparmor,
+  author  = {{Docker Developers}},
+  title   = {{AppArmor security profiles for Docker}},
+  url     = {https://docs.docker.com/engine/security/apparmor/},
+  urldate = {2021-05-29},
+  note    = {Developer documenation},
+}
+
+Docker default AppArmor profile
+@misc{docker_default_apparmor,
+  author  = {{Docker Developers}},
+  title   = {{profiles/apparmor/template.go}},
+  url     = {https://github.com/moby/moby/blob/master/profiles/apparmor/template.go},
+  urldate = {2021-05-29},
+  note    = {Github repository},
 }
 
 
