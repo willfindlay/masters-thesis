@@ -120,7 +120,8 @@ pages marked writable and not allowed to be marked executable and vice versa. Th
 to prevent the most baroque code execution attacks. Another important protection mechanism
 employed by the operating system is \gls{aslr}, which slightly randomizes virtual address
 space mappings, making them unpredictable and thus harder for attackers to exploit
-consistently. A similar mechanism, \gls{kaslr}, protects the kernel.
+consistently. A similar mechanism, \gls{kaslr}, protects the kernel. \todo{Maybe talk
+about grsecruity here?}
 
 Additional protections are afforded by \textit{memory protection rings}, a concept first
 introduced by Multics~\cite{vyssotsky1965_multics, corbato1965_multics} in the mid-1960s.
@@ -354,6 +355,18 @@ fundamental issues and proposed the adoption of similar mechanisms.
 
 \section{Extensions to the Unix Security Model}%
 \label{s:security-extensions}
+
+\todo{Add small introductory paragraph}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item The items discussed in 2.1 have been around for a long time
+    \item To solve problems that crop up, this model has been update over time across multiple distributions
+    \item This section presents a selection of key developments to the Unix security model
+  \end{itemize}
+\end{inprogress}
+
+\todo{Maybe add Grsecurity (OpenWall, etc.) to this background?}
 
 \subsection{POSIX Capabilities}
 
@@ -937,13 +950,15 @@ indirection provided by the hypervisor and the guest operating system kernel, vi
 machines are generally considered to be quite \textit{strongly isolated} from each other,
 but this isolation comes at the cost of much higher overhead, both in terms of storage and
 performance~\cite{eder2016_hypervisor_container, sultan2019_container_security}.
-Hypervisors can be classified into one of two types, depending on how they are deployed
-and implemented.  Type I hypervisors are implemented directly on top of hardware, whereas
-type II hypervisors run on top of a host operating system. This results in a further layer
-of indirection between the guest and the system hardware and thus a further degradation in
-performance.
 
-\todo{Maybe about specific hypervisor technologies like Xen, VirtualBox, KVM, etc?}
+%Hypervisors can be classified into one of two types, depending on how they are deployed
+%and implemented.  Type I hypervisors are implemented directly on top of hardware, whereas
+%type II hypervisors run on top of a host operating system. This results in a further layer
+%of indirection between the guest and the system hardware and thus a further degradation in
+%performance.
+
+\todo{With HVMs, the security comes from the virtualization, well-defined barrier from one
+machine to another, opt in to whatever is going to cross it}
 
 \textit{Containers} have emerged as a new unit of computation in recent years, providing
 a lighter-weight alternative to full hypervisor-based
@@ -956,84 +971,61 @@ virtualization and confinement primitives. These primitives typically include na
 and cgroups, along with optional confinement mechanisms like seccomp-\gls{bpf} and Linux
 \gls{mac} policy. Since they directly share the host \gls{os} kernel and do not require
 a guest operating system, containers are significantly lighter-weight and more performant
-than virtual machines, but at the cost of weaker isolation. \Cref{fig:virt} and
-\Cref{tab:virt-comparison} illustrate the major differences between containers and virtual
-machines.
+than virtual machines, but at the cost of weaker isolation. \Cref{fig:virt} depicts the
+major differences between container and hypervisor-based architectures.
+
+% \begin{figure}[tbp]
+%   \centering
+%   \includegraphics[width=0.8\linewidth]{figs/background/virtualization.pdf}
+%   \caption[A comparison of virtual machine and container architectures]{
+%     A comparison of virtual machine and container
+%     architectures~\cite{sultan2019_container_security, eder2016_hypervisor_container}.
+%     Containers \textbf{(a)} achieve virtualization using a thin layer provided by the host
+%     \gls{os} itself. They share the underlying operating system kernel and resources,
+%     requiring no guest \gls{os}. Type I hypervisors \textbf{(b)} virtualize and control
+%     the underlying hardware directly, but require full guest operating systems on top of
+%     the virtualization layer. Type II hypervisors \textbf{(c)} run on top of a host
+%     operating system but still require full guest operating systems above the
+%     virtualization layer.
+%   }%
+%   \label{fig:virt}
+% \end{figure}
 
 \begin{figure}[tbp]
   \centering
-  \includegraphics[width=0.8\linewidth]{figs/background/virtualization.pdf}
+  \includegraphics[width=1\linewidth]{figs/background/virtualization.pdf}
   \caption[A comparison of virtual machine and container architectures]{
     A comparison of virtual machine and container
     architectures~\cite{sultan2019_container_security, eder2016_hypervisor_container}.
     Containers \textbf{(a)} achieve virtualization using a thin layer provided by the host
     \gls{os} itself. They share the underlying operating system kernel and resources,
-    requiring no guest \gls{os}. Type I hypervisors \textbf{(b)} virtualize and control
-    the underlying hardware directly, but require full guest operating systems on top of
-    the virtualization layer. Type II hypervisors \textbf{(c)} run on top of a host
-    operating system but still require full guest operating systems above the
+    requiring no guest \gls{os}. A hypervisor \textbf{(b)} virtualizes and controls the
+    underlying hardware directly, but requires full guest operating systems on top of the
     virtualization layer.
   }%
   \label{fig:virt}
 \end{figure}
 
-\begin{table}[htbp]
-  \centering
-  \caption[A high-level comparison of hypervisors and containers]{
-    A high-level comparison of hypervisors and containers. \fullc{} means property fully
-    satisfied; \halfc{} means property somewhat satisfied; and \emptyc{} means property
-    not satisfied.
-  }%
-  \label{tab:virt-comparison}
-  \begin{tabular}{lllcccp{1.6em}}
-  \toprule
-  & Deployment & Implementation & \rot{60}{1.6em}{Host-Isolated} & \rot{60}{1.6em}{Light-Weight} & \rot{60}{1.6em}{High-Performance} & \\
-  \midrule
-  Type I \glsentryshort{vm}  & Hardware & Guest \glsentryshort{os} & \fullc  & \halfc  & \halfc  & \\
-  Type II \glsentryshort{vm} & Host OS  & Guest \glsentryshort{os} & \halfc  & \emptyc & \emptyc & \\
-  Containers                 & Host OS  & Namespaces + Cgroups     & \emptyc & \fullc  & \fullc  & \\
-  \bottomrule
-  \end{tabular}
-\end{table}
+% \begin{table}[htbp]
+%   \centering
+%   \caption[A high-level comparison of hypervisors and containers]{
+%     A high-level comparison of hypervisors and containers. \fullc{} means property fully
+%     satisfied; \halfc{} means property somewhat satisfied; and \emptyc{} means property
+%     not satisfied.
+%   }%
+%   \label{tab:virt-comparison}
+%   \begin{tabular}{lllcccp{1.6em}}
+%   \toprule
+%   & Deployment & Implementation & \rot{60}{1.6em}{Host-Isolated} & \rot{60}{1.6em}{Light-Weight} & \rot{60}{1.6em}{High-Performance} & \\
+%   \midrule
+%   Type I \glsentryshort{vm}  & Hardware & Guest \glsentryshort{os} & \fullc  & \halfc  & \halfc  & \\
+%   Type II \glsentryshort{vm} & Host OS  & Guest \glsentryshort{os} & \halfc  & \emptyc & \emptyc & \\
+%   Containers                 & Host OS  & Namespaces + Cgroups     & \emptyc & \fullc  & \fullc  & \\
+%   \bottomrule
+%   \end{tabular}
+% \end{table}
 
-Linux containers have three broad goals. In order of perceived prioritization in existing
-container implementations, they are:
-\begin{enumerate}
-  \item \textbf{Dependency Management / Reproducibility.}
-    Containers should provide an easy and robust framework for creating reproducible
-    development environments. Dependencies should be maximally self-contained such that
-    a containerized environment \enquote{just works} to the maximum possible extent. We
-    can see examples of this property in Docker, the predominant container framework to
-    date. Docker Hub~\cite{docker_hub} allows container images to be pulled from the
-    Internet, recombined, and used to create further images. The end result is a flexible
-    framework for creating and distributing reproducible development environments.
-
-  \item \textbf{Virtualization.}
-    Containers should virtualize system resources, creating the illusion of running on
-    a separate physical machine. Where possible, resources should be transparently reused
-    between multiple containers (e.g.~sharing a single base copy of the same shared
-    library between two container images). To achieve virtualization, containers generally
-    rely on the namespaces and cgroups primitives provided by the Linux kernel. Overlay
-    filesystems~\cite{overlayfs} combined with the mount namespace aid containers one-way
-    sharing of filesystem resources.
-
-  \item \textbf{Confinement.}
-    Containerized processes should be confined by default. That is, a containerized
-    process should have access to the minimal set of privileges required for it to operate
-    normally. The extent to which this property is achieved by conventional container
-    frameworks varies greatly, both by framework and by individual
-    deployment~\cite{sultan2019_container_security, lin2018_container_security,
-    bui2015_docker_analysis}.
-\end{enumerate}
-
-Unfortunately, the aforementioned goals are not only ordered by their decreasing
-prioritization in extant container management frameworks, but they are also ordered by
-increasing relevance to container security. That is to say, existing frameworks generally
-prioritize goals unrelated to security and leave security as an afterthought. Since
-containers are necessarily less isolated from the host system than virtual
-machines~\cite{sultan2019_container_security, eder2016_hypervisor_container}, one might
-expect container security to be of paramount importance. This motivates the need to
-revisit container security and approach it from a confinement-first perspective.
+\todo{Discuss the OCI spec?}
 
 \subsection{Container Security}%
 \label{ss:container-security-bg}
@@ -1077,6 +1069,24 @@ model.
   \label{fig:containersec}
 \end{figure}
 
+\todo{Add a bulleted list of container escapes}
+\begin{inprogress}
+\begin{itemize}
+  \item It's kind of leaky
+  \item Even if you configure it perfectly, there are ways to misconfigure it
+  \item The things you are subject to are the things you're subject to in the classic security model
+  \item No different than software security in general... Because a container is just a set of processes
+\end{itemize}
+  \begin{itemize}
+    \item Shared-resource attack
+    \item Privilege escalation
+    \begin{itemize}
+      \item Exploiting a privileged process (e.g.~confused deputy)
+      \item Exploiting kernel directly
+    \end{itemize}
+  \end{itemize}
+\end{inprogress}
+
 \subsubsection{Container Security in Industry}%
 \label{sss:container-security-industry}
 
@@ -1089,8 +1099,6 @@ privileges into finer components. Seccomp-bpf filters limit the availability of 
 calls to the container, while Linux \gls{mac} policies, enforced by an \gls{lsm} restrict
 the container's access to system resources. Unix \gls{dac}, possibly accompanied by a new
 user namespace, can limit the container's access as well, when properly configured.
-
-\todo{Discuss the OCI spec?}
 
 \gls{lxc}~\todo{CITE} is a container runtime for Linux that directly exposes low-level
 virtualization and confinement primitives. \gls{lxc} exposes namespaces and cgroups to
@@ -1116,9 +1124,12 @@ additional setup.  Docker also provides a \texttt{--privileged} flag which allow
 to totally ignore all security defaults, essentially granting the container the same
 access as a (often root-privileged) host process.
 
-\todo{Possibly discuss others: OpenVZ, OpenShift, more?}
+\todo{Possibly discuss others: OpenVZ, OpenShift, more? Only talk in detail if they do
+something different}
 
 \todo{Possibly discuss containerized package managers: Snap, FlatPak, \etal?}
+
+\todo{be explicit about why we need}
 
 \subsubsection{Container Security in Academia}%
 \label{sss:container-security-academia}
@@ -1233,8 +1244,6 @@ classic monitoring use case. In this section, we discuss the origins of \gls{ebp
 components and how they work, its applications under the Linux kernel, and how it has
 evolved over time.
 
-\todo{Perhaps add a subsection here to discuss DTrace as a precursor to eBPF?}
-
 \subsection{Origins of BPF\@: Efficient Packet Filtering and Beyond}%
 \label{ss:origins-of-bpf-bg}
 
@@ -1291,6 +1300,9 @@ mccanne1993_bpf}. In Linux, the \texttt{seccomp(2)} system
 call~\cite{anderson2017_comparison} was enhanced to include classic \gls{bpf} filters,
 allowing a user process to use classic \gls{bpf} programs to define allowlists and
 denylists of system calls (c.f.~\Cref{sss:seccomp}).
+
+\todo{DTrace here, then talk about how it inspired later eBPF tooling (bpftrace, etc) and
+the motivation behind eBPF}
 
 In 2014, Alexei Starovoitov and Daniel Borkmann~\cite{starovoitov2014_ebpf} first proposed
 a total overhaul of the Linux \gls{bpf} engine. Their proposal, dubbed \gls{ebpf}, expanded the
@@ -1368,7 +1380,7 @@ sleepable versions of some \gls{ebpf} program types~\cite{starovoitov2020_sleepa
 Once loaded into the kernel, \gls{ebpf} programs are represented as \gls{bpf} objects, each with its
 own reference count. Loading a \gls{bpf} program and attaching it to a system event increments
 the reference count, while detaching and unloading the program decrements the reference
-count. The kernel also exposes a special filesystem, \gls{bpffs}, which allows \gls{bpf}
+count. The kernel also exposes a special filesystem, \textit{bpffs} , which allows \gls{bpf}
 programs to be pinned. This also increments the reference count, allowing an attached
 program to outlive its controlling process (i.e.~the process that loaded and attached
 it)~\cite{gregg2019_bpf}.
@@ -1473,7 +1485,7 @@ a particularly attractive target for developing new security solutions.
 \gls{ebpf} maps serve as both a runtime data store for \gls{ebpf} programs and the
 canonical method of communication between \gls{ebpf} programs and other \gls{ebpf}
 programs, and \gls{ebpf} programs and userspace applications. Like \gls{ebpf} programs,
-maps can be pinned to \gls{bpffs} to increment their reference count in the kernel.
+maps can be pinned to \textit{bpffs}  to increment their reference count in the kernel.
 Concurrent access to \gls{ebpf} maps from within kernelspace is protected by an implicit
 RCU lock, and a spinlock concurrency primitive is exposed via a helper function to guard
 map accesses between kernelspace and userspace.  From the \gls{ebpf} side, maps can be
@@ -1505,7 +1517,7 @@ to be generic, others are highly specialized for specific use cases. \bpfcontain
 \label{ss:bpf-userspace}
 
 Although \gls{ebpf} programs and maps can exist on their own after being pinned to
-\gls{bpffs}, the more common approach is to manage their lifetime using a controlling
+\textit{bpffs} , the more common approach is to manage their lifetime using a controlling
 process. Userspace applications implementing such a controlling process typically use an
 \gls{ebpf} front-end framework to facilitate loading and interacting with programs and maps.
 A number of such front-ends exist~\cite{gobpf, bcc, libbpf, libbpf-rs, libbpfgo,

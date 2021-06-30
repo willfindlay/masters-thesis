@@ -9,6 +9,29 @@ arise in adopting newly-proposed alternatives. These insights represent the key
 motivating factors behind the design of \bpfbox{} and \bpfcontain{} and can potentially
 inform the way we think about new confinement mechanisms going forward.
 
+\section{Rethinking the Virtualization Narrative}%
+
+\begin{inprogress}
+  \begin{itemize}
+    \item Just like the word container makes people think about security
+    \item Type I and Type II hypervisor, the way it's depicted, makes people think something else is happening
+    \item The representation and terminology
+    \item This makes sense to talk about it if we connect it to containers
+    \item Why can't containers give as good or better security than hypervisors
+    \item Can we just get our enforcement clear
+    \item Virtual machines seem like they define a clear boundary, but it isn't actually
+          so clear in practice because all these things are being shared across boundaries
+    \item People think of virtual machines as being inherently more secure, the security
+          benefit is more of an obfuscation thing related to the semantic gap but with the right
+          tools you can still cross it freely
+    \item VMs have all these little holes everywhere and the policy is not centralized\,---\,we
+          have policy through mechanism
+    \item There's no reason why containers can't be as (if not more) secure than virtual machines
+    \item Because we can make this boundary very clear
+    \item \bpfcontain{} can be seen as a step towards this
+  \end{itemize}
+\end{inprogress}
+
 \section{Fundamental Issues with Linux Confinement}%
 \label{s:cp-confinement-issues}
 
@@ -69,6 +92,47 @@ inform the way we think about new confinement mechanisms going forward.
 
 \section{Confinement in Container Management Frameworks}%
 \label{s:cp-containers}
+
+\begin{inprogress}
+Linux containers have three broad goals. In order of perceived prioritization in existing
+container implementations, they are:
+\begin{enumerate}
+  \item \textbf{Dependency Management / Reproducibility.}
+    Containers should provide an easy and robust framework for creating reproducible
+    development environments. Dependencies should be maximally self-contained such that
+    a containerized environment \enquote{just works} to the maximum possible extent. We
+    can see examples of this property in Docker, the predominant container framework to
+    date. Docker Hub~\cite{docker_hub} allows container images to be pulled from the
+    Internet, recombined, and used to create further images. The end result is a flexible
+    framework for creating and distributing reproducible development environments.
+
+  \item \textbf{Virtualization.}
+    Containers should virtualize system resources, creating the illusion of running on
+    a separate physical machine. Where possible, resources should be transparently reused
+    between multiple containers (e.g.~sharing a single base copy of the same shared
+    library between two container images). To achieve virtualization, containers generally
+    rely on the namespaces and cgroups primitives provided by the Linux kernel. Overlay
+    filesystems~\cite{overlayfs} combined with the mount namespace aid containers one-way
+    sharing of filesystem resources.
+
+  \item \textbf{Confinement.}
+    Containerized processes should be confined by default. That is, a containerized
+    process should have access to the minimal set of privileges required for it to operate
+    normally. The extent to which this property is achieved by conventional container
+    frameworks varies greatly, both by framework and by individual
+    deployment~\cite{sultan2019_container_security, lin2018_container_security,
+    bui2015_docker_analysis}.
+\end{enumerate}
+
+Unfortunately, the aforementioned goals are not only ordered by their decreasing
+prioritization in extant container management frameworks, but they are also ordered by
+increasing relevance to container security. That is to say, existing frameworks generally
+prioritize goals unrelated to security and leave security as an afterthought. Since
+containers are necessarily less isolated from the host system than virtual
+machines~\cite{sultan2019_container_security, eder2016_hypervisor_container}, one might
+expect container security to be of paramount importance. This motivates the need to
+revisit container security and approach it from a confinement-first perspective.
+\end{inprogress}
 
 \begin{inprogress}
   Container security policies are often overly-generic and ill-suited to fine-grained
