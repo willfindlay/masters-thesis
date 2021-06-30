@@ -1109,6 +1109,23 @@ Also likely useful for container security
                             Container Security
 ------------------------------------------------------------------------------
 
+Hypervisor escapes
+@inproceedings{dubrelle2015_hypervisor,
+  author    = {Paul Dubrulle and
+               Renaud Sirdey and
+               Philippe Dore and
+               M. Aichouch and
+               Emmanuel Ohayon},
+  title     = {{Blind Hypervision to Protect Virtual Machine Privacy Against Hypervisor
+               Escape Vulnerabilities}},
+  booktitle = {13th {IEEE} International Conference on Industrial Informatics, {INDIN}
+               2015, Cambridge, United Kingdom, July 22-24, 2015},
+  pages     = {1394--1399},
+  publisher = {{IEEE}},
+  year      = {2015},
+  doi       = {10.1109/INDIN.2015.7281938},
+}
+
 Container security survey
 @article{sultan2019_container_security,
   author    = {Sari Sultan and
@@ -1213,7 +1230,7 @@ Study of security measures for containerized applications in docker
                Seung Moon and
                Tuan Nguyen and
                Joel Coffman},
-  title     = {Docker Container Security in Cloud Computing},
+  title     = {{Docker Container Security in Cloud Computing}},
   booktitle = {10th Annual Computing and Communication Workshop and Conference},
   pages     = {975--980},
   publisher = {{IEEE}},
@@ -1275,6 +1292,26 @@ Study of security measures for containerized applications in docker
   url       = {https://www.usenix.org/conference/raid2020/presentation/ghavanmnia},
 }
 
+SPEAKER
+@inproceedings{lei2017_speaker,
+  author    = {Lingguang Lei and
+               Jianhua Sun and
+               Kun Sun and
+               Chris Shenefiel and
+               Rui Ma and
+               Yuewu Wang and
+               Qi Li},
+  title     = {{SPEAKER: Split-Phase Execution of Application Containers}},
+  booktitle = {Detection of Intrusions and Malware, and Vulnerability Assessment
+               - 14th International Conference},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {10327},
+  pages     = {230--251},
+  publisher = {Springer},
+  year      = {2017},
+  doi       = {10.1007/978-3-319-60876-1_11},
+}
+
 Security namespace
 @inproceedings{sun2018_security_namespace,
   author    = {Yuqiong Sun and
@@ -1293,6 +1330,48 @@ Security namespace
   publisher = {{USENIX} Association},
   year      = {2018},
   url       = {https://www.usenix.org/conference/usenixsecurity18/presentation/sun},
+}
+
+Tracee
+@misc{tracee,
+  author  = {{Aqua Security}},
+  title   = {{Tracee}},
+  url     = {https://github.com/aquasecurity/tracee},
+  urldate = {2021-06-29},
+  note    = {Github repository},
+}
+
+Cilium
+@misc{cilium,
+  author  = {{Cilium}},
+  title   = {{Cilium}},
+  url     = {https://github.com/cilium/cilium},
+  urldate = {2021-06-29},
+  note    = {Github repository},
+}
+
+docker hub
+@misc{docker_hub,
+  author  = {{Docker}},
+  title   = {{Docker Hub}},
+  url     = {https://hub.docker.com/},
+  urldate = {2021-06-29},
+}
+
+overlayfs
+@misc{overlayfs,
+  author  = {Neil Brown},
+  title   = {{Overlay Filesystem}},
+  url     = {https://www.kernel.org/doc/html/latest/filesystems/overlayfs.html},
+  urldate = {2021-06-29},
+}
+
+@misc{docker_security,
+  author  = {{Docker Developers}},
+  title   = {{Docker Security}},
+  url     = {https://docs.docker.com/engine/security/},
+  urldate = {2021-06-29},
+  note    = {Developer documenation},
 }
 
 Docker AppArmor documentation

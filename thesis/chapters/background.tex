@@ -903,7 +903,9 @@ namespace~\cite{sun2018_security_namespace} for virtualizing \gls{lsm} hooks.
     \multirow{1}{*}{Cgroup} & Cgroup membership\\
     \bottomrule
 \end{tabular}
-\caption{Linux namespaces (as of kernel version 5.13) and what they can be used to isolate~\cite{linux_namespaces}.}
+\caption[Linux namespaces]{
+  Linux namespaces (as of kernel version 5.13) and what they can be used to isolate~\cite{linux_namespaces}.
+}
 \label{tab:namespaces}
 \end{table}
 
@@ -940,6 +942,8 @@ and implemented.  Type I hypervisors are implemented directly on top of hardware
 type II hypervisors run on top of a host operating system. This results in a further layer
 of indirection between the guest and the system hardware and thus a further degradation in
 performance.
+
+\todo{Maybe about specific hypervisor technologies like Xen, VirtualBox, KVM, etc?}
 
 \textit{Containers} have emerged as a new unit of computation in recent years, providing
 a lighter-weight alternative to full hypervisor-based
@@ -992,7 +996,7 @@ machines.
   \end{tabular}
 \end{table}
 
-Linux containers have three broad goals. In order of perceived importance and prioritization in existing
+Linux containers have three broad goals. In order of perceived prioritization in existing
 container implementations, they are:
 \begin{enumerate}
   \item \textbf{Dependency Management / Reproducibility.}
@@ -1000,10 +1004,9 @@ container implementations, they are:
     development environments. Dependencies should be maximally self-contained such that
     a containerized environment \enquote{just works} to the maximum possible extent. We
     can see examples of this property in Docker, the predominant container framework to
-    date~\todo{CITE}. Docker Hub~\todo{CITE} allows self-contained container images to be
-    pulled from the Internet, recombined, and used to create further self-contained
-    images. The end result is a flexible framework for creating and distributing reproducible
-    development environments.
+    date. Docker Hub~\cite{docker_hub} allows container images to be pulled from the
+    Internet, recombined, and used to create further images. The end result is a flexible
+    framework for creating and distributing reproducible development environments.
 
   \item \textbf{Virtualization.}
     Containers should virtualize system resources, creating the illusion of running on
@@ -1011,8 +1014,8 @@ container implementations, they are:
     between multiple containers (e.g.~sharing a single base copy of the same shared
     library between two container images). To achieve virtualization, containers generally
     rely on the namespaces and cgroups primitives provided by the Linux kernel. Overlay
-    filesystems~\todo{CITE} combined with the mount namespace aid containers one-way
-    sharing of  filesystem resources.
+    filesystems~\cite{overlayfs} combined with the mount namespace aid containers one-way
+    sharing of filesystem resources.
 
   \item \textbf{Confinement.}
     Containerized processes should be confined by default. That is, a containerized
@@ -1035,36 +1038,34 @@ revisit container security and approach it from a confinement-first perspective.
 \subsection{Container Security}%
 \label{ss:container-security-bg}
 
-Existing container security on Linux is supported by a number of fundamental
-virtualization and confinement mechanisms, covered in \Cref{s:process-security-model} and
-\Cref{s:security-extensions}. Namespaces virtualize and limit the visibility of global
-resource identifiers and cgroups virtualize and limit the available quantities of system
-resources. Dropped POSIX capabilities allow the container to partition coarse-grained root
-privileges into finer components. Seccomp-bpf filters limit the availability of system
-calls to the container, while Linux \gls{mac} policies, enforced by an \gls{lsm} restrict
-the container's access to system resources. Unix \gls{dac}, possibly accompanied by a new
-user namespace, can limit the container's access as well, when properly configured.
-
 While containers are lighter-weight than virtual machines, they are necessarily less
 secure, since they share and interact directly with the host operating system kernel.
-Although hypervisor escapes are not unheard of~\todo{CITE}, they are far less common than
-container escapes, particularly given the fact that variabilities in container
-configuration can easily introduce holes in
-confinement~\cite{sultan2019_container_security}. Rather than going through a hypervisor
-(either directly to hardware or to a subsequent system call), containers directly make
-system calls to the host kernel. Not only does this make the probability of container
-escape more likely, but it also increases the host-to-container and container-to-host
-attack surface. Every system call is an opportunity to exploit a kernel vulnerability;
-over-zealous resource-sharing is an opportunity to establish a covert channel, or perform
-a confused deputy attack~\cite{hardy1988_confused_deputy} against a privileged
-application. The cost to mount such attacks rapidly decreases as isolation from the host
-operating system decreases.
+Although hypervisor escapes are not unheard of~\cite{dubrelle2015_hypervisor,
+eder2016_hypervisor_container}, they are far less common than container escapes,
+particularly given the fact that variabilities in container configuration can easily
+introduce holes in confinement~\cite{sultan2019_container_security}. Rather than going
+through a hypervisor (either directly to hardware or to a subsequent system call),
+containers directly make system calls to the host kernel. Not only does this make the
+probability of container escape more likely, but it also increases the host-to-container
+and container-to-host attack surface. Every system call is an opportunity to exploit
+a kernel vulnerability; over-zealous resource-sharing is an opportunity to establish
+a covert channel, or perform a confused deputy attack~\cite{hardy1988_confused_deputy}
+against a privileged application. The cost to mount such attacks rapidly decreases as
+isolation from the host operating system decreases.
 
-\todo{Outline threat model for containers, rework this and update the figure}
-The threat model for container security consists of a few different attack surfaces and
-corresponding attack vectors. \Cref{fig:containersec} depicts a high-level overview of
-this threat model. Containers can attack other containers, host processes, the host
-operating system kernel, or mount privilege escalation attacks against the host.
+A general threat model for container security consists of a number of attack vectors, each
+targeting a different part of the system. A malicious container can target another
+container, a regular host process, or the host operating system kernel. Similarly,
+a malicious host process can target a container. To attack the \gls{os} kernel,
+a container must generally exploit a kernel-level vulnerability, such as a memory safety
+error in a system call implementation. To mitigate such attacks, the attack surface
+exposed by the kernel to the container should be minimal. Other classes of attack rely on
+exploiting the intended effects of system calls for in unintended ways. For instance,
+a misconfigured security policy might allow a containerized process to load a kernel
+module or perform interprocess communication with an external daemon. Abusing shared
+resources can have a similar affect, allowing a container to manipulate or tamper with an
+external process. \Cref{fig:containersec} depicts a high-level overview of this threat
+model.
 
 \begin{figure}[tbp]
   \centering
@@ -1079,17 +1080,45 @@ operating system kernel, or mount privilege escalation attacks against the host.
 \subsubsection{Container Security in Industry}%
 \label{sss:container-security-industry}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item OCI
+Existing container security on Linux is supported by a number of fundamental
+virtualization and confinement mechanisms, covered in \Cref{s:process-security-model} and
+\Cref{s:security-extensions}. Namespaces virtualize and limit the visibility of global
+resource identifiers and cgroups virtualize and limit the available quantities of system
+resources. Dropped POSIX capabilities allow the container to partition coarse-grained root
+privileges into finer components. Seccomp-bpf filters limit the availability of system
+calls to the container, while Linux \gls{mac} policies, enforced by an \gls{lsm} restrict
+the container's access to system resources. Unix \gls{dac}, possibly accompanied by a new
+user namespace, can limit the container's access as well, when properly configured.
 
-    \item Docker~\cite{bui2015_docker_analysis, combe2016_to_docker}
+\todo{Discuss the OCI spec?}
 
-    \item LXC
+\gls{lxc}~\todo{CITE} is a container runtime for Linux that directly exposes low-level
+virtualization and confinement primitives. \gls{lxc} exposes namespaces and cgroups to
+virtualize system resources and seccomp-bpf to filter system calls, reducing the kernel's
+attack surface.
 
-    \item OpenShift
-  \end{itemize}
-\end{inprogress}
+Docker~\cite{docker_security, bui2015_docker_analysis, combe2016_to_docker}, originally
+based on \gls{lxc}, provides a high-level interface for creating, manipulating, and
+running container images. Docker places containers in a new cgroup with sensible defaults
+for resource virtualization. To isolate processes, the filesytem, and network interfaces,
+Docker containers run in a new \texttt{pid}, \texttt{ipc}, \texttt{mnt}, and \texttt{net}
+namespace by default.  Similarly, Docker uses the \texttt{uts} namespace for hostname
+virtualization and the \texttt{cgroup} namespace to limit cgroup membership visibility. To
+reduce the kernel's attack surface, Docker also includes a default seccomp-bpf profile
+that blocks 51 system calls. Finally, Docker supports integration with the AppArmor
+\gls{lsm} when it is enabled on the host, using a generic default profile that provides
+modest protection~\cite{docker_apparmor, docker_default_apparmor}.
+
+Unfortunately, Docker does not run in a new user namespace by default, making privilege
+escalation from within a container significantly more likely~\cite{docker_security}.
+However, it does offer the ability to opt-in to user namespace confinement with some
+additional setup.  Docker also provides a \texttt{--privileged} flag which allows a user
+to totally ignore all security defaults, essentially granting the container the same
+access as a (often root-privileged) host process.
+
+\todo{Possibly discuss others: OpenVZ, OpenShift, more?}
+
+\todo{Possibly discuss containerized package managers: Snap, FlatPak, \etal?}
 
 \subsubsection{Container Security in Academia}%
 \label{sss:container-security-academia}
@@ -1143,21 +1172,29 @@ attack surface exposed by the container running directly on the host operating s
 
 To address limitations imposed by container security defaults and alleviate concerns about
 poor security practices in default configurations, many researchers have turned to
-automatic policy generation~\cite{loukidis2018_dockersec, ghavamania2020_confine}.
-Dockersec~\cite{loukidis2018_dockersec} uses a combination of static analysis techniques
-on existing security profiles and a dynamic training process to automatically infer
-AppArmor profiles for containers.  These inferred profiles provide greater protection than
-the generic default profile since they are finer-grained and tailored to the container's
-access patterns. In addition to generating \gls{mac} policy, others have focused on
-generating seccomp-bpf policy to reduce the kernel's attack surface from within
-a container. Confine~\cite{ghavamania2020_confine} uses static binary analysis and library
-call instrumentation to generate seccomp-bpf policy for container images.  Their results
-showed that they were able to significantly reduce the attack surface for kernel
-exploitation in many of the most popular Docker images. While not an automated approach in
-and of itself, Sun \etal~\cite{sun2018_security_namespace} proposed the inclusion of
-a security namespace into the kernel, allowing individual containers to load their own
-independent \gls{mac} policy. Security namespaces could be used in combination with policy
-generation mechanisms to allow containers to easily confine themselves.
+automatic policy generation~\cite{loukidis2018_dockersec, ghavamania2020_confine,
+lei2017_speaker}.  Dockersec~\cite{loukidis2018_dockersec} uses a combination of static
+analysis techniques on existing security profiles and a dynamic training process to
+automatically infer AppArmor profiles for containers.  These inferred profiles provide
+greater protection than the generic default profile since they are finer-grained and
+tailored to the container's access patterns. In addition to generating \gls{mac} policy,
+others have focused on generating seccomp-bpf policy to reduce the kernel's attack surface
+from within a container. Confine~\cite{ghavamania2020_confine} uses static binary analysis
+and library call instrumentation to generate seccomp-bpf policy for container images.
+Their results showed that they were able to significantly reduce the attack surface for
+kernel exploitation in many of the most popular Docker images.
+SPEAKER~\cite{lei2017_speaker} partitions application containers into two distinct
+phases\,---\,the setup and execution phase\,---\, and generates a unique seccomp-bpf
+policy for each phase, enabling a tighter bound on confinement for each phase.
+
+Others have focused on promoting self-confinement for containerized applications. Sun
+\etal~\cite{sun2018_security_namespace} proposed the inclusion of a security namespace
+into the kernel, allowing individual containers to load their own independent \gls{mac}
+policy. This approach enables a clear separation of concerns between host policy and
+container policy, and provides a clear path toward unprivileged self-confinement. The
+approach is also generic enough to enable the use of alternative \gls{lsm}-based
+confinement solutions on a per-container basis. \bpfcontain{}, for instance, might work
+cooperatively with security namespaces for more efficient per-container confinement.
 
 Vulnerability analysis of container images~\cite{shu2017_image_vuln, kwon2020_divds,
 brady2020_docker_cloud} can be an effective technique for identifying weaknesses in
@@ -1174,10 +1211,10 @@ vulnerabilities during development.
 
 \gls{ebpf} is seeing increasing prominence within the container security space. Besides
 \bpfbox{} and \bpfcontain{}, other projects have arisen over the past few years, albeit
-with a general focus on observability rather than policy enforcement. Tracee~\todo{CITE}
+with a general focus on observability rather than policy enforcement. Tracee~\cite{tracee}
 is a container observability tool developed by Aqua Security that can watch system calls
 made by a container, along with other security-sensitive events, and generate audit logs
-for further analysis. Cilium~\todo{CITE} is a popular security daemon for the Kubernetes
+for further analysis. Cilium~\cite{cilium} is a popular security daemon for the Kubernetes
 container orchestration framework, with a focus on network security for distributed
 container deployments. Cilium provides observability metrics through a configurable audit
 framework and allows the end-user to define network policy for telemetry, performance
@@ -1390,7 +1427,7 @@ and their properties.
 
 It is worth spending more time focusing specifically on \gls{lsm} probes, as these are used
 extensively in \bpfbox{} and \bpfcontain{} to enforce policy over security-sensitive
-events. Introduced by KP Singh in his KRSI (Kernel Runtime Security Instrumentation)
+events. Introduced by KP Singh in his \gls{krsi}
 patch~\cite{singh2019_krsi}, \gls{lsm} probes define a canonical framework for attaching \gls{ebpf}
 programs to the Linux kernel's \gls{lsm} security hooks (c.f.~\Cref{ss:mac}). Unlike
 traditional \gls{lsm}s which are implemented as static kernel modules, \gls{lsm} probes are
