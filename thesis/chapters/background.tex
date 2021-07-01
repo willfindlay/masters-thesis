@@ -1,12 +1,16 @@
-\begin{inprogress}
-  This chapter presents background information on virtualization and confinement
-  technologies in Linux and other Unix-like operating systems. It also presents a detailed
-  history and examination of \gls{ebpf} and discusses its applications in the domains of
-  computer security, performance monitoring, and beyond.
-\end{inprogress}
+This chapter presents technical background information required to understand this thesis
+and discusses related work from the perspective of industry and academia.
+\Cref{s:process-security-model} presents technical background on historical models for
+process-level confinement, with a particular emphasis on Multics, Unix, and Unix
+derivatives.  \Cref{s:security-extensions} focuses on subsequent extensions to the Unix
+security model and covers related work in the confinement space. \Cref{s:virtualization}
+examines process-level virtualization technologies in Unix-like operating systems.
+\Cref{s:containers-bg} discusses the differences between hypervisor- and container-based
+virtualization, container security, and presents related work in the container security
+space. Finally, \Cref{s:ebpf-bg} presents a detailed history of \glsentryshort{ebpf},
+describes its architectural components and features, and discusses use cases in security
+and beyond.
 
-%\section{Process-Level Virtualization and Confinement}%
-%\label{s:virtualization-and-confinement}
 \section{Classic Unix Process Security Model}%
 \label{s:process-security-model}
 
@@ -17,7 +21,7 @@ how these concepts interact to form the backbone of process-level security in Un
 goal of this section is to help the reader build a mental model of how operating systems
 isolate and protect processes and system resources at the most fundamental level. Readers
 with intermediate to advanced knowledge of operating systems security can skip this
-section in favour of \Cref{s:extensions-bg} which examines more advanced security
+section in favour of \Cref{s:security-extensions} which examines more advanced security
 mechanisms and discusses related work.
 
 \subsection{The Reference Monitor}%
@@ -35,16 +39,16 @@ implementation of a reference monitor is known as the \textit{security kernel.}
 \Cref{fig:refmon} depicts the reference monitor concept as it was first presented by
 Anderson~\cite{anderson1972_report}.
 
-\begin{figure}[tbp]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.6\linewidth]{figs/background/refmon.pdf}
   \caption[The reference monitor concept]{
-    The reference monitor concept as outlined in the Anderson
-    Report~\cite{anderson1972_report}. User processes make requests (e.g.~via system calls
-    to the operating system). The \gls{os} kernel invokes the reference monitory, which is
-    implemented in software as a security kernel. The reference monitor queries its
-    security policy taking the subject, object, and other parameters as input. As output,
-    it returns a security decision (i.e.~whether the requested access should be
+    The reference monitor concept as outlined in the Anderson Report. Redrawn and adapted
+    from Anderson~\cite{anderson1972_report}. User processes make requests (e.g.~via
+    system calls to the operating system). The \gls{os} kernel invokes the reference
+    monitory, which is implemented in software as a security kernel. The reference monitor
+    queries its security policy taking the subject, object, and other parameters as input.
+    As output, it returns a security decision (i.e.~whether the requested access should be
     \textit{allowed} or \textit{denied}).
   }%
   \label{fig:refmon}
@@ -135,7 +139,7 @@ rings, ring 0 and ring 3 for kernelspace and userspace respectively. \Cref{fig:r
 depicts this design. Lee \etal~\cite{lee2018_lotr} have proposed using the remaining two
 rings for finer-grained isolation on x86.
 
-\begin{figure}[tbp]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/rings.pdf}
   \caption[Protection rings on modern CPUs]{
@@ -214,12 +218,17 @@ versa~\cite{van_oorschot2020_tools_jewels}. Together, the set of all access cont
 (or capability lists) forms an \textit{access matrix}, describing the \gls{dac} policy over
 the entire system. \Cref{fig:acl} depicts this relationship.
 
-\begin{figure}[tbp]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/acl.pdf}
   \caption[The access matrix]{
     The access matrix and the relationship between \glspl{acl} and capability
-    lists~\cite{anderson1972_report, van_oorschot2020_tools_jewels, jaeger2008_os_security}.
+    lists~\cite{anderson1972_report, van_oorschot2020_tools_jewels,
+    jaeger2008_os_security}. \glspl{acl} define the set of subjects that have specific
+    access rights on a particular object. Capability lists conversely define the access
+    rights that a specific subject has on a set of objects. Note that an \gls{acl} may be
+    derived by taking the set of all capability lists and vice versa. Taken together,
+    these form the access matrix.
   }%
   \label{fig:acl}
 \end{figure}
@@ -333,10 +342,10 @@ authors showed that their model was generalizable and that it could be used to i
 any \gls{dac} mechanism.
 
 Dittmer and Tripunitara~\cite{dittmer2014_setuid} examined the implementation and common
-usage patterns of the POSIX setuid and setgid API across multiple Unix-like operating
+usage patterns of the POSIX setuid and setgid \gls{api} across multiple Unix-like operating
 systems. They identified weaknesses in systems that do not implement the latest POSIX
 standard revisions and suggested that mismatched semantics between various implementors
-can be a source of developer error. Finally, they presented an alternative API that
+can be a source of developer error. Finally, they presented an alternative \gls{api} that
 partitions \gls{uid} changes into permanent and temporary categories. Tsafrir
 \etal~\cite{tsafrir2008_setuid} and Chen \etal~\cite{chen2002_setuid} identified the same
 fundamental issues and proposed the adoption of similar mechanisms.
@@ -477,7 +486,7 @@ various kernel functions~\cite{zhang2021_lsm_file_overhead}. The eventual goal o
 this is an evolving process and no formal verification exists to prove the security of
 \gls{lsm} hooks~\cite{ganapathy2005_lsm}. \Cref{fig:lsm} depicts the basic \gls{lsm} architecture.
 
-\begin{figure}[tbp]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/lsm.pdf}
   \caption[The LSM architecture]{
@@ -721,7 +730,7 @@ applications in the best case and expose security vulnerabilities in the worst c
 Another innate problem with seccomp arises due to its fine-granularity. Paradoxically,
 avoiding system call categorization can expose vulnerabilities, due to system call
 equivalence classes. For instance, the \texttt{openat(2)} system call can perform the same
-functionality as the \texttt{open(2)} system call, with slightly different API semantics.
+functionality as the \texttt{open(2)} system call, with slightly different \gls{api} semantics.
 A seccomp-BPF filter allowing one system call but denying the other is now totally broken
 and vulnerable to sandbox escape.  Similarly, argument checking on pathnames or file
 descriptors can be vulnerable to \gls{toctou} race conditions in practice, rendering such
@@ -991,7 +1000,7 @@ major differences between container and hypervisor-based architectures.
 %   \label{fig:virt}
 % \end{figure}
 
-\begin{figure}[tbp]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=1\linewidth]{figs/background/virtualization.pdf}
   \caption[A comparison of virtual machine and container architectures]{
@@ -1059,7 +1068,7 @@ resources can have a similar affect, allowing a container to manipulate or tampe
 external process. \Cref{fig:containersec} depicts a high-level overview of this threat
 model.
 
-\begin{figure}[tbp]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/container_security.pdf}
   \caption[A sample threat model for container security]{
@@ -1276,7 +1285,7 @@ a page fault~\cite{mccanne1993_bpf}.  By applying filtering logic in the kernel,
 expensive copying could be skipped for packets that would be discarded or ignored by the
 network monitor anyway.
 
-\begin{figure}[tbp]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/classic-bpf.pdf}
   \caption[The classic BPF architecture]{The classic \gls{bpf} architecture. Adapted from McCanne and Jacobson~\cite{mccanne1993_bpf}.}%
@@ -1316,7 +1325,7 @@ just-in-time compiled into the native instruction set.  \Cref{fig:extended-bpf} 
 the \gls{ebpf} architecture in detail. The reader is encouraged to compare this with the classic
 BPF architecture, depicted in \Cref{fig:classic-bpf}.
 
-\begin{figure}[tbp]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/ebpf.pdf}
   \caption[The extended BPF architecture]{The extended \gls{bpf} architecture. Unlike classic
@@ -1427,7 +1436,7 @@ and their properties.
   Program Type & Description\\
   \midrule
   \textit{\gls{lsm} Probes}    & \gls{lsm} probes~\cite{singh2019_krsi} attach to the kernel's \gls{lsm} hooks and can be used to audit security events and make policy decisions.\\
-  \textit{Raw Tracepoints}     & Raw tracepoint programs attach to a stable tracing interface exposed by the Linux kernel. Tracepoints are considered a stable API, but are more limiting than alternatives such as Kprobes or Fentry probes.\\
+  \textit{Raw Tracepoints}     & Raw tracepoint programs attach to a stable tracing interface exposed by the Linux kernel. Tracepoints are considered a stable \gls{api}, but are more limiting than alternatives such as Kprobes or Fentry probes.\\
   \textit{Kprobes/Kretprobes}  & Kprobe programs can attach to any kernel function, by replacing the function with a trap into the \gls{bpf} program. The \gls{bpf} program has read-only access to the function arguments. Kretprobes work in the same way, but handle function returns instead of function calls.\\
   \textit{Fentry/Fexit Probes} & A more efficient version of Kprobes and Kretprobes that directly trampolines into the \gls{bpf} program instead of trapping. These programs can also be used to modify the return value of specifically allowlisted kernel functions (e.g.~system call implementations).\\
   \textit{Uprobes/Uretprobes}  & The userspace equivalent of Kprobes and Kretprobes.\\
@@ -1447,7 +1456,7 @@ traditional \gls{lsm}s which are implemented as static kernel modules, \gls{lsm}
 runtime, simply by loading a new \gls{ebpf} program.  \Cref{fig:bpf-lsm} depicts how \gls{lsm} probes
 integrate with the \gls{lsm} framework.
 
-\begin{figure}[tbp]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/bpf-lsm.pdf}
   \caption[How eBPF LSM probes make policy decisions]{A simplified example of how \gls{ebpf} \gls{lsm} probes make policy decisions. Privileged userspace processes can attach one or more \gls{lsm} probes to a given hook. When a userspace process requests a privileged operation, the kernel implicitly calls into the corresponding \gls{lsm} hooks, which in turn invoke the logic associated with each \gls{lsm}. A shim \gls{lsm} is responsible for invoking each \gls{lsm} probe, and any resulting policy decisions are taken together to arrive at a final decision. As with ordinary \gls{lsm}s, the final decision is consensus-based. That is, if \textit{any \gls{lsm}s} or \textit{any \gls{bpf} \gls{lsm} probes} disagree on a policy decision, the privileged operation is denied.}%
@@ -1545,7 +1554,7 @@ With libbpf and \gls{core}, \gls{ebpf} programs can now be compiled once and run
 that supports the required \gls{bpf} features. This provides a powerful advantage over other
 \gls{ebpf} frameworks and even alternatives to \gls{ebpf}, such as loadable kernel modules. A \gls{core}
 program that runs on one kernel will be guaranteed to run on another of the same version
-or higher, barring any API incompatibilities like changes in a hooker function signature.
+or higher, barring any \gls{api} incompatibilities like changes in a hooker function signature.
 Such incompatibilities can be resolved with the use of built-in kernel configuration
 checks.
 
@@ -1570,7 +1579,7 @@ At a first approximation, \gls{ebpf} differs from kernel modules in the followin
   \item \gls{ebpf} programs \textbf{must pass verification checks} before they can be loaded into the
   kernel. This verification step provides assurances about program safety. For instance, \gls{ebpf}
   programs are guaranteed not to deadlock the kernel, and are far less likely to suffer from
-  memory safety issues. In contrast, misuse of kernel APIs in a kernel module can have dangerous
+  memory safety issues. In contrast, misuse of kernel \gls{api}s in a kernel module can have dangerous
   implications for system safety and security.
 
   \item An implicit advantage provided by \gls{ebpf} is that \gls{bpf} programs can be \textbf{easier
