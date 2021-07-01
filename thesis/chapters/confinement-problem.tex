@@ -12,6 +12,67 @@ inform the way we think about new confinement mechanisms going forward.
 \end{inprogress}
 
 \section{Rethinking the Virtualization Narrative}%
+\label{s:rethinking-virtualization}
+
+Hypervisor-backed virtualization is commonly considered more secure than container-based
+virtualization~\cite{sultan2019_container_security, eder2016_hypervisor_container}.
+Intuitively, this makes sense. Containers run directly on the host operating system,
+whereas a virtual machine runs on top of a hypervisor, separated by at least one layer of
+indirection from the host system. However, this intuition does not strictly stand up to
+scrutiny. A virtual machine running on top of a hypervisor makes requests to the
+hypervisor's \gls{api} (via hypercalls), in much the same way as a container running on
+a host operating system makes requests to the kernel's \gls{api} (via system calls).
+\Cref{fig:syscall-hypercall} illustrates this parity.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/confinement-problem/syscall-hypercall.pdf}
+  \caption[]{
+    \todo{Caption here}
+  }%
+  \label{fig:syscall-hypercall}
+\end{figure}
+
+The isolation guarantees provided by a virtual machine come almost entirely from a sense
+of obfuscation over a semantic gap, created as the hypervisor virtualizes system
+resources.  There is no notion of centralized policy in a virtual machine; rather,
+security is an emergent phenomenon, a form of \enquote{policy through mechanism}. With the
+right tools, we can and have poked holes everywhere in this
+policy~\cite{dubrelle2015_hypervisor, thongthua2016_analysis, shahzad2017_systematic}.
+
+The central argument of this thesis is that there is no fundamental reason why containers
+cannot be as\,---\,if not more\,---\,secure than virtual machines.
+\begin{inprogress}
+  \begin{itemize}
+    \item The point is that we just need to define a clear protection boundary
+    \item \bpfbox{} lays the foundation for this, and \bpfcontain{} brings it home
+    \item In \bpfbox{} policies are defined in a centralized, flexible policy file, and
+          integrate a variety of possible behaviours together in a simple and clear way
+    \item In \bpfcontain{}, we build a container abstraction into \bpfbox{}, and use this
+          to inform an \textit{implicit policy}. This defines a very clear boundary for
+          operations that can impact the container vs operations that can impact the system as
+          a whole. Behaviour \textit{within} the container is unrestricted, whereas behaviour
+          that can impact the world outside the container is implicitly denied. Policy then
+          defines \textit{exceptions} to this implicit policy, rather than \textit{rules}.
+    \item The key insight is that \gls{ebpf} allows us to get this container abstraction
+          in a flexible and adoptable way, rather than forcing it into the mainline kernel.
+          Yet we still have the flexibility to incorporate various aspects of system state
+          into our enforcement decisions, beyond simple \gls{lsm} hooks.
+  \end{itemize}
+\end{inprogress}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item To accomplish something like this, we need a way to define a single, clear,
+          protection boundary into containers
+    \item This requires a fundamental change in the way containers are handled on the kernel side
+    \item Specifically, we need a good abstraction for containers in order to be able to enforce
+          a clear and effective policy for then
+    \item Lead into the next section: Given the existing state of confinement on Linux,
+          this may not seem like a feasible task, but we assert that new kernel technologies
+          are making this possible (i.e.~eBPF and \bpfbox{}/\bpfcontain{}).
+  \end{itemize}
+\end{inprogress}
 
 \begin{inprogress}
   \begin{itemize}
