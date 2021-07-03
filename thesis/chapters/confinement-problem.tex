@@ -12,23 +12,29 @@ inform the way we think about new confinement mechanisms going forward.
 \end{inprogress}
 
 \section{Rethinking the Virtualization Narrative}%
-\label{s:rethinking-virtualization}
+\label{s:cp-rethinking}
 
-Hypervisor-backed virtualization is commonly considered more secure than container-based
-virtualization~\cite{sultan2019_container_security, eder2016_hypervisor_container}.
-Intuitively, this makes sense. Containers run directly on the host operating system,
-whereas a virtual machine runs on top of a hypervisor, separated by at least one layer of
-indirection from the host system. However, this intuition does not strictly stand up to
-scrutiny. A virtual machine running on top of a hypervisor makes requests to the
-hypervisor's \gls{api} (via hypercalls), in much the same way as a container running on
-a host operating system makes requests to the kernel's \gls{api} (via system calls).
-\Cref{fig:syscall-hypercall} illustrates this parity.
+Hypervisor-backed virtualization is commonly considered more secure than
+con\-tain\-er-based virtualization~\cite{sultan2019_container_security,
+eder2016_hypervisor_container}.  Intuitively, this makes sense. Containers run directly on
+the host operating system, whereas a virtual machine runs on top of a hypervisor,
+separated by at least one layer of indirection from the host system. However, this
+intuition does not strictly stand up to scrutiny. A virtual machine running on top of
+a hypervisor makes requests to the hypervisor's \gls{api} (via hypercalls), in much the
+same way as a container running on a host operating system makes requests to the kernel's
+\gls{api} (via system calls).  \Cref{fig:syscall-hypercall} illustrates this parity.
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/confinement-problem/syscall-hypercall.pdf}
-  \caption[]{
-    \todo{Caption here}
+  \caption[System calls and hypercalls as vulnerable interfaces]{
+    System calls and hypercalls as vulnerable interfaces. Containers (which are really
+    just process groups running on the host \gls{os}) make system calls to the
+    more-privileged host \gls{os} kernel. Similarly, a guest operating system makes
+    hypercalls to the more-privileged hypervisor. Both of these interfaces are ripe
+    targets for a myriad of attacks, including privilege escalation and tampering with
+    sensitive resources. This parity becomes particularly evident when we assume that an
+    attacker has or is able to obtain control over the guest \gls{os}.
   }%
   \label{fig:syscall-hypercall}
 \end{figure}
@@ -74,29 +80,117 @@ cannot be as\,---\,if not more\,---\,secure than virtual machines.
   \end{itemize}
 \end{inprogress}
 
+% \begin{inprogress}
+%   \begin{itemize}
+%     \item Just like the word container makes people think about security
+%     \item Type I and Type II hypervisor, the way it's depicted, makes people think something else is happening
+%     \item The representation and terminology
+%     \item This makes sense to talk about it if we connect it to containers
+%     \item Why can't containers give as good or better security than hypervisors
+%     \item Can we just get our enforcement clear
+%     \item Virtual machines seem like they define a clear boundary, but it isn't actually
+%           so clear in practice because all these things are being shared across boundaries
+%     \item People think of virtual machines as being inherently more secure, the security
+%           benefit is more of an obfuscation thing related to the semantic gap but with the right
+%           tools you can still cross it freely
+%     \item VMs have all these little holes everywhere and the policy is not centralized\,---\,we
+%           have policy through mechanism
+%     \item There's no reason why containers can't be as (if not more) secure than virtual machines
+%     \item Because we can make this boundary very clear
+%     \item \bpfcontain{} can be seen as a step towards this
+%   \end{itemize}
+% \end{inprogress}
+
+
+
+
+\section{How Containers Apply Confinement Primitives}%
+\label{s:cp-containers}
+
+In general, Linux containers have three broad goals. However, these goals are not
+equally met by existing container management frameworks. In order of decreasing
+prioritization, they are:
+\begin{enumerate}
+  \item \textbf{Dependency Management / Reproducibility.}
+    Containers should provide an easy and robust framework for creating reproducible
+    development environments. Dependencies should be maximally self-contained such that
+    a containerized environment \enquote{just works} to the maximum possible extent. We
+    can see examples of this property in Docker, the predominant container framework to
+    date. Docker Hub~\cite{docker_hub} allows container images to be pulled from the
+    Internet, recombined, and used to create further images. The end result is a flexible
+    framework for creating and distributing reproducible development environments.
+
+  \item \textbf{Virtualization.}
+    Containers should virtualize system resources, creating the illusion of running on
+    a separate physical machine. Where possible, resources should be transparently reused
+    between multiple containers (e.g.~sharing a single base copy of the same shared
+    library between two container images). To achieve virtualization, containers generally
+    rely on the namespaces and cgroups primitives provided by the Linux kernel. Overlay
+    filesystems~\cite{overlayfs} combined with the mount namespace aid containers one-way
+    sharing of filesystem resources.
+
+  \item \textbf{Confinement.}
+    Containerized processes should be confined by default. That is, a containerized
+    process should have access to the minimal set of privileges required for it to operate
+    normally. The extent to which this property is achieved by conventional container
+    frameworks varies greatly, both by framework and by individual
+    deployment~\cite{sultan2019_container_security, lin2018_container_security,
+    bui2015_docker_analysis}. In general, proper confinement is not a priority of
+    container frameworks, and this tends to result in sacrificing security for
+    ease-of-deployment.
+\end{enumerate}
+
+The aforementioned goals are not only ordered by their decreasing prioritization in extant
+container management frameworks; they are also ordered by increasing relevance to
+container security. That is to say, existing frameworks generally prioritize goals
+unrelated to security and leave security as an afterthought. Since containers are really
+just process groups running directly on the host operating system, an unconfined container
+therefore exposes the same attack surface as an ordinary host process. Thus, one might
+expect container security to be of paramount importance. Unfortunately, this is not the
+case. These difficulties in confinement motivate the need to revisit container security
+and approach it from a confinement-first perspective. To understand how these confinement
+issues impact containers, we briefly review how container management systems apply
+confinement primitives in practice.
+
+To achieve confinement in the first place, container frameworks cobble together existing
+confinement technologies and apply them ways that are often simultaneously confusing and
+difficult to audit. The result is a complex policy soup with little room for customization
+or auditability. For instance, Snap~\cite{snap} uses a high-level policy language that
+targets system interfaces in a coarse-grained manner. Under the hood, this is compiled
+into hundreds or thousands of lines of seccomp-bpf and AppArmor policy.
+Docker~\cite{docker_security, docker_default_apparmor, docker_apparmor} uses a generic
+AppArmor, seccomp-bpf, and POSIX capability policy for every container, along with default
+namespace and control group configurations. Making meaningful changes to these policy
+configurations, beyond simply disabling them altogether, is difficult and
+error-prone~\cite{lin2018_container_security}.
+
+Container security policies are often overly-generic and ill-suited to fine-grained
+confinement. Part of the problem here is that containers in general are designed to
+\enquote{just work}. Overly fine-grained security policies may get in the way of this,
+particularly as end-user requirements vary and evolve across deployments.
+Docker~\cite{docker_security}, for instance,
+
+Even worse, many container management systems operate under a fail-open approach when the
+necessary security mechanisms are not supported. This results in low-security deployments,
+often without even notifying the user that there may be such a configuration. Since the
+end-user generally doesn't even participate in the policy authorship process, they may not
+even be aware of the level of protection that is being applied, resulting in a dangerous
+false sense of security. Docker's AppArmor policy~\cite{docker_apparmor,
+docker_default_apparmor}, for instance, is not applied when the deployment environment
+doesn't support AppArmor or AppArmor is disabled. Snap~\cite{snap} and others that rely on
+the AppArmor or SELinux \gls{lsm}s for confinement suffer from similar failings.
+
+
 \begin{inprogress}
-  \begin{itemize}
-    \item Just like the word container makes people think about security
-    \item Type I and Type II hypervisor, the way it's depicted, makes people think something else is happening
-    \item The representation and terminology
-    \item This makes sense to talk about it if we connect it to containers
-    \item Why can't containers give as good or better security than hypervisors
-    \item Can we just get our enforcement clear
-    \item Virtual machines seem like they define a clear boundary, but it isn't actually
-          so clear in practice because all these things are being shared across boundaries
-    \item People think of virtual machines as being inherently more secure, the security
-          benefit is more of an obfuscation thing related to the semantic gap but with the right
-          tools you can still cross it freely
-    \item VMs have all these little holes everywhere and the policy is not centralized\,---\,we
-          have policy through mechanism
-    \item There's no reason why containers can't be as (if not more) secure than virtual machines
-    \item Because we can make this boundary very clear
-    \item \bpfcontain{} can be seen as a step towards this
-  \end{itemize}
+  Docker applies a dangerously permissive iptables policy that can transparently
+  expose the container to an external network, even overriding existing denials~\cite{}.
+
+  \todo{Docker footguns including \url{https://blog.newsblur.com/2021/06/28/story-of-a-hacking/}}
 \end{inprogress}
 
+
 \section{Fundamental Issues with Linux Confinement}%
-\label{s:cp-confinement-issues}
+\label{s:cp-issues}
 
 \begin{enumerate}
   \item \textbf{Complexity and Interdependence.}
@@ -122,7 +216,7 @@ cannot be as\,---\,if not more\,---\,secure than virtual machines.
     \end{itemize}
   \end{inprogress}
 
-  \item \textbf{Inappropriate Defaults.}
+  \item \textbf{\todo{WHAT GOES HERE}.}
   \begin{inprogress}
     \begin{itemize}
       \item
@@ -153,71 +247,8 @@ cannot be as\,---\,if not more\,---\,secure than virtual machines.
 
 
 
-\section{Confinement in Container Management Frameworks}%
-\label{s:cp-containers}
-
-\begin{inprogress}
-Linux containers have three broad goals. In order of perceived prioritization in existing
-container implementations, they are:
-\begin{enumerate}
-  \item \textbf{Dependency Management / Reproducibility.}
-    Containers should provide an easy and robust framework for creating reproducible
-    development environments. Dependencies should be maximally self-contained such that
-    a containerized environment \enquote{just works} to the maximum possible extent. We
-    can see examples of this property in Docker, the predominant container framework to
-    date. Docker Hub~\cite{docker_hub} allows container images to be pulled from the
-    Internet, recombined, and used to create further images. The end result is a flexible
-    framework for creating and distributing reproducible development environments.
-
-  \item \textbf{Virtualization.}
-    Containers should virtualize system resources, creating the illusion of running on
-    a separate physical machine. Where possible, resources should be transparently reused
-    between multiple containers (e.g.~sharing a single base copy of the same shared
-    library between two container images). To achieve virtualization, containers generally
-    rely on the namespaces and cgroups primitives provided by the Linux kernel. Overlay
-    filesystems~\cite{overlayfs} combined with the mount namespace aid containers one-way
-    sharing of filesystem resources.
-
-  \item \textbf{Confinement.}
-    Containerized processes should be confined by default. That is, a containerized
-    process should have access to the minimal set of privileges required for it to operate
-    normally. The extent to which this property is achieved by conventional container
-    frameworks varies greatly, both by framework and by individual
-    deployment~\cite{sultan2019_container_security, lin2018_container_security,
-    bui2015_docker_analysis}.
-\end{enumerate}
-
-Unfortunately, the aforementioned goals are not only ordered by their decreasing
-prioritization in extant container management frameworks, but they are also ordered by
-increasing relevance to container security. That is to say, existing frameworks generally
-prioritize goals unrelated to security and leave security as an afterthought. Since
-containers are necessarily less isolated from the host system than virtual
-machines~\cite{sultan2019_container_security, eder2016_hypervisor_container}, one might
-expect container security to be of paramount importance. This motivates the need to
-revisit container security and approach it from a confinement-first perspective.
-\end{inprogress}
-
-\begin{inprogress}
-  Container security policies are often overly-generic and ill-suited to fine-grained
-  confinement. To achieve confinement in the first place, container frameworks cobble
-  together existing confinement technologies and apply them in confusing and
-  difficult-to-audit ways, overlapping and recombining default and generated policies. The
-  end result is a complex security soup with little room for policy customization or
-  auditability. \todo{Examples here}
-
-  Even worse, many container management systems operate under a fail-open approach when the
-  necessary security mechanisms are not supported. This results in low-security deployments,
-  often without even notifying the user that there may be such a configuration. Since the
-  end-user generally doesn't even participate in the policy authorship process, they may not
-  even be aware of the level of protection that is being applied, resulting in a dangerous
-  false sense of security. \todo{Examples here}
-\end{inprogress}
-
-
-
-
 \section{Design Goals}%
-\label{s:design-goals}
+\label{s:cp-design}
 
 Using the above analysis of the confinement problem, we can derive a clear set of design
 goals for \bpfbox{} and \bpfcontain{}, such that they approach a solution to issues that
@@ -235,5 +266,7 @@ identified at the beginning of this chapter (c.f.~\Cref{s:cp-confinement-issues}
 
 
 
+
+
 \section{The \bpfbox{} and \bpfcontain{} Threat Model}%
-\label{s:threat-model}
+\label{s:cp-threat-model}

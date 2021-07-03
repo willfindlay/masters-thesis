@@ -458,6 +458,18 @@ System call interposition for process confinement and intrustion detection.
   url       = {https://www.ndss-symposium.org/ndss2000/user-level-infrastructure-system-call-interposition-platform-intrusion-detection-and-confinement/},
 }
 
+MBox
+@inproceedings{kim2013_mbox,
+  author    = {Taesoo Kim and
+               Nickolai Zeldovich},
+  title     = {{Practical and Effective Sandboxing for Non-root Users}},
+  booktitle = {2013 {USENIX} Annual Technical Conference},
+  pages     = {139--144},
+  publisher = {{USENIX} Association},
+  year      = {2013},
+  url       = {https://www.usenix.org/conference/atc13/technical-sessions/presentation/kim},
+}
+
 pledge and unveil
 @misc{pledge,
   title        = {{pledge(2)}},
@@ -1388,6 +1400,16 @@ overlayfs
   urldate = {2021-06-29},
 }
 
+OCI spec
+@misc{oci,
+  author       = {{Linux Foundation}},
+  title        = {{Open Container Initiative}},
+  year         = {2020},
+  url          = {https://opencontainers.org},
+  urldate      = {2020-12-20},
+}
+
+Docker security documenation
 @misc{docker_security,
   author  = {{Docker Developers}},
   title   = {{Docker Security}},
@@ -1412,6 +1434,69 @@ Docker default AppArmor profile
   url     = {https://github.com/moby/moby/blob/master/profiles/apparmor/template.go},
   urldate = {2021-05-29},
   note    = {Github repository},
+}
+
+SELinux profile for Docker containers
+@misc{docker_selinux,
+  author  = {{Docker Developers}},
+  title   = {{profiles/apparmor/template.go}},
+  url     = {https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux_atomic_host/7/html/container_security_guide/docker_selinux_security_policy},
+  urldate = {2021-05-29},
+  note    = {Github repository},
+}
+
+LXC Security Documentation
+@misc{lxc_security,
+  author  = {{LXC Developers}},
+  title   = {{LXC Security}},
+  url     = {https://linuxcontainers.org/lxc/security/},
+  urldate = {2021-07-02},
+  note    = {Developer documenation},
+}
+
+Snapcraft
+@misc{snap,
+  author       = {{Snapcraft}},
+  title        = {{Security Policy and Sandboxing}},
+  year         = {2020},
+  url          = {https://snapcraft.io/docs/security-sandboxing},
+  urldate      = {2021-07-02},
+}
+
+Flatpak
+@misc{flatpak,
+  author       = {{Flatpak}},
+  title        = {{Sandbox Permissions}},
+  year         = {2020},
+  url          = {https://docs.flatpak.org/en/latest/sandbox-permissions.html},
+  urldate      = {2021-07-02},
+}
+
+OpenShift
+@misc{openshift,
+  author       = {{Red Hat}},
+  title        = {{OpenShift}},
+  year         = {2020},
+  url          = {https://www.openshift.com},
+  urldate      = {2020-12-20},
+}
+
+Bubblewrap
+@misc{bubblewrap,
+  author       = {{Bubblewrap}},
+  title        = {{Bubblewrap}},
+  year         = {2020},
+  url          = {https://github.com/containers/bubblewrap},
+  urldate      = {2020-10-25},
+}
+
+Firejail
+@misc{firejail,
+  author       = {{Firejail}},
+  title        = {{Firejail}},
+  year         = {2020},
+  url          = {https://firejail.wordpress.com},
+  urldate      = {2020-10-25},
 }
 
 
@@ -1701,9 +1786,6 @@ A scathing criticism of FlatPak security
 
 Security documentation for lxc
   https://linuxcontainers.org/lxc/security/
-
-SELinux Docker security policy
-  https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux_atomic_host/7/html/container_security_guide/docker_selinux_security_policy
 
 BPFRoid -- Malware detection on android
   https://arxiv.org/abs/2105.14344
