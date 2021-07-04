@@ -1,15 +1,14 @@
-\begin{inprogress}
 Researchers have been studying confinement for decades~\cite{lampson1973_confinement}, and
 have been designing and applying confinement primitives since the early days of
 time-sharing computers and multi-tenant systems~\cite{shu2016_security_isolation_study}.
-Despite decades of research into the confinement problem, the status quo of confinement on
-Linux, particularly from the perspective of containers, is in a sorry state. This chapter
-outlines the difficulties that arise in the Linux confinement ecosystem due to its
-inherent complexity, inflexible and interdependent components, and the difficulties that
-arise in adopting newly-proposed alternatives. These insights represent the key
-motivating factors behind the design of \bpfbox{} and \bpfcontain{} and can potentially
-inform the way we think about new confinement mechanisms going forward.
-\end{inprogress}
+While many developments have been made in the mean time, the current confinement
+landscape (particularly within the Linux ecosystem) suffers from a few fundamental flaws
+that culminate in poor container security practices; this does not need to be so. This
+chapter presents a critique of the current state of confinement on Linux, examines how
+confinement primitives are applied to containers, and proposes a fundamental re-framing of
+the problem to focus on \todo{WHAT THREE THINGS?}. In light of this re-framing, we
+consider design goals for \bpfbox{} and \bpfcontain{} and present the threat model for
+confinement under these research systems.
 
 \section{Rethinking the Virtualization Narrative}%
 \label{s:cp-rethinking}
@@ -47,38 +46,45 @@ tools, we can and have poked holes everywhere in this
 policy~\cite{dubrelle2015_hypervisor, thongthua2016_analysis, shahzad2017_systematic}.
 
 The central argument of this thesis is that there is no fundamental reason why containers
-cannot be as\,---\,if not more\,---\,secure than virtual machines.
-\begin{inprogress}
-  \begin{itemize}
-    \item The point is that we just need to define a clear protection boundary
-    \item \bpfbox{} lays the foundation for this, and \bpfcontain{} brings it home
-    \item In \bpfbox{} policies are defined in a centralized, flexible policy file, and
-          integrate a variety of possible behaviours together in a simple and clear way
-    \item In \bpfcontain{}, we build a container abstraction into \bpfbox{}, and use this
-          to inform an \textit{implicit policy}. This defines a very clear boundary for
-          operations that can impact the container vs operations that can impact the system as
-          a whole. Behaviour \textit{within} the container is unrestricted, whereas behaviour
-          that can impact the world outside the container is implicitly denied. Policy then
-          defines \textit{exceptions} to this implicit policy, rather than \textit{rules}.
-    \item The key insight is that \gls{ebpf} allows us to get this container abstraction
-          in a flexible and adoptable way, rather than forcing it into the mainline kernel.
-          Yet we still have the flexibility to incorporate various aspects of system state
-          into our enforcement decisions, beyond simple \gls{lsm} hooks.
-  \end{itemize}
-\end{inprogress}
+cannot be as\,---\,if not more\,---\,secure than virtual machines. While it is true that
+a containerized process is nothing more than a host process running under some virtualized
+state, an operating system that provides and enforces the right set of confinement
+primitives should be able to lock a container down in much the same way that a hypervisor
+implicitly enforces isolation. Unlike hypervisor-based isolation, a policy enforced by the
+operating system has the potential to be more minimal, centralized, and accessible to
+end-users. The key to developing such an enforcement mechanism lies in defining a clear
+protection boundary within the kernel and enforcing access across this boundary. \bpfbox{}
+lays the foundation for such an enforcement mechanism, and \bpfcontain{} explicitly
+applies it to containers.
 
-\begin{inprogress}
-  \begin{itemize}
-    \item To accomplish something like this, we need a way to define a single, clear,
-          protection boundary into containers
-    \item This requires a fundamental change in the way containers are handled on the kernel side
-    \item Specifically, we need a good abstraction for containers in order to be able to enforce
-          a clear and effective policy for then
-    \item Lead into the next section: Given the existing state of confinement on Linux,
-          this may not seem like a feasible task, but we assert that new kernel technologies
-          are making this possible (i.e.~eBPF and \bpfbox{}/\bpfcontain{}).
-  \end{itemize}
-\end{inprogress}
+In \bpfbox{}, policies are defined in a centralized, flexible policy file. Using
+\gls{ebpf}, \bpfbox{} can observe various aspects of system behaviour, such as user and
+kernelspace function calls, and incorporate them into its enforcement decisions. This
+helps define fine-grained policy while keeping the overall policy syntax clean and simple.
+\bpfcontain{} extends this model by defining an implicit protection boundary around
+a container, where the container is made up of a set of host processes and associated
+resources. Operations \textit{within} the container are implicitly allowed, whereas
+operations \textit{outside} the container or operations that can affect the system as
+a whole are implicitly denied. In this way, \bpfcontain{} policy allows the user to define
+\textit{exceptions to implicit rules} rather than the rules themselves.
+
+The key insight behind both \bpfbox{} and \bpfcontain{} is that novel kernel mechanisms
+are required to realize their respective goals. The new \gls{ebpf} kernel technology
+provides precisely the right framework for developing such mechanisms. In \bpfcontain{},
+a clear and well-defined abstraction for containers allows the kernel to enforce implicit
+policy centred around container semantics. We rely on \gls{ebpf} to enable the definition
+of such an abstraction without necessarily tying the kernel down to one specific
+interpretation of what a container actually is. Using multiple \gls{ebpf} programs and
+maps, we can combine various other aspects of system behaviour with \gls{lsm}-based
+enforcement in a stateful manner. \bpfbox{} uses its ability to introspect system state to
+enable policy enforcement at the granularity of individual function calls.
+
+At this point, it should be clear that both \bpfbox{} and \bpfcontain{} leverage the power
+of \gls{ebpf} to make improvements on the existing status quo of Linux confinement. The
+next two sections, \Cref{s:cp-issues} and \Cref{s:cp-containers}, discuss the state of
+confinement on Linux and how existing container technologies apply confinement primitives.
+This discussion serves to contextualize the notions behind this section and motivates the
+need for \bpfbox{} and \bpfcontain{} as novel confinement primitives.
 
 % \begin{inprogress}
 %   \begin{itemize}
@@ -101,6 +107,62 @@ cannot be as\,---\,if not more\,---\,secure than virtual machines.
 %   \end{itemize}
 % \end{inprogress}
 
+
+
+\section{Fundamental Issues with Linux Confinement}%
+\label{s:cp-issues}
+
+\begin{enumerate}
+  \item \textbf{Complexity and Interdependence.}
+    Existing confinement primitives are overly complex and designed for use
+    cases beyond simple process confinement. This results in a pattern of
+    abusing existing mechanisms
+  \begin{inprogress}
+    \begin{itemize}
+      \item Existing confinement solutions are overly complex
+      \item Based on a number of low-level primitives that were originally designed for
+            totally different tasks.
+      \item Namespaces were designed to virtualize resources. They provide a form of
+            isolation but not confinement; need a way to deal with namespace escapes
+      \item Cgroups, similarly, were designed to virtualize the availability of system
+            resources, not to directly confine.
+      \item Unix \gls{dac} is far too coarse-grained and easy to bypass to be practically useful for confinement.
+      \item POSIX capabilities can be used to reduce overprivilege by portioning root privileges, but do not
+            implement confinement by themselves.
+      \item Seccomp-bpf works well to reduce the availability of system calls, but writing
+            classic \gls{bpf} filters is complex and error-prone. Anything beyond basic system call
+            filtering quickly becomes untenable, particularly considering race conditions when
+            checking arguments.
+    \end{itemize}
+  \end{inprogress}
+
+  \item \textbf{\todo{WHAT GOES HERE}.}
+  \begin{inprogress}
+    \begin{itemize}
+      \item
+    \end{itemize}
+  \end{inprogress}
+
+  \item \textbf{Difficulty Adopting New Solutions.}
+  \begin{inprogress}
+    \begin{itemize}
+      \item Motivated by the above difficulties, academics are often tempted to propose new confinement solutions.
+      \item Many try to solve the problem by simply recombining and reusing these existing primitives in new ways.
+      \item This isn't really a step forward, as we are still subject to limitations introduced in item 1 and item 2.
+      \item To really solve the problem, we need kernel-level support for something new.
+      \item The issue is that new solutions based on kernel support are not necessarily
+            adoptable. New kernel code can introduce bugs and security vulnerabilities, and
+            needs to be thoroughly tested before it can be considered production-ready.
+      \item Another problem arises when we consider container-specific confinement as an
+            end goal; not everyone can agree on what the definition of a \enquote{container}
+            even is, so how can we hope to reach agreement on what a new abstraction for
+            container-based confinement would even look like.
+      \item To solve this problem, we need a way to add new abstractions to the kernel in
+            a way that is neither binding nor limited by the lack of adoptability associated
+            with traditional kernel-based solutions.
+    \end{itemize}
+  \end{inprogress}
+\end{enumerate}
 
 
 
@@ -189,62 +251,6 @@ the AppArmor or SELinux \gls{lsm}s for confinement suffer from similar failings.
 \end{inprogress}
 
 
-\section{Fundamental Issues with Linux Confinement}%
-\label{s:cp-issues}
-
-\begin{enumerate}
-  \item \textbf{Complexity and Interdependence.}
-    Existing confinement primitives are overly complex and designed for use
-    cases beyond simple process confinement. This results in a pattern of
-    abusing existing mechanisms
-  \begin{inprogress}
-    \begin{itemize}
-      \item Existing confinement solutions are overly complex
-      \item Based on a number of low-level primitives that were originally designed for
-            totally different tasks.
-      \item Namespaces were designed to virtualize resources. They provide a form of
-            isolation but not confinement; need a way to deal with namespace escapes
-      \item Cgroups, similarly, were designed to virtualize the availability of system
-            resources, not to directly confine.
-      \item Unix \gls{dac} is far too coarse-grained and easy to bypass to be practically useful for confinement.
-      \item POSIX capabilities can be used to reduce overprivilege by portioning root privileges, but do not
-            implement confinement by themselves.
-      \item Seccomp-bpf works well to reduce the availability of system calls, but writing
-            classic \gls{bpf} filters is complex and error-prone. Anything beyond basic system call
-            filtering quickly becomes untenable, particularly considering race conditions when
-            checking arguments.
-    \end{itemize}
-  \end{inprogress}
-
-  \item \textbf{\todo{WHAT GOES HERE}.}
-  \begin{inprogress}
-    \begin{itemize}
-      \item
-    \end{itemize}
-  \end{inprogress}
-
-  \item \textbf{Difficulty Adopting New Solutions.}
-  \begin{inprogress}
-    \begin{itemize}
-      \item Motivated by the above difficulties, academics are often tempted to propose new confinement solutions.
-      \item Many try to solve the problem by simply recombining and reusing these existing primitives in new ways.
-      \item This isn't really a step forward, as we are still subject to limitations introduced in item 1 and item 2.
-      \item To really solve the problem, we need kernel-level support for something new.
-      \item The issue is that new solutions based on kernel support are not necessarily
-            adoptable. New kernel code can introduce bugs and security vulnerabilities, and
-            needs to be thoroughly tested before it can be considered production-ready.
-      \item Another problem arises when we consider container-specific confinement as an
-            end goal; not everyone can agree on what the definition of a \enquote{container}
-            even is, so how can we hope to reach agreement on what a new abstraction for
-            container-based confinement would even look like.
-      \item To solve this problem, we need a way to add new abstractions to the kernel in
-            a way that is neither binding nor limited by the lack of adoptability associated
-            with traditional kernel-based solutions.
-    \end{itemize}
-  \end{inprogress}
-\end{enumerate}
-
-
 
 
 \section{Design Goals}%
@@ -254,7 +260,7 @@ Using the above analysis of the confinement problem, we can derive a clear set o
 goals for \bpfbox{} and \bpfcontain{}, such that they approach a solution to issues that
 plague the status quo. In particular, we derive the following three design principles.
 Note that these design principles are each the polar opposite of the three major problems
-identified at the beginning of this chapter (c.f.~\Cref{s:cp-confinement-issues}).
+identified in \Cref{s:cp-issues}.
 
 \begin{enumerate}
   \item \textbf{Simplicity and Flexibility.}
@@ -270,3 +276,46 @@ identified at the beginning of this chapter (c.f.~\Cref{s:cp-confinement-issues}
 
 \section{The \bpfbox{} and \bpfcontain{} Threat Model}%
 \label{s:cp-threat-model}
+
+This section outlines the threat model for \bpfbox{} and \bpfcontain{}. In particular, we
+provide a scoping definition of confinement policy and what it means for a policy
+enforcement mechanism to confine a subject using that policy. We also discuss the
+adversary's capabilities, goals, and potential attack vectors in a commodity Linux-based
+operating system. In general, both \bpfbox{} and \bpfcontain{} have a very similar threat
+model, with subtle and specific differences arising in a few key areas. Where
+discrepancies arise, they will be noted accordingly.
+
+\subsection{Confinement Policy}
+
+We define \textit{confinement} as the restriction of \textit{subject} (system actors such
+as processes) behaviours to a set of desired behaviours, as they pertain to
+\textit{objects} (system resources such as files, network sockets, devices, and IPC
+handles onto other subjects). Consider the set of all subjects $\mathcal{S}$ and the set
+of all objects $\mathcal{O}$. We define $\mathcal{S} \subseteq \mathcal{O}$ to account for
+IPC objects. The goal is to create a confinement policy $\mathcal{P}_i$ for every subject
+$\mathcal{S}_i$ that maps $(\mathcal{S}_i, \mathcal{O}_j, Op)$ tuples to \textit{policy
+decisions} where $Op$ is an operation $\mathcal{S}_i \xrightarrow{Op} \mathcal{O}_j$.
+
+\begin{inprogress}
+  \begin{itemize}
+    \item Confinement policy is expressed as follows:
+    \item Consider the set of all system subjects $\mathcal{S}$
+    \item Consider the set of all system objects $\mathcal{O}$
+    \item Define $\mathcal{S} \subseteq \mathcal{O}$ to account for IPC objects
+    \item We want to author a policy $\mathcal{P}_{i}$ for subject $\mathcal{S}_i$ that
+    maps $(\mathcal{S}_i, \mathcal{O}_j, Op)$ tuples to policy decisions where $Op$ is an operation
+    from $\mathcal{S}_i \rightarrow \mathcal{O}_j$
+  \end{itemize}
+\end{inprogress}
+
+\subsection{The Adversary}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item We consider a root-level adversary
+    \item The goal is to escape confinement
+  \end{itemize}
+\end{inprogress}
+
+\subsection{Attack Vectors}
+
