@@ -169,6 +169,11 @@ need for \bpfbox{} and \bpfcontain{} as novel confinement primitives.
 \section{How Containers Apply Confinement Primitives}%
 \label{s:cp-containers}
 
+This section examines and critiques the way Linux container technologies apply confinement
+primitives to lock down container deployments. We focus primarily on Docker as a case
+study, however these principles in general apply the majority of container management
+frameworks.
+
 In general, Linux containers have three broad goals. However, these goals are not
 equally met by existing container management frameworks. In order of decreasing
 prioritization, they are:
@@ -230,7 +235,10 @@ Container security policies are often overly-generic and ill-suited to fine-grai
 confinement. Part of the problem here is that containers in general are designed to
 \enquote{just work}. Overly fine-grained security policies may get in the way of this,
 particularly as end-user requirements vary and evolve across deployments.
-Docker~\cite{docker_security}, for instance,
+Docker~\cite{docker_security}, for instance, provisions an overly-permissive default
+AppArmor policy~\cite{docker_default_apparmor} designed to enforce basic protections
+against interacting with sensitive kernel parameters without impacting the functionality
+of the container. \todo{More examples}
 
 Even worse, many container management systems operate under a fail-open approach when the
 necessary security mechanisms are not supported. This results in low-security deployments,
@@ -240,16 +248,15 @@ even be aware of the level of protection that is being applied, resulting in a d
 false sense of security. Docker's AppArmor policy~\cite{docker_apparmor,
 docker_default_apparmor}, for instance, is not applied when the deployment environment
 doesn't support AppArmor or AppArmor is disabled. Snap~\cite{snap} and others that rely on
-the AppArmor or SELinux \gls{lsm}s for confinement suffer from similar failings.
+the AppArmor or SELinux \glspl{lsm} for confinement suffer from similar failings.
 
-
-\begin{inprogress}
-  Docker applies a dangerously permissive iptables policy that can transparently
-  expose the container to an external network, even overriding existing denials~\cite{}.
-
-  \todo{Docker footguns including \url{https://blog.newsblur.com/2021/06/28/story-of-a-hacking/}}
-\end{inprogress}
-
+Other aspects of confinement policy may be ignored entirely or even worse, overridden by
+a more permissive policy, possibly without the user's knowledge.
+Docker~\cite{docker_security} applies a dangerously permissive iptables policy that can
+transparently expose a container to an external network, even overriding existing deny
+rules. This overly-permissive network policy was the direct cause of a recent data breach
+at NewsBlur~\cite{newsblur}, a news aggregation website, although NewsBlur administrators
+claim that no user data was actually compromised~\cite{newsblur}. \todo{More examples}
 
 
 
@@ -264,10 +271,25 @@ identified in \Cref{s:cp-issues}.
 
 \begin{enumerate}
   \item \textbf{Simplicity and Flexibility.}
+  \begin{inprogress}
+    \begin{itemize}
+      \item
+    \end{itemize}
+  \end{inprogress}
 
   \item \textbf{Sensible Defaults.}
+  \begin{inprogress}
+    \begin{itemize}
+      \item
+    \end{itemize}
+  \end{inprogress}
 
   \item \textbf{Adoptability.}
+  \begin{inprogress}
+    \begin{itemize}
+      \item
+    \end{itemize}
+  \end{inprogress}
 \end{enumerate}
 
 
@@ -292,21 +314,40 @@ as processes) behaviours to a set of desired behaviours, as they pertain to
 \textit{objects} (system resources such as files, network sockets, devices, and IPC
 handles onto other subjects). Consider the set of all subjects $\mathcal{S}$ and the set
 of all objects $\mathcal{O}$. We define $\mathcal{S} \subseteq \mathcal{O}$ to account for
-IPC objects. The goal is to create a confinement policy $\mathcal{P}_i$ for every subject
+IPC objects. The goal is to create a confinement policy $\mathcal{P}_i$ for a subject
 $\mathcal{S}_i$ that maps $(\mathcal{S}_i, \mathcal{O}_j, Op)$ tuples to \textit{policy
-decisions} where $Op$ is an operation $\mathcal{S}_i \xrightarrow{Op} \mathcal{O}_j$.
+decisions} where $Op$ is an operation $\mathcal{S}_i \xrightarrow{Op} \mathcal{O}_j$.  The
+policy is written in some abstract policy language that encodes such tuples in
+a human-readable format.
 
-\begin{inprogress}
-  \begin{itemize}
-    \item Confinement policy is expressed as follows:
-    \item Consider the set of all system subjects $\mathcal{S}$
-    \item Consider the set of all system objects $\mathcal{O}$
-    \item Define $\mathcal{S} \subseteq \mathcal{O}$ to account for IPC objects
-    \item We want to author a policy $\mathcal{P}_{i}$ for subject $\mathcal{S}_i$ that
-    maps $(\mathcal{S}_i, \mathcal{O}_j, Op)$ tuples to policy decisions where $Op$ is an operation
-    from $\mathcal{S}_i \rightarrow \mathcal{O}_j$
-  \end{itemize}
-\end{inprogress}
+An \textit{enforcement engine} operates between the subject and system objects. It
+intercepts requests to access these objects and makes an access control decision according
+to the corresponding confinement policy. The end result is a behavioural restriction on
+the subject to some subset of all possible behaviours. The goal of an effective security policy
+and enforcement engine is to achieve the minimal possible subset for normal operation,
+thus achieving the principle of least privilege and minimizing the attack surface for
+potential exploitation.
+
+When designing a policy language and policy enforcement engine, there are a number of
+trade-offs to consider that can directly impact the security, usability, readability, and
+auditability of resulting policies.
+
+\paragraph*{Expressive vs Terse} An \textit{expressive} confinement policy encodes rules
+(our subject, object, and operation tuples) at a fine granularity. Conversely,
+a \textit{terse} confinement policy encodes rules at a coarse granularity. A more
+expressive policy language is naturally conducive to the principle of least-privilege, as
+fine-grained access controls can tightly confine an application to the minimal set of
+desired behaviours.  Intuitively, a terser policy language is less conducive to
+a least-privilege confinement policy, as it becomes impossible to encode access controls
+at the required granularity. However, policy authorship becomes significantly easier under
+a terse policy language~\cite{schreuders2012_towards}. This property may indirectly
+improve security in practice, as users are less likely to take shortcuts during policy
+authorship.
+
+\paragraph*{Restrictive vs Permissive} A more \textit{restrictive} policy language
+takes a
+
+\paragraph*{Tightly Coupled vs Decoupled}
 
 \subsection{The Adversary}
 
