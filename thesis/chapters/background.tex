@@ -959,6 +959,9 @@ indirection provided by the hypervisor and the guest operating system kernel, vi
 machines are generally considered to be quite \textit{strongly isolated} from each other,
 but this isolation comes at the cost of much higher overhead, both in terms of storage and
 performance~\cite{eder2016_hypervisor_container, sultan2019_container_security}.
+\Cref{s:cp-rethinking} in \Cref{c:confinement-problem} discusses the differences between
+virtual machines and containers in more detail and addresses some common misconceptions
+about the levels of isolation they provide.
 
 %Hypervisors can be classified into one of two types, depending on how they are deployed
 %and implemented.  Type I hypervisors are implemented directly on top of hardware, whereas
@@ -966,8 +969,8 @@ performance~\cite{eder2016_hypervisor_container, sultan2019_container_security}.
 %of indirection between the guest and the system hardware and thus a further degradation in
 %performance.
 
-\todo{With HVMs, the security comes from the virtualization, well-defined barrier from one
-machine to another, opt in to whatever is going to cross it}
+% \todo{With HVMs, the security comes from the virtualization, well-defined barrier from one
+% machine to another, opt in to whatever is going to cross it}
 
 \textit{Containers} have emerged as a new unit of computation in recent years, providing
 a lighter-weight alternative to full hypervisor-based
