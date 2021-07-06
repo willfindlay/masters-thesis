@@ -704,7 +704,7 @@ in overpermission in practice. For instance, consider a hard link to the root of
 filesystem placed by an attacker within some unveiled directory. The unveiling process
 would now have full access to the entire filesystem, constituting a sandbox escape.
 
-\subsubsection*{Linux Seccomp and Seccomp-BPF}%
+\subsubsection*{Linux Seccomp and Seccomp-bpf}%
 \label{sss:seccomp}
 
 In Linux, the primary facility for direct system call filtering is
@@ -719,9 +719,9 @@ process.
 
 Later, seccomp was extended to enable processes to define custom allowlists, denylists,
 and enforcement actions using classic \gls{bpf} filters~\cite{edge2015_seccomp}. This new
-incarnation was dubbed seccomp-BPF. While allowing for much finer-grained confinement
-policy than pledge and unveil, seccomp-BPF has its own limitations which can result in
-ineffective (and possibly dangerous) policies. In seccomp-BPF, filters are defined over
+incarnation was dubbed seccomp-bpf. While allowing for much finer-grained confinement
+policy than pledge and unveil, seccomp-bpf has its own limitations which can result in
+ineffective (and possibly dangerous) policies. In seccomp-bpf, filters are defined over
 system call numbers and (optionally) arguments. Unless the developer takes great care to
 correlate system call numbers with the specific target architecture, the resulting policy
 may allow and deny incorrect system calls, resulting in broken policies that break
@@ -731,16 +731,16 @@ Another innate problem with seccomp arises due to its fine-granularity. Paradoxi
 avoiding system call categorization can expose vulnerabilities, due to system call
 equivalence classes. For instance, the \texttt{openat(2)} system call can perform the same
 functionality as the \texttt{open(2)} system call, with slightly different \gls{api} semantics.
-A seccomp-BPF filter allowing one system call but denying the other is now totally broken
+A seccomp-bpf filter allowing one system call but denying the other is now totally broken
 and vulnerable to sandbox escape.  Similarly, argument checking on pathnames or file
 descriptors can be vulnerable to \gls{toctou} race conditions in practice, rendering such
 policies ineffective~\cite{anderson2017_comparison}.
 
-A final consideration for seccomp-BPF is that the development of seccomp-BPF policies
+A final consideration for seccomp-bpf is that the development of seccomp-bpf policies
 requires knowledge of the relatively arcane \gls{cbpf} syntax. This problem is somewhat
-alleviated by the existence of library wrappers~\cite{libseccomp} around seccomp-BPF
+alleviated by the existence of library wrappers~\cite{libseccomp} around seccomp-bpf
 functionality, although the usability of these solutions remains somewhat questionable,
-particularly given the many pitfalls of seccomp-BPF policy
+particularly given the many pitfalls of seccomp-bpf policy
 authorship~\cite{anderson2017_comparison}.
 
 \subsubsection*{FreeBSD Capsicum and CHERI Capabilities}
