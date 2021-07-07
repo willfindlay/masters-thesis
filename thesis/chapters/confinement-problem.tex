@@ -29,15 +29,25 @@ present the threat model for confinement under these research systems.
 \section{Rethinking the Virtualization Narrative}%
 \label{s:cp-rethinking}
 
+\todo{Have a diagram that positions virtual machines, containers, and standalone in terms
+of perceived isolation guarantees, have an arrow spanning left to right. We are trying to
+move containers as far to the right as possible, ideally to the same place as
+hypervisor-based virtual machines, hopefully farther over. On the right: isolation
+provided by hardware, isolation provided by software (perceived stronger vs perceived
+weaker). When the boundary is in hardware it is considered rigid, in software things are
+considered more malleable. We are trying to find a way to make things more rigid in
+software.}
+
 Hypervisor-backed virtualization is commonly considered more secure than
 con\-tain\-er-based virtualization~\cite{sultan2019_container_security,
-eder2016_hypervisor_container}.  Intuitively, this makes sense. Containers run directly on
-the host operating system, whereas a virtual machine runs on top of a hypervisor,
-separated by at least one layer of indirection from the host system. However, this
-intuition does not strictly stand up to scrutiny. A virtual machine running on top of
-a hypervisor makes requests to the hypervisor's \gls{api} (via hypercalls), in much the
-same way as a container running on a host operating system makes requests to the kernel's
-\gls{api} (via system calls).  \Cref{fig:syscall-hypercall} illustrates this parity.
+eder2016_hypervisor_container}.  \todo{See figure ...} Intuitively, this makes sense.
+Containers run directly on the host operating system, whereas a virtual machine runs on
+top of a hypervisor, separated by at least one layer of indirection from the host system.
+However, this intuition does not strictly stand up to scrutiny. A virtual machine running
+on top of a hypervisor makes requests to the hypervisor's \gls{api} (via hypercalls), in
+much the same way as a container running on a host operating system makes requests to the
+kernel's \gls{api} (via system calls).  \Cref{fig:syscall-hypercall} illustrates this
+parity.
 
 \begin{figure}[htbp]
   \centering
@@ -54,25 +64,58 @@ same way as a container running on a host operating system makes requests to the
   \label{fig:syscall-hypercall}
 \end{figure}
 
-The isolation guarantees provided by a virtual machine come almost entirely from a sense
-of obfuscation over a semantic gap, created as the hypervisor virtualizes system
-resources. There is no notion of centralized policy in a virtual machine; rather, security
-is an emergent phenomenon, a form of \enquote{policy through mechanism}. With the right
-tools, we can and have poked holes everywhere in this
-policy~\cite{dubrelle2015_hypervisor, thongthua2016_analysis, shahzad2017_systematic}.
+\todo{You can't craft fine-grained policies with a virtual machine. You get a box. Network
+firewalls, shared filesystem with access controls. (The cognitive overhead to lock down
+a virtual machine after exposing specific interfaces is very high.) With a virtual machine,
+policy is intrinsically tied to functionality. It's all about configuring the interfaces
+and then locking it down (either from the inside or outside). Provision the resource and
+secure it, because that's how you do it with a conventional operating system. Here, the
+provisioning is already taken care of by the operating system, so all we're doing is
+specifying the access.}
+
+\todo{Verify the following: VM escapes are partially about exploiting bugs, but it's also
+that the attacker has access to a lot of functionality that allows them the opportunity to
+exploit these bugs. It's not least-privilege. You're giving them an entire VM. They have
+control over the entire OS and the entire hardware interface becomes an attack surface. In
+principle, with a container, you can make this exposed interface very small. People think
+of the hardware interface as being more secure, even though in principle it is larger,
+since it is rigid. But we have a hard boundary in the Linux kernel too: the \gls{lsm}
+layer. People think of hardware as being more secure, and somehow they think this notion
+carries forward to hardware semantics implemented in software.}
+
+\todo{We have a repeated mistake here: Taking the interface that's there as the one we use
+to define our security properties. When we build containers, we made the mistake again of
+thinking that the interfaces are rigid, and that we need to make use of the abstractions
+that already exist. For the people who are designing container runtimes, their goal is to
+design container runtimes, not reinvent security mechanisms. Our goal is not to design
+a new container runtime, it's to improve the security of existing runtimes.}
+
+% The isolation guarantees provided by a virtual machine come almost entirely from a sense
+% of obfuscation over a semantic gap, created as the hypervisor virtualizes system
+% resources. There is no notion of centralized policy in a virtual machine; rather, security
+% is an emergent phenomenon, a form of \enquote{policy through mechanism}. With the right
+% tools, we can and have poked holes everywhere in this
+% policy~\cite{dubrelle2015_hypervisor, thongthua2016_analysis, shahzad2017_systematic}.
 
 The central argument of this thesis is that there is no fundamental reason why containers
 cannot be as\,---\,if not more\,---\,secure than virtual machines. While it is true that
 a containerized process is nothing more than a host process running under some virtualized
 state, an operating system that provides and enforces the right set of confinement
 primitives should be able to lock a container down in much the same way that a hypervisor
-implicitly enforces isolation. Unlike hypervisor-based isolation, a policy enforced by the
-operating system has the potential to be more minimal, centralized, and accessible to
-end-users. The key to developing such an enforcement mechanism lies in defining a clear
-protection boundary within the kernel and enforcing access across this boundary. \bpfbox{}
-lays the foundation for such an enforcement mechanism, and \bpfcontain{} explicitly
-applies it to containers.
+implicitly enforces isolation. \todo{Talk about why containers suck in brief and lead into 3.2}
 
+\todo{All of the following should be moved into another section, possibly design goals,
+possibly something else?}
+
+\todo{Introduce \bpfbox{} and \bpfcontain{}}
+
+Unlike hypervisor-based isolation, a policy enforced by the operating system has the
+potential to be more minimal, centralized, and accessible to end-users. The key to
+developing such an enforcement mechanism lies in defining a clear protection boundary
+within the kernel and enforcing access across this boundary. \bpfbox{} lays the foundation
+for such an enforcement mechanism, and \bpfcontain{} explicitly applies it to containers.
+
+\todo{Rephrase this: Our goal is to have policies that are centralized, flexible, ...}
 In \bpfbox{}, policies are defined in a centralized, flexible policy file. Using
 \gls{ebpf}, \bpfbox{} can observe various aspects of system behaviour, such as user and
 kernelspace function calls, and incorporate them into its enforcement decisions. This
