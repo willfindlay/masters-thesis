@@ -1,3 +1,19 @@
+\begin{comment}
+  What is the original framing of the problem? It almost doesn't make sense to frame it as a system-wide problem. Because a process is useless if it's totally isolated from the rest of the system. Make processes isolated and poke some holes in this isolation.
+
+  This is something that has been on the radar since the origin of multi-processing
+  systems.  We can argue that one of the reasons it's never been solved has been because
+  the problem is too broadly defined.
+
+  One set of tehcnologies that has helped in this sense has been hypervisor-based
+  virtualization. But this is subject to some fundamental concerns. Containers
+
+  It's a reframing but it's also narrowing the scope
+  A "scoping definition"? A "scoping reframing"?
+  Applying it specifically to containers and virtualization
+\end{comment}
+
+
 Researchers have been studying confinement for decades~\cite{lampson1973_confinement}, and
 have been designing and applying confinement primitives since the early days of
 time-sharing computers and multi-tenant systems~\cite{shu2016_security_isolation_study}.
@@ -463,3 +479,19 @@ system state, or perform any other operation in violation of our security model.
 adversary's goal is simple: to escape confinement. This goal of escaping confinement
 (tantamount to privilege escalation) can be a subgoal used to achieve some other purpose,
 such as spoofing, tampering, information disclosure, or persistence.
+
+
+
+\section{Summary}
+
+This chapter has presented a novel framing of the confinement problem as it pertains to
+Linux and Linux containers. In particular, we reexamine the differences between virtual
+machines and containers and argue that the former need not be more secure than the latter,
+we identify three distinct problems with modern Linux confinement, and we examine how
+containers apply existing confinement primitives. This re-framing of the confinement
+problem both serves as a motivation for the creation of \bpfbox{} and \bpfcontain{} and
+informs the design goals behind these two research systems. Finally, we present
+a high-level threat model for \bpfbox{} and \bpfcontain{}, providing a scoping definition
+for what it means to confine an adversary. The next two chapters, \Cref{c:bpfbox} and
+\Cref{c:bpfcontain}, present the design and implementation of \bpfbox{} an \bpfcontain{} in
+detail.
