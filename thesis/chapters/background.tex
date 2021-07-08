@@ -20,9 +20,9 @@ and Linux) security. In particular, we discuss the \textit{reference monitor con
 how these concepts interact to form the backbone of process-level security in Unix.  The
 goal of this section is to help the reader build a mental model of how operating systems
 isolate and protect processes and system resources at the most fundamental level. Readers
-with intermediate to advanced knowledge of operating systems security can skip this
-section in favour of \Cref{s:security-extensions} which examines more advanced security
-mechanisms and discusses related work.
+familiar with these \gls{os} security concepts can skip this section in favour of
+\Cref{s:security-extensions} which examines more advanced security mechanisms and
+discusses related work.
 
 \subsection{The Reference Monitor}%
 \label{ss:refmon}
@@ -46,7 +46,7 @@ Anderson~\cite{anderson1972_report}.
     The reference monitor concept as outlined in the Anderson Report. Redrawn and adapted
     from Anderson~\cite{anderson1972_report}. User processes make requests (e.g.~via
     system calls to the operating system). The \gls{os} kernel invokes the reference
-    monitory, which is implemented in software as a security kernel. The reference monitor
+    monitor, which is implemented in software as a security kernel. The reference monitor
     queries its security policy taking the subject, object, and other parameters as input.
     As output, it returns a security decision (i.e.~whether the requested access should be
     \textit{allowed} or \textit{denied}).
@@ -100,7 +100,8 @@ configuration~\cite{denning1970_virtual}. With the advent of multi-processing sy
 virtual memory took on a new role\,---\,separation of memory resources between distinct
 user processes. This separation is a fundamental notion for secure multi-processing; two
 user processes should not be able to interfere with each other's memory, and a user
-process should not be able to interfere with the \gls{os} kernel.
+process should not be able to interfere with the \gls{os} kernel, resident in ring
+0 memory.
 
 By partitioning memory into virtual address spaces, virtual memory forms the most
 fundamental isolation barrier between user processes. To accomplish this goal, a hardware
@@ -119,13 +120,15 @@ this end, the CPU \gls{isa} generally defines memory protection bits that can be
 to physical pages and enforced in the \gls{mmu}. For instance, individual pages can be
 marked as readable, writable, and/or executable depending on how the memory is to be used.
 How these protections are used is generally up to the operating system; for instance,
-modern operating systems often enforce a W$\oplus$X memory protection policy, meaning this
-pages marked writable and not allowed to be marked executable and vice versa. This helps
-to prevent the most baroque code execution attacks. Another important protection mechanism
-employed by the operating system is \gls{aslr}, which slightly randomizes virtual address
-space mappings, making them unpredictable and thus harder for attackers to exploit
-consistently. A similar mechanism, \gls{kaslr}, protects the kernel. \todo{Maybe talk
-about grsecruity here?}
+modern operating systems often enforce a policy where pages marked writable and not
+allowed to be marked executable and vice versa (this is often referred to as W$\oplus$X).
+This helps to prevent the most baroque code execution attacks. Another important
+protection mechanism employed by the operating system is \gls{aslr}, which slightly
+randomizes virtual address space mappings, making them unpredictable and thus harder for
+attackers to exploit consistently. A similar mechanism, \gls{kaslr}, protects the kernel.
+The \texttt{grsecruity} patch suite~\cite{grsecruity} offers additional memory protection for the
+Linux kernel, hardening the boundary between userspace and kernelspace and applying
+additional mitigations to prevent return-oriented programming attacks.
 
 Additional protections are afforded by \textit{memory protection rings}, a concept first
 introduced by Multics~\cite{vyssotsky1965_multics, corbato1965_multics} in the mid-1960s.
@@ -149,7 +152,8 @@ rings for finer-grained isolation on x86.
     ring 0 is said to run in \textit{supervisor mode}. Rings 1--2 are generally unused by
     \glsentryfull{cots} operating systems.  Modern CPUs often implement \enquote{lower}
     rings (-1, -2, etc.) by virtualizing ring 0 in firmware. These are typically reserved
-    for the hypervisor and other hardware-backed features like Intel Management Engine.
+    for the hypervisor and other hardware-backed features like Intel's System Management
+    Mode~\cite{tereshkin2009_introducing}.
   }%
   \label{fig:rings}
 \end{figure}
@@ -159,7 +163,7 @@ rings for finer-grained isolation on x86.
 
 \textit{Discretionary access control} (DAC) comprises the most basic form of access
 control in many operating systems, including Linux, other Unix-like operating systems, and
-Microsoft Windows. First formalized in the 1983 US Department of Defense (sic)
+Microsoft Windows. First formalized in the 1983 US Department of Defense
 standard~\cite{orange_book}, a discretionary access control mechanism partitions and
 labels system objects (i.e.~resources such as files) by the subjects (i.e.~actors such as
 users and user processes) that \textit{own} them. The corresponding resource owner then
@@ -248,11 +252,11 @@ password entries in \texttt{/etc/shadow}. To achieve such functionality, Unix pr
 special \texttt{setuid} and \texttt{setgid} permission bits that implicitly set the
 effective user and group IDs of a process to those of the file owner.
 A sufficiently-privileged process may also change its own \gls{euid} or \gls{egid} at
-runtime using the \texttt{setuid(2)} and \texttt{setgid(2)} family of system calls. Our
-login program, for instance, could use these system calls to drop its privileges to those
-of the user being logged in. While necessary under the Unix \gls{dac} model, setuid and
-setgid binaries have long been the target of exploitation, particularly for privilege
-escalation attacks~\cite{dittmer2014_setuid, van_oorschot2020_tools_jewels,
+runtime using the \texttt{setuid(2)} and \texttt{setgid(2)} family of system calls. The
+example login program, for instance, could use these system calls to drop its privileges
+to those of the user being logged in. While necessary under the Unix \gls{dac} model,
+setuid and setgid binaries have long been the target of exploitation, particularly for
+privilege escalation attacks~\cite{dittmer2014_setuid, van_oorschot2020_tools_jewels,
 jaeger2008_os_security}.
 
 \subsubsection*{User and Group Assignment}
@@ -317,11 +321,12 @@ access control~\cite{mao2009_trojan_resistant_dac, solworth2004_layered_dac,
 dranger2006_dac_complexity, dittmer2014_setuid, tsafrir2008_setuid, chen2002_setuid}. This
 subsection focuses specifically on the latter.
 
-Mao \etal~\cite{mao2009_trojan_resistant_dac} proposed IFEDAC as an alternative \gls{dac}
-model that is resistant to Trojan horse attacks. The insight behind their work was that
-\gls{dac}'s primary weaknesses lie in the inability to distinguish requests involving
-multiple actors. Their mechanism proposes to track information flows between subjects and
-use these flows to infer a list of subjects that have influenced a request.
+Mao \etal~\cite{mao2009_trojan_resistant_dac} proposed IFEDAC (Information Flow Enhanced
+\glsentryshort{dac}) as an alternative \gls{dac} model that is resistant to Trojan horse
+attacks.  The insight behind their work was that \gls{dac}'s primary weaknesses lie in the
+inability to distinguish requests involving multiple actors. Their mechanism proposes to
+track information flows between subjects and use these flows to infer a list of subjects
+that have influenced a request.
 
 Under the traditional Unix \gls{dac} model, only the \gls{uid} and \gls{gid} of the
 process are considered when making access control decisions; under IFEDAC, the \gls{uid}
@@ -427,12 +432,12 @@ davis2019_cheriabi}. These are discussed in more detail in \Cref{ss:syscall-filt
 In contrast with \gls{dac}, \textit{\gls{mac}} does not delegate permission assignment to
 the resource owner~\cite{spencer1999_flask, van_oorschot2020_tools_jewels,
 jaeger2008_os_security}. In the context of Unix, this means that \gls{mac} both overrides
-traditional discretionary access controls \textit{and} applies access controls even to the
-root user. Historical implementations of \gls{mac} have focused primarily on \gls{mls}, an
-access control scheme that revolves around the \textit{secrecy} of objects and
-\textit{access level} of subjects~\cite{bell2005_blp}. In a nutshell, \gls{mls} prevents
-a subject from reading data with a higher secrecy level or writing data with a lower
-secrecy level, preventing breaches in confidentiality and
+traditional discretionary access controls \textit{and} applies access controls to all
+users on the system, including root. Historical implementations of \gls{mac} have focused
+primarily on \gls{mls}, an access control scheme that revolves around the \textit{secrecy}
+of objects and \textit{access level} of subjects~\cite{bell2005_blp}. In a nutshell,
+\gls{mls} prevents a subject from reading data with a higher secrecy level or writing data
+with a lower secrecy level, preventing breaches in confidentiality and
 integrity~\cite{jaeger2008_os_security}.
 
 \subsubsection*{Historical Approaches}
@@ -952,7 +957,7 @@ Cgroup membership visibility can be virtualized using the cgroup namespace~\cite
 
 Classically, virtualization of a system has been accomplished by means of
 a hypervisor~\cite{eder2016_hypervisor_container, sultan2019_container_security}.
-Hypervisors implement an interface which virtualizes the underlying system hardware,
+Hypervisors implement an interface which overlays the underlying system hardware,
 enabling one or more \textit{guest operating systems} to be installed on a single physical
 host. These guest systems are then called \textit{virtual machines}. Due to the level of
 indirection provided by the hypervisor and the guest operating system kernel, virtual
@@ -975,16 +980,17 @@ about the levels of isolation they provide.
 \textit{Containers} have emerged as a new unit of computation in recent years, providing
 a lighter-weight alternative to full hypervisor-based
 virtualization~\cite{sultan2019_container_security, eder2016_hypervisor_container}.
-Unlike virtual machines, containers run directly on the host operating system and share
-the host operating system kernel with each other and with ordinary host processes. In
-fact, a container is nothing more than a discrete collection of processes (sometimes only
-one process) that share some common isolation from the rest of the system by way of
-virtualization and confinement primitives. These primitives typically include namespaces
-and cgroups, along with optional confinement mechanisms like seccomp-\gls{bpf} and Linux
-\gls{mac} policy. Since they directly share the host \gls{os} kernel and do not require
-a guest operating system, containers are significantly lighter-weight and more performant
-than virtual machines, but at the cost of weaker isolation. \Cref{fig:virt} depicts the
-major differences between container and hypervisor-based architectures.
+Unlike virtual machines, containers run directly on the host operating system, rather than
+directly atop a hypervisor, and share the host operating system kernel with each other and
+with ordinary host processes. In fact, a container is nothing more than a discrete
+collection of processes (sometimes only one process) that share some common isolation from
+the rest of the system by way of virtualization and confinement primitives. These
+primitives typically include namespaces and cgroups, along with optional confinement
+mechanisms like seccomp-\gls{bpf} and Linux \gls{mac} policy. Since they directly share
+the host \gls{os} kernel and do not require a guest operating system, containers are
+significantly lighter-weight and more performant than virtual machines, but at the cost of
+weaker base isolation. \Cref{fig:virt} depicts the major differences between container and
+hypervisor-based architectures.
 
 % \begin{figure}[tbp]
 %   \centering
@@ -1037,39 +1043,46 @@ major differences between container and hypervisor-based architectures.
 %   \end{tabular}
 % \end{table}
 
-\todo{Discuss the OCI spec?}
-
 \subsection{Container Security}%
 \label{ss:container-security-bg}
 
-While containers are lighter-weight than virtual machines, they are necessarily less
-secure, since they share and interact directly with the host operating system kernel.
-Although hypervisor escapes are not unheard of~\cite{dubrelle2015_hypervisor,
-eder2016_hypervisor_container}, they are far less common than container escapes,
-particularly given the fact that variabilities in container configuration can easily
-introduce holes in confinement~\cite{sultan2019_container_security}. Rather than going
-through a hypervisor (either directly to hardware or to a subsequent system call),
-containers directly make system calls to the host kernel. Not only does this make the
-probability of container escape more likely, but it also increases the host-to-container
-and container-to-host attack surface. Every system call is an opportunity to exploit
-a kernel vulnerability; over-zealous resource-sharing is an opportunity to establish
-a covert channel, or perform a confused deputy attack~\cite{hardy1988_confused_deputy}
-against a privileged application. The cost to mount such attacks rapidly decreases as
-isolation from the host operating system decreases.
+Due to the nature of containers as specialized process groups, any notion of container
+security is necessarily tightly coupled with the underlying security primitives exposed by
+the host operating system. These include the virtualization primitives discussed in
+\Cref{s:virtualization}, and the confinement primitives discussed in
+\Cref{s:process-security-model,s:security-extensions}. Whereas the primary attack surface
+of a virtual machine is comprised of the interface exposed on top of hardware, the attack
+surface of a container is comprised of the system calls that it uses to interact with the
+host operating system kernel. Every system call is an opportunity to exploit a kernel
+vulnerability; over-zealous resource-sharing is an opportunity to establish a covert
+channel, or perform a confused deputy attack~\cite{hardy1988_confused_deputy} against
+a privileged application. The cost to mount such attacks rapidly decreases as isolation
+from the host operating system decreases.
 
-A general threat model for container security consists of a number of attack vectors, each
-targeting a different part of the system. A malicious container can target another
-container, a regular host process, or the host operating system kernel. Similarly,
-a malicious host process can target a container. To attack the \gls{os} kernel,
-a container must generally exploit a kernel-level vulnerability, such as a memory safety
-error in a system call implementation. To mitigate such attacks, the attack surface
-exposed by the kernel to the container should be minimal. Other classes of attack rely on
-exploiting the intended effects of system calls for in unintended ways. For instance,
-a misconfigured security policy might allow a containerized process to load a kernel
-module or perform interprocess communication with an external daemon. Abusing shared
-resources can have a similar affect, allowing a container to manipulate or tamper with an
-external process. \Cref{fig:containersec} depicts a high-level overview of this threat
-model.
+% While containers are lighter-weight than virtual machines, they are necessarily less
+% secure, since they share and interact directly with the host operating system kernel.
+% Although hypervisor escapes are not unheard of~\cite{dubrelle2015_hypervisor,
+% eder2016_hypervisor_container}, they are far less common than container escapes,
+% particularly given the fact that variabilities in container configuration can easily
+% introduce holes in confinement~\cite{sultan2019_container_security}. Rather than going
+% through a hypervisor (either directly to hardware or to a subsequent system call),
+% containers directly make system calls to the host kernel. Not only does this make the
+% probability of container escape more likely, but it also increases the host-to-container
+% and container-to-host attack surface.
+
+\Cref{fig:containersec} depicts a high-level threat model for containers from the
+perspective of the host operating system. \todo{Connect each part of the figure to the
+text.} This model comprises a number of attack vectors, each targeting a different part of
+the system. A malicious container can target another container, a regular host process, or
+the host operating system kernel. Similarly, a malicious host process can target
+a container. To attack the \gls{os} kernel, a container must generally exploit
+a kernel-level vulnerability, such as a memory safety error in a system call
+implementation. To mitigate such attacks, the attack surface exposed by the kernel to the
+container should be minimal. Other classes of attack rely on exploiting the intended
+effects of system calls for in unintended ways.  For instance, a misconfigured security
+policy might allow a containerized process to load a kernel module or perform interprocess
+communication with an external daemon. Abusing shared resources can have a similar affect,
+allowing a container to manipulate or tamper with an external process.
 
 \begin{figure}[htbp]
   \centering
@@ -1112,10 +1125,10 @@ calls to the container, while Linux \gls{mac} policies, enforced by an \gls{lsm}
 the container's access to system resources. Unix \gls{dac}, possibly accompanied by a new
 user namespace, can limit the container's access as well, when properly configured.
 
-\gls{lxc}~\todo{CITE} is a container runtime for Linux that directly exposes low-level
-virtualization and confinement primitives. \gls{lxc} exposes namespaces and cgroups to
-virtualize system resources and seccomp-bpf to filter system calls, reducing the kernel's
-attack surface.
+\gls{lxc}~\cite{lxc_security} is a container runtime for Linux that directly exposes
+low-level virtualization and confinement primitives. \gls{lxc} exposes namespaces and
+cgroups to virtualize system resources and seccomp-bpf to filter system calls, reducing
+the kernel's attack surface.
 
 Docker~\cite{docker_security, bui2015_docker_analysis, combe2016_to_docker}, originally
 based on \gls{lxc}, provides a high-level interface for creating, manipulating, and
@@ -1136,12 +1149,10 @@ additional setup.  Docker also provides a \texttt{--privileged} flag which allow
 to totally ignore all security defaults, essentially granting the container the same
 access as a (often root-privileged) host process.
 
-\todo{Possibly discuss others: OpenVZ, OpenShift, more? Only talk in detail if they do
-something different}
-
-\todo{Possibly discuss containerized package managers: Snap, FlatPak, \etal?}
-
-\todo{be explicit about why we need}
+% \todo{Possibly discuss others: OpenVZ, OpenShift, more? Only talk in detail if they do
+% something different}
+% \todo{Possibly discuss containerized package managers: Snap, FlatPak, \etal?}
+% \todo{be explicit about why we need}
 
 \subsubsection{Container Security in Academia}%
 \label{sss:container-security-academia}
@@ -1233,15 +1244,16 @@ scanning techniques to a continuous integration pipeline, flagging and fixing im
 vulnerabilities during development.
 
 \gls{ebpf} is seeing increasing prominence within the container security space. Besides
-\bpfbox{} and \bpfcontain{}, other projects have arisen over the past few years, albeit
-with a general focus on observability rather than policy enforcement. Tracee~\cite{tracee}
-is a container observability tool developed by Aqua Security that can watch system calls
-made by a container, along with other security-sensitive events, and generate audit logs
-for further analysis. Cilium~\cite{cilium} is a popular security daemon for the Kubernetes
-container orchestration framework, with a focus on network security for distributed
-container deployments. Cilium provides observability metrics through a configurable audit
-framework and allows the end-user to define network policy for telemetry, performance
-optimization, and security.
+\bpfbox{} (c.f.~\Cref{c:bpfbox}) and \bpfcontain{} (c.f.~\Cref{c:bpfcontain}), other
+projects have arisen over the past few years, albeit with a general focus on observability
+rather than policy enforcement. Tracee~\cite{tracee} is a container observability tool
+developed by Aqua Security that can watch system calls made by a container, along with
+other security-sensitive events, and generate audit logs for further analysis.
+Cilium~\cite{cilium} is a popular security daemon for the Kubernetes container
+orchestration framework, with a focus on network security for distributed container
+deployments. Cilium provides observability metrics through a configurable audit framework
+and allows the end-user to define network policy for telemetry, performance optimization,
+and security.
 
 \section{Extended BPF}%
 \label{s:ebpf-bg}
@@ -1291,7 +1303,9 @@ network monitor anyway.
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/classic-bpf.pdf}
-  \caption[The classic BPF architecture]{The classic \gls{bpf} architecture. Adapted from McCanne and Jacobson~\cite{mccanne1993_bpf}.}%
+  \caption[The classic BPF architecture]{
+    The classic \gls{bpf} architecture. Adapted from McCanne and Jacobson~\cite{mccanne1993_bpf}.
+  }%
   \label{fig:classic-bpf}
 \end{figure}
 
@@ -1313,9 +1327,6 @@ call~\cite{anderson2017_comparison} was enhanced to include classic \gls{bpf} fi
 allowing a user process to use classic \gls{bpf} programs to define allowlists and
 denylists of system calls (c.f.~\Cref{sss:seccomp}).
 
-\todo{DTrace here, then talk about how it inspired later eBPF tooling (bpftrace, etc) and
-the motivation behind eBPF}
-
 In 2014, Alexei Starovoitov and Daniel Borkmann~\cite{starovoitov2014_ebpf} first proposed
 a total overhaul of the Linux \gls{bpf} engine. Their proposal, dubbed \gls{ebpf}, expanded the
 classic \gls{bpf} execution model into a full-fledged virtual instruction set. In particular,
@@ -1327,6 +1338,9 @@ safety. At runtime, programs can be dynamically attached to system events and ar
 just-in-time compiled into the native instruction set.  \Cref{fig:extended-bpf} depicts
 the \gls{ebpf} architecture in detail. The reader is encouraged to compare this with the classic
 BPF architecture, depicted in \Cref{fig:classic-bpf}.
+
+Dtrace~\cite{cantrill2004_dtrace, gregg2001_dtrace} served as an early inspiration for the design of
+\gls{ebpf} and related tooling. \todo{Say a bit more here.}
 
 \begin{figure}[htbp]
   \centering
@@ -1497,7 +1511,7 @@ a particularly attractive target for developing new security solutions.
 \gls{ebpf} maps serve as both a runtime data store for \gls{ebpf} programs and the
 canonical method of communication between \gls{ebpf} programs and other \gls{ebpf}
 programs, and \gls{ebpf} programs and userspace applications. Like \gls{ebpf} programs,
-maps can be pinned to \textit{bpffs}  to increment their reference count in the kernel.
+maps can be pinned to \textit{bpffs} to increment their reference count in the kernel.
 Concurrent access to \gls{ebpf} maps from within kernelspace is protected by an implicit
 RCU lock, and a spinlock concurrency primitive is exposed via a helper function to guard
 map accesses between kernelspace and userspace.  From the \gls{ebpf} side, maps can be
@@ -1529,7 +1543,7 @@ to be generic, others are highly specialized for specific use cases. \bpfcontain
 \label{ss:bpf-userspace}
 
 Although \gls{ebpf} programs and maps can exist on their own after being pinned to
-\textit{bpffs} , the more common approach is to manage their lifetime using a controlling
+\textit{bpffs}, the more common approach is to manage their lifetime using a controlling
 process. Userspace applications implementing such a controlling process typically use an
 \gls{ebpf} front-end framework to facilitate loading and interacting with programs and maps.
 A number of such front-ends exist~\cite{gobpf, bcc, libbpf, libbpf-rs, libbpfgo,
@@ -1547,7 +1561,7 @@ bypasses libbpf entirely, providing fully native \gls{ebpf} bindings for Rust an
 Among the myriad of userspace front-ends available for \gls{ebpf}, libbpf stands out as the only
 one with official upstream support from the Linux kernel. Recent improvements to libbpf
 have solidified its position as the dominant framework. In particular, libbpf supports
-a new way of compiling a loading \gls{bpf} programs into the kernel, \gls{bpf}
+a new way of compiling and loading \gls{bpf} programs into the kernel, \gls{bpf}
 \gls{core}~\cite{gregg2020_core, nakryiko2020_core}. \gls{bpf} \gls{core} uses \gls{btf}
 debugging information exposed by the kernel, along with load-time relocation logic to
 support loading the same compiled \gls{ebpf} bytecode across multiple target kernels. The
@@ -1622,3 +1636,5 @@ composability, and modularity. \gls{ebpf} maps facilitate easy communication bet
 and userspace, and provide the ability to build relationships between data from different
 program types. Kernel modules should be preferred for the implementation of more complex
 kernel functionality, such as device drivers.
+
+\todo{A summary table here would be nice}
