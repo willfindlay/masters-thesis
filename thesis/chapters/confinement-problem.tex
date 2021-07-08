@@ -29,25 +29,40 @@ present the threat model for confinement under these research systems.
 \section{Rethinking the Virtualization Narrative}%
 \label{s:cp-rethinking}
 
-\todo{Have a diagram that positions virtual machines, containers, and standalone in terms
-of perceived isolation guarantees, have an arrow spanning left to right. We are trying to
-move containers as far to the right as possible, ideally to the same place as
-hypervisor-based virtual machines, hopefully farther over. On the right: isolation
-provided by hardware, isolation provided by software (perceived stronger vs perceived
-weaker). When the boundary is in hardware it is considered rigid, in software things are
-considered more malleable. We are trying to find a way to make things more rigid in
-software.}
+\begin{comment}
+  Have a diagram that positions virtual machines, containers, and standalone in terms
+  of perceived isolation guarantees, have an arrow spanning left to right. We are trying to
+  move containers as far to the right as possible, ideally to the same place as
+  hypervisor-based virtual machines, hopefully farther over. On the right: isolation
+  provided by hardware, isolation provided by software (perceived stronger vs perceived
+  weaker). When the boundary is in hardware it is considered rigid, in software things are
+  considered more malleable. We are trying to find a way to make things more rigid in
+  software.
+\end{comment}
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/confinement-problem/security.pdf}
+  \caption[Comparing the isolation and perceived security of containers and \glsentryshortpl{vm}]{
+    Comparing the isolation and perceived security of containers and
+    \glsentryshortpl{vm}. A boundary defined in hardware is often considered more rigid,
+    whereas a software defined boundary is generally considered more malleable, and thus
+    weaker. However, this need not be the case. The goal of this thesis is to reposition
+    containers to be as secure, if not more secure, than hypervisor-based virtualization.
+  }%
+  \label{fig:container-hvm-security}
+\end{figure}
 
 Hypervisor-backed virtualization is commonly considered more secure than
 con\-tain\-er-based virtualization~\cite{sultan2019_container_security,
-eder2016_hypervisor_container}.  \todo{See figure ...} Intuitively, this makes sense.
-Containers run directly on the host operating system, whereas a virtual machine runs on
-top of a hypervisor, separated by at least one layer of indirection from the host system.
-However, this intuition does not strictly stand up to scrutiny. A virtual machine running
-on top of a hypervisor makes requests to the hypervisor's \gls{api} (via hypercalls), in
-much the same way as a container running on a host operating system makes requests to the
-kernel's \gls{api} (via system calls).  \Cref{fig:syscall-hypercall} illustrates this
-parity.
+eder2016_hypervisor_container} (see \Cref{fig:container-hvm-security}). Intuitively, this
+makes sense.  Containers run directly on the host operating system, whereas a virtual
+machine runs on top of a hypervisor, separated by at least one layer of indirection from
+the host system.  However, this intuition does not strictly stand up to scrutiny.
+A virtual machine running on top of a hypervisor makes requests to the hypervisor's
+\gls{api} (via hypercalls), in much the same way as a container running on a host
+operating system makes requests to the kernel's \gls{api} (via system calls).
+\Cref{fig:syscall-hypercall} illustrates this parity.
 
 \begin{figure}[htbp]
   \centering
