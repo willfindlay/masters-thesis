@@ -18,9 +18,9 @@ Researchers have been studying confinement for decades~\cite{lampson1973_confine
 have been designing and applying confinement primitives since the early days of
 time-sharing computers and multi-tenant systems~\cite{shu2016_security_isolation_study}.
 While many developments have been made in the mean time, the current confinement landscape
-(particularly within the Linux ecosystem) suffers from a few fundamental flaws that
-culminate in poor container security practices; this does not need to be so. This chapter
-presents a critique of the current state of confinement on Linux, examines how confinement
+(particularly within the Linux ecosystem) suffers from fundamental flaws that culminate in
+poor container security practices; this does not need to be so. This chapter presents
+a critique of the current state of confinement on Linux, examines how confinement
 primitives are applied to containers, and proposes a fundamental re-framing of the problem
 to focus on complexity, adoptability, and suitability for container-specific applications.
 In light of this re-framing, we consider design goals for \bpfbox{} and \bpfcontain{} and
@@ -93,8 +93,9 @@ isolation provided by a virtual machine is purely a function of the semantic gap
 guest operating system, virtualized hardware, and physical hardware. Here, security is
 intrinsically tied to functionality. Administrators poke holes in this isolation all the
 time, through shared filesystems, virtual network interfaces, and the like. From there, it
-is up to the administrator to use conventional \gls{os} security mechanisms such as
-filesystem access controls and network firewalls to lock down the exposed interface.
+is up to the administrator to use conventional \gls{os} security mechanisms
+(c.f.~\Cref{s:process-security-model,s:security-extensions} in \Cref{c:background}) such
+as filesystem access controls and network firewalls to lock down the exposed interface.
 A clear pattern emerges: first provision the resource, then secure it, just as in an
 ordinary operating system (after all, a guest operating system \textit{is} just an
 operating system). The end result of this process is a combination of implicit isolation
@@ -108,7 +109,9 @@ a containerized process is nothing more than a host process running under one or
 the right set of confinement primitives should be able to lock a container down in much
 the same way that a hypervisor implicitly enforces isolation.  Unlike hypervisor-based
 isolation, such a policy enforced by the operating system has the potential to be more
-minimal, centralized, and accessible to end-users.
+minimal, centralized, and accessible to end-users. Further, we can attain a high level of
+flexibility through a software-based enforcement mechanism, unencumbered by the
+restrictions of a hardware-level interface.
 
 The key to developing such an enforcement mechanism lies in defining a clear protection
 boundary within the kernel and enforcing access across this boundary. Rather than
@@ -129,7 +132,7 @@ runtimes for this design choice; a container runtime's job is to run containers,
 implement new security mechanisms. Intuitively, it makes sense to reach for primitives
 that already exist, regardless of the fact that these primitives may have been designed
 for system-wide use cases, beyond individual processes or even process groups. Likewise,
-the goal of this thesis is to design a new container runtime\,---\,rather, it is to
+the goal of this thesis is not to design a new container runtime\,---\,rather, it is to
 implement the missing confinement mechanism that will enable our vision for container
 security to become a reality.
 
@@ -322,10 +325,11 @@ of decreasing prioritization, they are:
     Containers should provide an easy and robust framework for creating reproducible
     development environments. Dependencies should be maximally self-contained such that
     a containerized environment \enquote{just works} to the maximum possible extent. We
-    can see examples of this property in Docker, the predominant container framework to
-    date. Docker Hub~\cite{docker_hub} allows container images to be pulled from the
-    Internet, recombined, and used to create further images. The end result is a flexible
-    framework for creating and distributing reproducible development environments.
+    can see examples of this property in Docker, the predominant container framework at
+    the time of writing. Docker Hub~\cite{docker_hub} allows container images to be pulled
+    from the Internet, recombined, and used to create further images. The end result is
+    a flexible framework for creating and distributing reproducible development
+    environments.
 
   \item \textbf{Virtualization.}
     Containers should virtualize system resources, creating the illusion of running on
@@ -338,9 +342,9 @@ of decreasing prioritization, they are:
     combined with the mount namespace allow containers to perform one-way sharing of
     filesystem resources. The \gls{pid} namespace allows each container to have its own
     \textit{init} process and virtual process tree.  The network namespace allows the
-    container to virtualize its network devices while the \glsentryfull{uts} namespace virtualizes host
-    and domain names. Control groups virtualize other resources such as the CPU,
-    main memory, and device drivers.
+    container to virtualize its network devices while the \glsentryfull{uts} namespace
+    virtualizes host and domain names. Control groups virtualize other resources such as
+    the CPU, main memory, and device drivers.
 
   \item \textbf{Confinement.}
     Containerized processes should be confined by default. That is, a containerized
@@ -367,6 +371,7 @@ and approach it from a confinement-first perspective. To understand how these co
 issues impact containers, we briefly review how container management systems apply
 confinement primitives in practice.
 
+\todo{Fold this up into prior sections as per David's comments, or perhaps simply add backward references}
 To achieve confinement in the first place, container frameworks cobble together existing
 confinement technologies and apply them ways that are often simultaneously confusing and
 difficult to audit. The result is a complex policy soup with little room for customization
@@ -427,8 +432,8 @@ kernelspace, targeting behaviours at the per-function-call level and enforcing p
 through \gls{lsm} hooks.
 
 \bpfcontain{} (c.f.~\Cref{c:bpfcontain}) extends \bpfbox{} to model container semantics,
-enabling it to clearly define an implicit boundary around containerized processes.
-\bpfcontain{} policies then define exceptions to these implicit rules, offering
+enabling it to clearly define a hard boundary around containerized processes.
+\bpfcontain{} policies then define explicit exceptions to the implicit boundary, offering
 fine-grained control over the interface that a container exposes to the outside world.
 
 The ultimate goal of \bpfbox{} and \bpfcontain{} is to expose centralized, flexible
@@ -543,16 +548,17 @@ issues identified in \Cref{s:cp-issues}. They are enumerated as follows.
     % 0 code passes through the \gls{ebpf} verifier before it is loaded into the system.
 \end{enumerate}
 
-The key insight behind this work is that novel kernel mechanisms are required to realize
-the aforementioned design goals. \gls{ebpf} provides precisely the right framework for
-developing such mechanisms. Its safety, compatibility with vanilla Linux kernels, and the
-ability to dynamically load and unload programs all contribute to strong adoptability
-guarantees. The ability for distinct program types to use \gls{ebpf} maps to communicate
-and share state enables the development of powerful confinement solutions that can unify
-policy across disparate interfaces. Using \gls{ebpf}, we can trace individual userspace
-and kernel function calls, along with the entire lifecycle of a process or container. This
-property enables the creation of a fine-grained policy enforcement mechanism that can
-easily be adapted and extended to support new semantics and kernel interfaces as required.
+The key insight behind this work is that novel \textit{kernel-level mechanisms} are
+required to realize the aforementioned design goals. \gls{ebpf} provides precisely the
+right framework for developing such mechanisms. Its safety, compatibility with vanilla
+Linux kernels, and the ability to dynamically load and unload programs all contribute to
+strong adoptability guarantees. The ability for distinct program types to use \gls{ebpf}
+maps to communicate and share state enables the development of powerful confinement
+solutions that can unify policy across disparate interfaces. Using \gls{ebpf}, we can
+trace individual userspace and kernel function calls, along with the entire lifecycle of
+a process or container. This property enables the creation of a fine-grained policy
+enforcement mechanism that can easily be adapted and extended to support new semantics and
+kernel interfaces as required.
 
 
 
