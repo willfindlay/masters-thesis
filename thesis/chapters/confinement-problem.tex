@@ -336,9 +336,9 @@ of decreasing prioritization, they are:
     To achieve virtualization, containers generally rely on the namespaces and cgroups
     primitives provided by the Linux kernel.  Overlay filesystems~\cite{overlayfs}
     combined with the mount namespace allow containers to perform one-way sharing of
-    filesystem resources. The PID namespace allows each container to have its own
+    filesystem resources. The \gls{pid} namespace allows each container to have its own
     \textit{init} process and virtual process tree.  The network namespace allows the
-    container to virtualize its network devices while the UTS namespace virtualizes host
+    container to virtualize its network devices while the \glsentryfull{uts} namespace virtualizes host
     and domain names. Control groups virtualize other resources such as the CPU,
     main memory, and device drivers.
 
@@ -571,10 +571,10 @@ discrepancies arise, they will be noted accordingly.
 
 We define \textit{confinement} as the restriction of \textit{subject} (system actors such
 as processes) behaviours to a set of desired behaviours, as they pertain to
-\textit{objects} (system resources such as files, network sockets, devices, and IPC
+\textit{objects} (system resources such as files, network sockets, devices, and \gls{ipc}
 handles onto other subjects). Consider the set of all subjects $\mathcal{S}$ and the set
 of all objects $\mathcal{O}$. We define $\mathcal{S} \subseteq \mathcal{O}$ to account for
-IPC objects. The goal is to create a confinement policy $\mathcal{P}_i$ for a subject
+\gls{ipc} objects. The goal is to create a confinement policy $\mathcal{P}_i$ for a subject
 $\mathcal{S}_i$ that maps $(\mathcal{S}_i, \mathcal{O}_j, Op)$ tuples to \textit{policy
 decisions} where $Op$ is an operation $\mathcal{S}_i \xrightarrow{Op} \mathcal{O}_j$.  The
 policy is written in some abstract policy language that encodes such tuples in

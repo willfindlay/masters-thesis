@@ -764,7 +764,7 @@ at the resource-level and enforces this access within the system call layer.
 
 To confine processes, capsicum exposes a special \texttt{cap\_enter(2)} system call which
 causes a process to enter \textit{capability mode}. A process in capability mode no longer
-has access to global namespaces (e.g.~the PID namespace) and may only make a subset of
+has access to global namespaces (e.g.~the \gls{pid} namespace) and may only make a subset of
 system calls which do not directly access these global namespaces. Other system calls are
 constrained so that they may only operate under the context of an open capability
 descriptor (a file descriptor which has been extended with capability
@@ -903,12 +903,12 @@ Notably, namespaces and cgroups are \textit{not} confinement mechanisms in and o
 themselves. This property is in stark contrast with Jails and Zones, which were designed
 to offer strong confinement guarantees over their respective security boundaries.
 As the canonical process-level virtualization building blocks in Linux, namespaces and
-cgroups form the backbone of Linux containers (c.f.~\Cref{s:container-security-bg}).
+cgroups form the backbone of Linux containers (c.f.~\Cref{ss:container-security-bg}).
 
 Linux namespaces~\cite{biederman2006_namespaces, linux_namespaces} limit the visibility of
 system resource by providing a virtual remapping of global resource identifiers to
 a process or process group. Such identifiers include process IDs, user IDs, filesystem
-mounts, IPC objects, and network interfaces, among others. Linux supports namespace
+mounts, \gls{ipc} objects, and network interfaces, among others. Linux supports namespace
 creation and entry via the \texttt{clone(2)} and \texttt{unshare(2)} system calls, for
 isolating child processes and existing processes respectively. As of version 5.13, the
 Linux kernel supports eight distinct namespaces, depicted in \Cref{tab:namespaces}. Other
@@ -920,12 +920,12 @@ namespace~\cite{sun2018_security_namespace} for virtualizing \gls{lsm} hooks.
     \toprule
     Namespace & Isolates \\
     \midrule
-    \multirow{1}{*}{PID} & Process IDs (PIDs)\\
+    \multirow{1}{*}{\glsentryshort{pid}} & \glspl{pid}\\
     \multirow{1}{*}{Mount} & Filesystem mountpoints\\
-    \multirow{1}{*}{Network} & Networking stack\\
-    \multirow{1}{*}{UTS} & Host and domain names\\
-    \multirow{1}{*}{IPC} & Inter-process communication objects\\
-    \multirow{1}{*}{User} & User IDs (UIDs) and group IDs (GIDs)\\
+    \multirow{1}{*}{Net} & Networking stack\\
+    \multirow{1}{*}{\glsentryshort{uts}} & Host and domain names\\
+    \multirow{1}{*}{\glsentryshort{ipc}} & Inter-process communication objects\\
+    \multirow{1}{*}{User} & \glspl{uid} and \glspl{gid}\\
     \multirow{1}{*}{Time} & System time\\
     \multirow{1}{*}{Cgroup} & Cgroup membership\\
     \bottomrule
@@ -1134,9 +1134,9 @@ Docker~\cite{docker_security, bui2015_docker_analysis, combe2016_to_docker}, ori
 based on \gls{lxc}, provides a high-level interface for creating, manipulating, and
 running container images. Docker places containers in a new cgroup with sensible defaults
 for resource virtualization. To isolate processes, the filesytem, and network interfaces,
-Docker containers run in a new \texttt{pid}, \texttt{ipc}, \texttt{mnt}, and \texttt{net}
-namespace by default.  Similarly, Docker uses the \texttt{uts} namespace for hostname
-virtualization and the \texttt{cgroup} namespace to limit cgroup membership visibility. To
+Docker containers run in a new \gls{pid}, \gls{ipc}, mount, and net
+namespace by default.  Similarly, Docker uses the \gls{uts} namespace for hostname
+virtualization and the cgroup namespace to limit cgroup membership visibility. To
 reduce the kernel's attack surface, Docker also includes a default seccomp-bpf profile
 that blocks 51 system calls. Finally, Docker supports integration with the AppArmor
 \gls{lsm} when it is enabled on the host, using a generic default profile that provides
@@ -1366,16 +1366,16 @@ implementation.
 \subsection{eBPF Programs}%
 \label{ss:bpf-programs-bg}
 
-\gls{ebpf} programs are expressed in a virtual RISC machine language called \gls{bpf} bytecode.  While
-it is technically possible to write \gls{bpf} bytecode by hand, programs are most often compiled
-from a restricted subset of the C programming language\footnote{Other languages may
-eventually be used to write \gls{ebpf} programs as well.  For instance, an experimental \gls{ebpf}
-target for the Rust programming language has recently been
-proposed~\cite{decina2021_bpf_rust}. The important distinction here is that the set of all
-possible \gls{ebpf} programs is a strict subset of the set of all possible programs.} using the
-LLVM toolchain.Programs can be loaded and attached to system events using the
-\texttt{bpf(2)} system call, at which point control passes to the \gls{ebpf} verifier, which
-checks the programs to make sure they satisfy a set of safety
+\gls{ebpf} programs are expressed in a virtual RISC machine language called \gls{bpf}
+bytecode.  While it is technically possible to write \gls{bpf} bytecode by hand, programs
+are most often compiled from a restricted subset of the C programming
+language\footnote{Other languages may eventually be used to write \gls{ebpf} programs as
+well.  For instance, an experimental Rust \gls{ebpf} target has recently been merged into
+the Rust compiler~\cite{decina2021_bpf_rust}. The important distinction here is that the
+set of all possible \gls{ebpf} programs is a strict subset of the set of all possible
+programs.} using the LLVM toolchain.Programs can be loaded and attached to system events
+using the \texttt{bpf(2)} system call, at which point control passes to the \gls{ebpf}
+verifier, which checks the programs to make sure they satisfy a set of safety
 constraints~\cite{starovoitov2014_ebpf, gregg2019_bpf}.
 
 In particular, \gls{ebpf} programs must consist of fewer than 1 million \gls{bpf}
@@ -1624,17 +1624,43 @@ At a first approximation, \gls{ebpf} differs from kernel modules in the followin
   Where the verifier gets in the way, the programmer can reach for a number of helper
   functions provided by the kernel to achieve more complex behaviour.
 
-  \item \gls{ebpf} is \textbf{not suitable for implementing device drivers} or other complex
-  functionality that requires ad-hoc access to various kernel facilities and write access
-  to arbitrary memory locations.
+  \item \gls{ebpf} is \textbf{not \textit{generally} suitable for implementing device drivers} or
+  other complex functionality that requires ad-hoc access to various kernel facilities and
+  write access to arbitrary memory locations. Where necessary, \gls{ebpf} helpers can be
+  added to the kernel to perform more complex functionality from within a \gls{bpf}
+  program. However, these helpers must be upstreamed in the kernel in order to be used,
+  are limited to specific program types, and must obey a safety contract with the
+  verifier.
 \end{enumerate}
 
-In summary, \gls{ebpf} is useful for observability use cases, or cases in which the functional
-requirements of the kernel code are not expected to be complex or might be expected to
-change frequently. \gls{ebpf} programs and maps are particularly good at separation of concerns,
-composability, and modularity. \gls{ebpf} maps facilitate easy communication between kernelspace
-and userspace, and provide the ability to build relationships between data from different
-program types. Kernel modules should be preferred for the implementation of more complex
-kernel functionality, such as device drivers.
+\begin{table}[!htb]
+  \centering
+  \caption[A high-level comparison between \glsentryshort{ebpf}, loadable kernel
+  modules, and kernel patches]{
+    A high-level comparison between \glsentryshort{ebpf}, loadable kernel modules, and
+    kernel patches. \fullc{} = property satisfied; \halfc{} = property somewhat satisfied;
+    \emptyc{} = property not satisfied.
+  }%
+  \label{tab:ebpf-comparison}
+  \begin{tabular}{lccccccp{4.8em}}
+  \toprule
+                       & \rot{45}{Loadable at Runtime} & \rot{45}{Verified Safety}
+                       & \rot{45}{Easy Abstractions}   & \rot{45}{Rich Data Structures}
+                       & \rot{45}{Turing Complete}     & \rot{45}{Complex Functionality} & \\
+  \midrule
+  \glsentryshort{ebpf} & \fullc  & \fullc  & \fullc  & \fullc  & \emptyc & \halfc  & \\
+  Kernel Modules       & \halfc  & \emptyc & \emptyc & \emptyc & \fullc  & \fullc  & \\
+  Kernel Patches       & \emptyc & \emptyc & \emptyc & \emptyc & \fullc  & \fullc  & \\
+  \bottomrule
+  \end{tabular}
+\end{table}
 
-\todo{A summary table here would be nice}
+In summary, \gls{ebpf} is useful for observability use cases, or cases in which the
+functional requirements of the kernel code are not expected to be complex or might be
+expected to change frequently. \gls{ebpf} programs and maps are particularly good at
+separation of concerns, composability, and modularity. \gls{ebpf} maps facilitate easy
+communication between kernelspace and userspace, and provide the ability to build
+relationships between data from different program types. Kernel modules should be
+preferred for the implementation of more complex kernel functionality, such as device
+drivers. \Cref{tab:ebpf-comparison} presents a summary comparison of \gls{ebpf}, kernel
+modules, and kernel patches as a means of running custom code in the kernel.
