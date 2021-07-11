@@ -116,7 +116,7 @@ space which maps the entirety of physical memory.
 
 While virtual memory can help isolate user processes from each other and user process from
 the kernel, additional protection mechanisms are required to strengthen this isolation. To
-this end, the CPU \gls{isa} generally defines memory protection bits that can be applied
+this end, the \gls{cpu} \gls{isa} generally defines memory protection bits that can be applied
 to physical pages and enforced in the \gls{mmu}. For instance, individual pages can be
 marked as readable, writable, and/or executable depending on how the memory is to be used.
 How these protections are used is generally up to the operating system; for instance,
@@ -135,7 +135,7 @@ introduced by Multics~\cite{vyssotsky1965_multics, corbato1965_multics} in the m
 In the original design, 64 protection rings were defined in hardware, numbered from 0--63.
 A task running in a higher-numbered protection ring would be unable to access any memory
 marked with a lower-numbered protection ring, effectively isolating sensitive code and
-data from unprivileged tasks. Modern CPUs carry forward this notion of protection rings,
+data from unprivileged tasks. Modern \glspl{cpu} carry forward this notion of protection rings,
 although a typical modern processor only defines \textit{four} protection rings rather
 than 64. Modern \gls{os}s, including Linux, generally only use \textit{two} of these
 rings, ring 0 and ring 3 for kernelspace and userspace respectively. \Cref{fig:rings}
@@ -145,12 +145,12 @@ rings for finer-grained isolation on x86.
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/rings.pdf}
-  \caption[Protection rings on modern CPUs]{
-    A visualization of protection rings on modern CPUs. Ring 3 contains
+  \caption[Protection rings on modern \glsentryshortpl{cpu}]{
+    A visualization of protection rings on modern \glsentryshortpl{cpu}. Ring 3 contains
     \textit{userspace}, the address space of ordinary applications that run in user mode.
     Ring 0 contains \textit{kernselspace}, the kernel's address space. Code running in
     ring 0 is said to run in \textit{supervisor mode}. Rings 1--2 are generally unused by
-    \glsentryfull{cots} operating systems.  Modern CPUs often implement \enquote{lower}
+    \glsentryfull{cots} operating systems.  Modern \glsentryshortpl{cpu} often implement \enquote{lower}
     rings (-1, -2, etc.) by virtualizing ring 0 in firmware. These are typically reserved
     for the hypervisor and other hardware-backed features like Intel's System Management
     Mode~\cite{tereshkin2009_introducing}.
@@ -494,7 +494,7 @@ this is an evolving process and no formal verification exists to prove the secur
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/lsm.pdf}
-  \caption[The LSM architecture]{
+  \caption[The \glsentryshort{lsm} architecture]{
     The \gls{lsm} architecture. A single \textit{exclusive} \gls{lsm} may be loaded at a time,
     and complemented by zero or more \textit{stackable} \gls{lsm}s. When userspace
     requests a privileged operation (e.g.~through a system call), this operation causes one
@@ -938,7 +938,7 @@ namespace~\cite{sun2018_security_namespace} for virtualizing \gls{lsm} hooks.
 
 Complementary to namespaces, cgroups~\cite{cgroups, gao2019_houdini} divide processes into hierarchical
 groups, performing resource accounting and restricting access to quantifiable resources
-such as memory, CPU clock cycles, block I/O, and device drivers. From a security
+such as memory, \gls{cpu} clock cycles, block I/O, and device drivers. From a security
 perspective, such restrictions are useful to prevent resource starvation attacks against
 the host. However, Gao \etal~\cite{gao2019_houdini} found that this protection is
 incomplete and often misleading, allowing up to 200$\times$ the allotted resource limits
@@ -1289,7 +1289,7 @@ pipeline for further analysis. The key insight behind \gls{cbpf} is that these f
 decisions could be made more efficiently in \textit{kernelspace}, the part of the
 operating system that runs in protection ring 0\footnote{Code that runs in ring 0 is said
 to run with \textit{supervisor privileges} and is able to access all system memory. Ring
-0 is the highest level of memory protection provided by the CPU~\cite{jaeger2008_os_security}.}
+0 is the highest level of memory protection provided by the \gls{cpu}~\cite{jaeger2008_os_security}.}
 and which is most commonly associated with any parts of the operating system that do not
 run in \textit{userland} (i.e.~the context of an ordinary user process). This provides
 a considerable performance advantage over conventional approaches to network monitoring.
@@ -1312,7 +1312,7 @@ network monitor anyway.
 Classic \gls{bpf} can be divided into two major components: a \textit{tap} mechanism and a set
 of one or more \textit{filter} programs. The cBPF architecture is depicted in
 \Cref{fig:classic-bpf}. \gls{cbpf} programs are expressed as a control-flow graph (CFG)
-over a set of abstract registers, backed by physical registers on the CPU. The tap
+over a set of abstract registers, backed by physical registers on the \gls{cpu}. The tap
 mechanism hooks into packets as they enter the networking stack, copying and forwarding
 them to the filters. At runtime, the filter programs walk their control-flow graph, taking
 the forwarded packets as input. As output, they return a filtering decision which controls
@@ -1436,16 +1436,17 @@ additional memory from a pool reserved at the time the map was loaded into the k
 
 \subsubsection*{eBPF Program Types and Use Cases}
 
-Each \gls{ebpf} program has a specific \textit{program type}, which determines both the set of
-system events to which the program can attach and the set of allowed kernel helpers that
-can be called from within the program context. Each program type roughly corresponds with
-a distinct \gls{ebpf} use case. For the purposes of this thesis, we will primarily be dealing
-with \textit{\gls{lsm} probes}, \textit{raw tracepoints}, \textit{fentry/fexit probes}, and
-\textit{uprobes/uretprobes}, as they form the basis of \bpfbox{} and \bpfcontain{}'s
-kernelspace implementations. \Cref{tab:program-types} summarizes the relevant program types
-and their properties.
+Each \gls{ebpf} program has a specific \textit{program type}, which determines both the
+set of system events to which the program can attach and the set of allowed kernel helpers
+that can be called from within the program context. Each program type roughly corresponds
+with a distinct \gls{ebpf} use case. For the purposes of this thesis, we will primarily be
+dealing with \textit{\gls{lsm} probes}, \textit{raw tracepoints},
+\textit{uprobes/uretprobes}, \textit{kprobes/kretprobes}, \textit{fentry/fexit probes},
+and \textit{\gls{usdt} probes} as they form the basis of \bpfbox{} and \bpfcontain{}'s
+kernelspace implementations. \Cref{tab:program-types} summarizes the relevant program
+types and their properties.
 
-\begingroup\footnotesize
+\begingroup\small
 \begin{longtable}[c]{lp{4.2in}}
 \caption[A selection of relevant eBPF program types for \bpfbox{} and \bpfcontain{}]{A selection of relevant \gls{ebpf} program types for \bpfbox{} and \bpfcontain{}.}%
 \label{tab:program-types}\\
@@ -1457,6 +1458,7 @@ and their properties.
   \textit{Kprobes/Kretprobes}  & Kprobe programs can attach to any kernel function, by replacing the function with a trap into the \gls{bpf} program. The \gls{bpf} program has read-only access to the function arguments. Kretprobes work in the same way, but handle function returns instead of function calls.\\
   \textit{Fentry/Fexit Probes} & A more efficient version of Kprobes and Kretprobes that directly trampolines into the \gls{bpf} program instead of trapping. These programs can also be used to modify the return value of specifically allowlisted kernel functions (e.g.~system call implementations).\\
   \textit{Uprobes/Uretprobes}  & The userspace equivalent of Kprobes and Kretprobes.\\
+  \textit{\glsentryshort{usdt} Probes}  & A statically defined version of uprobes and uretprobes. Application developers may place these at strategic points within an application in order to add explicit support for userspace tracing at compile-time.\\
   \bottomrule
 \end{longtable}
 \endgroup
@@ -1532,7 +1534,7 @@ to be generic, others are highly specialized for specific use cases. \bpfcontain
   \textit{\gls{bpf} Hashmap}           & A key-value hashmap. Keys and values can be arbitrary data structures.\\
   \textit{\gls{bpf} Array}             & A fixed-size array with integer indices. Values can be arbitrary data structures.\\
   \textit{\gls{bpf} Array/Map of Maps} & A \gls{bpf} array or map that stores handles into \textit{other maps}.\\
-  \textit{\gls{bpf} Per-CPU Array/Map} & Like a \gls{bpf} hashmap or \gls{bpf} array but with a separate copy per logical CPU\@. This enables concurrent access across CPUs, but without synchronization.\\
+  \textit{\gls{bpf} Per-\glsentryshort{cpu} Array/Map} & Like a \gls{bpf} hashmap or \gls{bpf} array but with a separate copy per logical \glsentryshort{cpu}\@. This enables concurrent access across \glsentryshortpl{cpu}, but without synchronization.\\
   \textit{\gls{bpf} Local Storage}     & A dummy \gls{bpf} map that provides a handle into local storage for a given kernel data structure. For instance, task local storage provides storage per-task-struct. Values can be arbitrary data structures.\\
   \textit{\gls{bpf} Ringbuf}           & A concurrent circular buffer that passes event handles from kernelspace to userspace. To communicate, \gls{ebpf} programs submit events and userspace applications poll events.\\
   \bottomrule
