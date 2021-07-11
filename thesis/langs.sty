@@ -1,0 +1,86 @@
+% BPFBox language
+\lstdefinelanguage{bpfbox}
+{
+    % keywords are not case-sensitive
+    sensitive=false,
+    % identifiers
+    morekeywords={
+    object,
+    any,
+    self,
+    parent,
+    child,
+    access,
+    protocol,
+    % ptrace
+    attach,
+    % fs access
+    read,
+    write,
+    exec,
+    append,
+    link,
+    setattr,
+    getattr,
+    rm,
+    ioctl,
+    % devfs categories
+    tty,
+    % net access
+    bind,
+    create,
+    connect,
+    send,
+    recv,
+    accept,
+    listen,
+    % net families
+    inet,
+    inet6,
+    unix,
+    netlink,
+    % signals
+    fatal,
+    check,
+    nohandle,
+    sigkill,
+    sigterm,
+    sigint,
+    },
+    % policy categories
+    morekeywords=[2]{
+    category,
+    rule,
+    fs,
+    net,
+    proc,
+    dev,
+    signal,
+    ptrace,
+    },
+    % strings
+    morestring=[b]",
+    morestring=[b]',
+    % directives
+    moredelim=*[s][{\bfseries\color{listing-keyword-3}}]{\#[}{]},
+    moredelim=*[s][{\bfseries\color{listing-keyword-3}}]{\#![}{]},
+    % comments
+    morecomment=[s]{/*}{*/},
+}
+
+% YAML language
+\newcommand\YAMLkeystyle{\bfseries\color{listing-keyword-3}}
+\newcommand\YAMLcolonstyle{\bfseries\color{listing-keyword-3}}
+\newcommand\YAMLvaluestyle{\normalfont\ttfamily\color{listing-string}}
+\lstdefinelanguage{yaml}{
+  keywords={true,false,null,y,n},
+  basicstyle = \YAMLkeystyle\ttfamily\normalsize\lst@ifdisplaystyle\footnotesize\singlespacing\fi,
+  sensitive=false,
+  comment=[l]{\#},
+  morecomment=[s]{/*}{*/},
+  stringstyle=\YAMLvaluestyle,
+  moredelim=**[il][\YAMLcolonstyle{:}\YAMLvaluestyle]{:},   % switch to value style at :
+  moredelim=**[l][\YAMLvaluestyle]{-},   % switch to value style at -
+  morestring=[b]',
+  morestring=[b]",
+}

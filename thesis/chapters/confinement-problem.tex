@@ -29,17 +29,6 @@ present the threat model for confinement under these research systems.
 \section{Rethinking the Virtualization Narrative}%
 \label{s:cp-rethinking}
 
-\begin{comment}
-  Have a diagram that positions virtual machines, containers, and standalone in terms
-  of perceived isolation guarantees, have an arrow spanning left to right. We are trying to
-  move containers as far to the right as possible, ideally to the same place as
-  hypervisor-based virtual machines, hopefully farther over. On the right: isolation
-  provided by hardware, isolation provided by software (perceived stronger vs perceived
-  weaker). When the boundary is in hardware it is considered rigid, in software things are
-  considered more malleable. We are trying to find a way to make things more rigid in
-  software.
-\end{comment}
-
 Hypervisor-backed virtualization is commonly considered more secure than
 con\-tain\-er-based virtualization~\cite{sultan2019_container_security,
 eder2016_hypervisor_container} (see \Cref{fig:container-hvm-security}). Intuitively, this
@@ -209,7 +198,7 @@ in \Cref{s:cp-containers}, and the design goals for \bpfbox{} and \bpfcontain{},
 in \Cref{s:cp-design}.
 
 \begin{enumerate}[font=\bfseries]
-  \item \textbf{Complexity, Interdependence, and Inflexibility.}
+  \item \label{i:problem-complexity} \textbf{Complexity, Interdependence, and Inflexibility.}
     Existing confinement primitives are overly complex and designed for use cases beyond
     simple process confinement. To achieve simple confinement, frameworks must abuse and
     recombine a number of existing primitives, each designed for a different use case.
@@ -245,7 +234,7 @@ in \Cref{s:cp-design}.
     are still compiled down into thousands of lines of policy soup, spanning multiple
     confinement mechanisms.
 
-  \item \textbf{Unsuitability for Containers.}
+  \item \label{i:problem-unsuitability} \textbf{Unsuitability for Containers.}
     Existing Linux \gls{dac} and \gls{mac} is unsuitable for containers.
     \gls{lsm}-based \gls{mac} implementations like AppArmor and SELinux are
     designed to implement global, system-wide confinement policy; they are not designed
@@ -274,7 +263,7 @@ in \Cref{s:cp-design}.
     host and container. Thus, to achieve proper process-level confinement for containers,
     we need an \gls{lsm}-based solution that is aware of container semantics.
 
-  \item \textbf{Difficulty Adopting New Solutions.}
+  \item \label{i:problem-adoptability} \textbf{Difficulty Adopting New Solutions.}
     Motivated by the inherent difficulties associated with the existing confinement space,
     academics are often tempted to propose new confinement solutions. Many try to solve
     the problem by simply recombining and reusing existing primitives in new and
@@ -286,7 +275,7 @@ in \Cref{s:cp-design}.
     primitives. Unfortunately, this begets yet another fundamental issue: adding new
     solutions directly to the kernel is difficult, particularly from an adoptability
     standpoint. New kernel code can introduce bugs and security vulnerabilities, and needs
-    to be throughly tested before it can be considered production ready. Paradoxically,
+    to be thoroughly tested before it can be considered production ready. Paradoxically,
     the potential to introduce new security vulnerabilities can make the use of such novel
     primitives \textit{less} secure. Similarly, kernel bugs can introduce availability
     concerns in production systems, even when such bugs are not security-critical. For
@@ -371,18 +360,25 @@ and approach it from a confinement-first perspective. To understand how these co
 issues impact containers, we briefly review how container management systems apply
 confinement primitives in practice.
 
-\todo{Fold this up into prior sections as per David's comments, or perhaps simply add backward references}
 To achieve confinement in the first place, container frameworks cobble together existing
 confinement technologies and apply them ways that are often simultaneously confusing and
 difficult to audit. The result is a complex policy soup with little room for customization
-or auditability. For instance, Snap~\cite{snap} uses a high-level policy language that
-targets system interfaces in a coarse-grained manner. Under the hood, this is compiled
-into hundreds or thousands of lines of seccomp-bpf and AppArmor policy.
-Docker~\cite{docker_security, docker_default_apparmor, docker_apparmor} uses a generic
-AppArmor, seccomp-bpf, and POSIX capability policy for every container, along with default
-namespace and control group configurations. Making meaningful changes to these policy
-configurations, beyond simply disabling them altogether, is difficult and
-error-prone~\cite{lin2018_container_security}.
+or auditability. \Cref{i:problem-complexity} in \Cref{s:cp-issues} outlines some examples
+of the inherent complexity that arises from mixing and matching confinement primitives in
+this way. To deal with this complexity, some container runtimes elect to use a high-level
+policy language that compiles down to thousands of lines of policy under the hood. Snap~\cite{snap}
+is one such mechanism. Docker~\cite{docker_security, docker_default_apparmor, docker_apparmor} instead
+elects to use an overly-permissive, generic policy template to avoid the potential issues
+associated with fine-grained policy defaults.
+
+% For instance, Snap~\cite{snap} uses a high-level policy language that
+% targets system interfaces in a coarse-grained manner. Under the hood, this is compiled
+% into hundreds or thousands of lines of seccomp-bpf and AppArmor policy.
+% Docker~\cite{docker_security, docker_default_apparmor, docker_apparmor} uses a generic
+% AppArmor, seccomp-bpf, and POSIX capability policy for every container, along with default
+% namespace and control group configurations. Making meaningful changes to these policy
+% configurations, beyond simply disabling them altogether, is difficult and
+% error-prone~\cite{lin2018_container_security}.
 
 Container security policies are often overly-generic and ill-suited to fine-grained
 confinement. Part of the problem here is that containers in general are designed to
@@ -391,7 +387,7 @@ particularly as end-user requirements vary and evolve across deployments.
 Docker~\cite{docker_security}, for instance, provisions an overly-permissive default
 AppArmor policy~\cite{docker_default_apparmor} designed to enforce basic protections
 against interacting with sensitive kernel parameters without impacting the functionality
-of the container. %\todo{More examples}
+of the container.
 
 Even worse, many container management systems operate under a fail-open approach when the
 necessary security mechanisms are not supported. This results in low-security deployments,
@@ -405,11 +401,11 @@ the AppArmor or SELinux \glspl{lsm} for confinement suffer from similar failings
 
 Other aspects of confinement policy may be ignored entirely or even worse, overridden by
 a more permissive policy, possibly without the user's knowledge.
-Docker~\cite{docker_security} applies a dangerously permissive iptables policy that can
-transparently expose a container to an external network, even overriding existing deny
-rules. This overly-permissive network policy was the direct cause of a recent data breach
-at NewsBlur~\cite{newsblur}, a news aggregation website, although NewsBlur administrators
-claim that no user data was actually compromised~\cite{newsblur}. %\todo{More examples}
+Docker~\cite{docker_security} applies a dangerously permissive \texttt{iptables} policy
+that can transparently expose a container to an external network, even overriding existing
+deny rules. This overly-permissive network policy was the direct cause of a recent data
+breach at NewsBlur~\cite{newsblur}, a news aggregation website, although NewsBlur
+administrators claim that no user data was actually compromised~\cite{newsblur}.
 
 
 
@@ -444,7 +440,7 @@ inter-container communication and resource sharing. To guide \bpfbox{} and \bpfc
 toward this goal, we consider three primary design goals, derived from the fundamental
 issues identified in \Cref{s:cp-issues}. They are enumerated as follows.
 
- % In \bpfcontain{}, a clear and well-defined abstraction for containers
+% In \bpfcontain{}, a clear and well-defined abstraction for containers
 % allows the kernel to enforce implicit policy centred around container semantics. We rely
 % on \gls{ebpf} to enable the definition of such an abstraction without necessarily tying
 % the kernel down to one specific interpretation of what a container actually is. Using
@@ -482,14 +478,14 @@ issues identified in \Cref{s:cp-issues}. They are enumerated as follows.
 \begin{enumerate}[font=\bfseries]
   \item \textbf{Simple and Flexible Policies.}
     Policies should be simple and flexible, without sacrificing expressiveness. It should
-    be possible to use \bpfbox{} and \bpfcontain{} for ad-hoc confinement of individual
+    be possible to use our solution for ad-hoc confinement of individual
     applications and containers, without worrying about the underlying details of
     enforcement. At the same time, the policy language and enforcement engine should be
     flexible enough to support expressive and fine-grained policies that target specific
     system resources where required. That is, the barrier to entry for writing an
     effective security policy should be low, yet it should still be possible to write
     a sophisticated security policy where needed. Further, the policy enforcement engine
-    underlying \bpfbox{} and \bpfcontain{} should be readily extensible, such that new
+    underlying our confinement solution should be readily extensible, such that new
     kernel interfaces and policy rules can be easily supported as required.
     % \bpfbox{} and \bpfcontain{} should be simple, self-contained, and flexible.  The
     % policy language for each should be as simple as possible without sacrificing
@@ -509,31 +505,33 @@ issues identified in \Cref{s:cp-issues}. They are enumerated as follows.
     % accessible to the end-user, without the need to rely on complex configuration,
     % unnecessary setup, or the combination of multiple confinement primitives.
 
-  \item \textbf{Process-Level and Container-Level Enforcement.}
-    \bpfbox{} and \bpfcontain{} should be suitable for process-level and container-level
-    enforcement respectively. The policy language design should encourage the authorship
-    of light-weight, localized policies, tailored to a specific use case, rather than
-    a heavy-weight, system-wide \gls{mac} policy. In the case of \bpfcontain{}, its policy
-    language and enforcement engine should also be designed with container semantics in
-    mind, enforcing a strong implicit boundary around a container and related resources.
-    To support inter-container communication and resource sharing, \bpfcontain{} should
-    provision the ability to define exceptions to this implicit boundary as required.
-    %Whereas existing \gls{lsm}-based security mechanisms are
-    % focused on system-level confinement, \bpfbox{} and \bpfcontain{} should instead focus
-    % on
-
-    % \bpfbox{} and \bpfcontain{} should process- and container-specific respectively by
-    % design. In particular, this means that \bpfbox{} should be designed with process-level
-    % confinement in mind and \bpfcontain{} should enforce policy in such a way that it is
-    % aware of container-level semantics such as namespace and cgroup membership.
+  \item \textbf{Suitable for Containers.}
+    Our confinement solution should be suitable for containers. To support this goal, the
+    policy language should encourage the authorship of light-weight, localized policies,
+    tailored to specific use cases rather than a heavy-weight, system-wide \gls{mac}
+    policy.  An ideal policy language for this purpose should be designed with container
+    semantics in mind, enforcing a strong boundary around a container and related
+    resources. To support inter-container communication and resource sharing, such
+    a policy language should support the ability to selectively define exceptions to this
+    boundary, as required.
+    % \bpfbox{} and \bpfcontain{} should be suitable for process-level and container-level
+    % enforcement respectively. The policy language design should encourage the authorship
+    % of light-weight, localized policies, tailored to a specific use case, rather than
+    % a heavy-weight, system-wide \gls{mac} policy. In the case of \bpfcontain{}, its policy
+    % language and enforcement engine should also be designed with container semantics in
+    % mind, enforcing a strong implicit boundary around a container and related resources.
+    % To support inter-container communication and resource sharing, \bpfcontain{} should
+    % provision the ability to define exceptions to this implicit boundary as required.
 
   \item \textbf{High Adoptability.}
-    \bpfbox{} and \bpfcontain{} should be readily adoptable, even in production
-    environments. All privileged code should be verifiably production-safe and should not
-    negatively impact the rest of the system when loaded into the kernel. Performance
-    overhead should at least be in line with alternatives like SELinux and AppArmor.  Both
-    \bpfbox{} and \bpfcontain{} should work out of the box on a vanilla Linux kernel,
-    without requiring any out-of-tree kernel patches or modules.
+    % As a novel security mechanism, adoptability is of paramount importance. Without adoptability,
+    % any security guarantees provided by such a mechanism would be effectively useless.
+    Our confinement solution should be readily adoptable, even in production environments.
+    All privileged code should be verifiably production-safe and should not negatively
+    impact the rest of the system when loaded into the kernel. Performance overhead should
+    at least be in line with alternatives like SELinux and AppArmor and our solution
+    should work out of the box on a vanilla Linux kernel, without requiring any
+    out-of-tree kernel patches or modules.
     % Both \bpfbox{} and \bpfcontain{} should be readily adoptable in production
     % environments, the cloud, and even personal desktop environments. In particular, the
     % requirements to run these mechanisms should be minimal, all privileged code should be
@@ -559,6 +557,30 @@ trace individual userspace and kernel function calls, along with the entire life
 a process or container. This property enables the creation of a fine-grained policy
 enforcement mechanism that can easily be adapted and extended to support new semantics and
 kernel interfaces as required.
+
+
+
+\section{Why Two Implementations?}
+\label{s:cp-why-two}
+
+In light of the design goals outlined in \Cref{s:cp-design}, we now examine why this
+thesis presents \textit{two} confinement implementations, rather than just one. The simple
+explanation for this is that \bpfbox{} can be seen as a rough, first cut at solving the
+confinement problem described in this chapter. Rather than a completely new system,
+\bpfcontain{} should be seen as an \textit{iteration} on the original \bpfbox{} design.
+In particular, \bpfbox{} satisfies each of the design goals enumerated in
+\Cref{s:cp-design} to varying degrees; \bpfcontain{} improves upon this by further
+simplifying the policy language, introducing container-level policy semantics, and
+improving adoptability by leveraging \gls{bpf} \gls{core} (c.f.~\Cref{ss:bpf-userspace} in
+\Cref{c:background}).
+
+Thus, \bpfbox{} and \bpfcontain{} should not be seen as competing or even complementary
+solutions to the confinement problem. Rather, the delta from \bpfbox{} to \bpfcontain{} is
+representative of the intellectual journey from a first approximation to a far more
+refined approach, more conducive to the insights outlined in this chapter. \Cref{c:bpfbox}
+and \Cref{c:bpfcontain} outline this journey in more detail, focusing on specific implementation
+differences between the two systems and how they arise from an evolution in understanding
+the confinement problem from a container-centric perspective.
 
 
 
@@ -668,5 +690,6 @@ problem both serves as a motivation for the creation of \bpfbox{} and \bpfcontai
 informs the design goals behind these two research systems. Finally, we present
 a high-level threat model for \bpfbox{} and \bpfcontain{}, providing a scoping definition
 for what it means to confine an adversary. The next two chapters, \Cref{c:bpfbox} and
-\Cref{c:bpfcontain}, present the design and implementation of \bpfbox{} an \bpfcontain{} in
-detail.
+\Cref{c:bpfcontain}, present the design and implementation of \bpfbox{} an \bpfcontain{}
+in detail and outline the intellectual journey from a prototype sandboxing mechanism to
+a container-specific confinement solution.
