@@ -391,7 +391,7 @@ specify additional context or policy actions. The first line in a \bpfbox{} poli
 always a special profile decorator, written as \lstinline[language=bpfbox]{#![profile "/path/to/exe"]},
 which marks the executable to which the policy should be associated.
 Other than the profile decorator, all others take the form of
-\lstinline[language=bpfbox]|#[decorator]{rule()}|. Multiple decorators may be specified
+\lstinline[language=bpfbox]|#[decorator] { rule() }|. Multiple decorators may be specified
 before a set of rules, meaning that all decorators apply to each rule.
 
 Profile assignment occurs when a process makes an \texttt{execve(2)} call that results in
@@ -401,13 +401,17 @@ marked with the \lstinline[language=bpfbox]{#[transition]} decorator. This ensur
 policy transitions only occur when expected and prevents malicious \texttt{execve(2)}
 calls from changing \bpfbox{}'s treatment of a process.
 
-The sections that follow describe the rule categories supported by
-\bpfbox{} (\Crefrange{ss:bpfbox-filesystem-rules}{ss:bpfbox-ptrace-rules}) and the decorators that may
-optionally be used to augment them
-(\Crefrange{ss:bpfbox-allow}{ss:bpfbox-kfunc}).
+The sections that follow describe the rule categories supported by \bpfbox{}
+(\Crefrange{ss:bpfbox-filesystem-rules}{ss:bpfbox-ptrace-rules}) and the decorators that
+may optionally be used to augment them (\Crefrange{ss:bpfbox-allow}{ss:bpfbox-kfunc}).
 \Cref{lst:bpfbox-policy-example} depicts a simple example \bpfbox{} policy.
 
-\begin{lstlisting}[language=bpfbox, gobble=4, caption={An example of a \bpfbox{} policy.}, label={lst:bpfbox-policy-example}, float]
+\begin{lstlisting}[language=bpfbox, gobble=4,
+  caption={[An example \bpfbox{} policy]
+    An example \bpfbox{} policy for a simple remote login program. This example offers
+    a fairly complete idea of the \bpfbox{} policy language's various features.
+  },
+  label={lst:bpfbox-policy-example}, float]
     /* This policy applies to the /usr/bin/mylogin
      * executable */
     #![profile "/usr/bin/mylogin"]
@@ -415,23 +419,29 @@ optionally be used to augment them
     /* Taint process state upon binding to
      * any IPv4/IPv6 network socket */
     #[taint] {
-        net(inet, bind)
-        net(inet6, bind)
+      net(inet,  bind)
+      net(inet6, bind)
+    }
+
+    /* Allow network connections/operations */
+    #[allow] {
+      net(inet,  accept|listen|send|recv)
+      net(inet6, accept|listen|send|recv)
     }
 
     /* Allow the check_login function to read
      * /etc/passwd and /etc/shadow */
     #[func "check_login"] {
-        fs("/etc/passwd", read)
-        fs("/etc/shadow", read)
+      fs("/etc/passwd", read)
+      fs("/etc/shadow", read)
     }
 
     /* Allow the add_user function to read
      * and append to /etc/passwd, but log such
-    events to the audit logs */
+     * events to the audit logs */
     #[func "add_user"]
     #[audit] {
-        fs("/etc/passwd", read|append)
+      fs("/etc/passwd", read|append)
     }
 
     /* Read and append to any immediate child
@@ -443,7 +453,7 @@ optionally be used to augment them
      * and untainting the process */
     #[transition]
     #[untaint] {
-        fs("/bin/bash", read|exec)
+      fs("/bin/bash", read|exec)
     }
 \end{lstlisting}
 
@@ -667,7 +677,7 @@ as a confinement mechanism and offers some insights into how \bpfcontain{} addre
     \bpfcontain{} requires neither a full LLVM toolchain nor kernel headers to be
     available in the target deployment, significantly reducing the dependency overhead.
 
-    Moreover, implementing the \bpfcontain{} daemon in Rust enables \bpfcontain{} to take
+    Moreover, implementing the \bpfcontain{} daemon in Rust allows \bpfcontain{} to take
     advantage of a myriad of benefits offered by the Rust language. In particular, Rust
     enables \bpfcontain{}'s userspace components to be safe, secure, and fast. Thread- and
     memory-safety guarantees provided by Rust ownership model eliminate many common
@@ -680,36 +690,32 @@ as a confinement mechanism and offers some insights into how \bpfcontain{} addre
     significantly better than languages with a bulky runtime such as Python.
 
   \item \textbf{Lack of Container Semantics.}
-    \todo{Write this}
+    Although \bpfbox{} exposes a light-weight policy language with high-level semantics to
+    the user, it fails to consider container semantics, as outlined in design goal
+    \ref{i:dg-suitability} in \Cref{s:cp-design}. While this marks an improvement over
+    existing confinement solutions by offering a terse yet fine-grained and expressive
+    policy language, it fails to fully address the container-specific use case; in other
+    words, \bpfbox{} is more suitable to generic, ad-hoc application sandboxing than to
+    container-specific applications. In improving the way the \bpfbox{} model handles
+    containers, we can simultaneously simplify policies and improve security by defining
+    a clear protection boundary around a container.
 
-  \item \textbf{Room for Further Policy Simplification.}
-    \todo{Write this}
+    \bpfcontain{} rectifies this gap by incorporating container semantics into the design
+    of both its policy language and enforcement engine. This includes properties such as
+    namespace and container membership, defining an implicit boundary around the container
+    and related resources, similar in spirit to FreeBSD Jails~\cite{kamp2000_jails}. In
+    this way, \bpfcontain{} policies can grant access to objects that exist within the
+    container and revoke access to objects that exist outside the container. Policies then
+    focus on defining exceptions to this boundary, exposing fine-grained interfaces into
+    the container and implicitly locking down the rest.
+
+  \item \textbf{Room for Further Policy Language Simplification.}
+    \begin{inprogress}
+      \begin{itemize}
+        \item
+      \end{itemize}
+    \end{inprogress}
 \end{enumerate}
-
-\todo{This will likely be an enumerated list with a small introductory paragraph... Fold it into summary? Perhaps.}
-\begin{inprogress}
-\begin{itemize}
-  \item bcc Python + LLVM + kernel headers dependency (\bpfcontain{} uses BPF CO-RE and Rust instead).
-  \begin{itemize}
-    \item Many deployments do not or cannot meet these requirements. LLVM toolchain alone is
-          gigabytes of dependency, kernel headers add even bulkier requirements, Python can
-          be quite slow.
-    \item CO-RE allows a single compiled version of \bpfcontain{} to work on any kernel $\ge 5.8$
-    \item Rust allows \bpfcontain{}'s userspace components to be safe, secure, and fast.
-    \item Speed of C, zero-cost abstractions, and memory/thread safety guarantees provided by Rust's ownership model
-  \end{itemize}
-
-  \item \bpfcontain{} is container-specific
-  \begin{itemize}
-    \item \todo{Sub points here}
-  \end{itemize}
-
-  \item \bpfcontain{} simplifies policy
-  \begin{itemize}
-    \item \todo{Sub points here}
-  \end{itemize}
-\end{itemize}
-\end{inprogress}
 
 
 

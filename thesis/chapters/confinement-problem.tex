@@ -476,7 +476,7 @@ issues identified in \Cref{s:cp-issues}. They are enumerated as follows.
 % identified in \Cref{s:cp-issues}.
 
 \begin{enumerate}[font=\bfseries]
-  \item \textbf{Simple and Flexible Policies.}
+  \item \label{i:dg-simplicity} \textbf{Simple and Flexible Policies.}
     Policies should be simple and flexible, without sacrificing expressiveness. It should
     be possible to use our solution for ad-hoc confinement of individual
     applications and containers, without worrying about the underlying details of
@@ -505,7 +505,7 @@ issues identified in \Cref{s:cp-issues}. They are enumerated as follows.
     % accessible to the end-user, without the need to rely on complex configuration,
     % unnecessary setup, or the combination of multiple confinement primitives.
 
-  \item \textbf{Suitable for Containers.}
+  \item \label{i:dg-suitability} \textbf{Suitable for Containers.}
     Our confinement solution should be suitable for containers. To support this goal, the
     policy language should encourage the authorship of light-weight, localized policies,
     tailored to specific use cases rather than a heavy-weight, system-wide \gls{mac}
@@ -523,7 +523,7 @@ issues identified in \Cref{s:cp-issues}. They are enumerated as follows.
     % To support inter-container communication and resource sharing, \bpfcontain{} should
     % provision the ability to define exceptions to this implicit boundary as required.
 
-  \item \textbf{High Adoptability.}
+  \item \label{i:dg-adoptability} \textbf{High Adoptability.}
     % As a novel security mechanism, adoptability is of paramount importance. Without adoptability,
     % any security guarantees provided by such a mechanism would be effectively useless.
     Our confinement solution should be readily adoptable, even in production environments.
