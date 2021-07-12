@@ -218,3 +218,7 @@
 % Removes glue around section titles.
 \RequirePackage{xpatch}
 \xapptocmd{\sectionlinesformat}{\vspace*{-\parskip}}{}{\PatchFailed}
+
+\newenvironment{inlined}
+    {\vspace{-0.5em}\begin{center}\begin{tabular}{l}}
+    {\end{tabular}\end{center}}

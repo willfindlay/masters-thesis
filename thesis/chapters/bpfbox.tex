@@ -11,37 +11,56 @@ Barrera~\cite{findlay2020_bpfbox}.
 
 \section{\bpfbox{} Overview}
 
-At a high level, \bpfbox{} is a confinement mechanism based on \gls{ebpf}. \todo{Outline basic components}
-\begin{inprogress}
-  \begin{itemize}
-    \item Custom policy language designed with simplicity in mind
-    \item The idea is to make light-weight confinement and have policy authorship be accessible to end-users
-    \item \bpfbox{} uses \gls{ebpf} for its kernelspace implementation to achieve a number of desirable properties
-    \begin{itemize}
-      \item Takes advantage of multiple program types, the ability to share data across
-            programs using maps, and the ability to dynamically attach programs to \gls{lsm}
-            hooks
-    \end{itemize}
-    \item Enables hyper-fine-grained confinement by tracing individual user and kernel function calls
-    \begin{itemize}
-      \item Policy can define things like \enquote{These rules should only apply within this specific function call}
-      \item But this is totally optional
-    \end{itemize}
-    \item \todo{More?}
-  \end{itemize}
-\end{inprogress}
+At a high level, \bpfbox{} is a confinement mechanism based on \gls{ebpf}. As outlined in
+\Cref{s:cp-design} in \Cref{c:confinement-problem}, our primary design goals are
+simplicity, flexibility, suitability for containerized applications, and flexibility. With
+this in mind, \bpfbox{} attempts to be as light-weight as possible, with a simple policy
+language that supports optional granularity. Perhaps the most important goal of \bpfbox{}
+may be derived from the aforementioned goals: to make per-application security policy
+accessible to end-users. To achieve these goals, we leverage \gls{ebpf} for \bpfbox{}'s
+kernelspace implementation and rely on a number of its intrinsic properties.
 
-\todo{Describe how \bpfbox{} enforces policy from start to finish, refer to \Cref{fig:bpfbox-policy-overview}}
-\begin{inprogress}
-  \begin{itemize}
-    \item User first writes a high-level policy in \bpfbox{}'s domain-specific policy language
-    \item Policy rules can be decorated with specific attributes for fine-grained enforcement, or can be left plain
-    \item A privileged daemon, \texttt{bpfboxd}, loads \gls{ebpf} programs and maps into the kernel
-    \item The daemon encodes policy into \gls{ebpf} maps
-    \item \gls{lsm} probes then read policy from the maps at runtime when making enforcement decisions
-    \item \Cref{fig:bpfbox-policy-overview} outlines the basic steps of this process
-  \end{itemize}
-\end{inprogress}
+In particular, we take advantage of multiple program and map types (outlined in
+\Cref{ss:bpfbox-architecture}). This design enables us to trace multiple aspects of system
+behaviour, including userspace and kernel function calls, and combine these with
+\gls{lsm}-layer enforcement, thanks to the \gls{krsi} extension that enables \gls{bpf}
+programs to be attached to \gls{lsm} hooks. By sharing data across program types in this
+way, we enable \bpfbox{} to define extremely fine-grained \gls{lsm} policy at the
+per-function-call level, something which no existing process confinement mechanism can do.
+
+Since \gls{ebpf} programs may be loaded dynamically into a vanilla kernel and provide
+implicit safety guarantees thanks to the verifier, we ensure that \bpfbox{} is both
+relatively light-weight and adoptable in practice; all of \bpfbox{}'s kernelspace code is
+pre-verified and thus significantly less likely to adversely affect a production kernel.
+
+In userspace, a privileged daemon loads \bpfbox{}'s \gls{ebpf} programs and maps into the
+kernel, manages their lifecycle, and logs policy enforcement actions for later
+examination. This daemon is implemented in bcc~\cite{bcc}, a Python3 library that acts as
+a userspace \gls{ebpf} front-end.  bcc in turn is based on libbpf~\cite{libbpf} and uses
+the LLVM toolchain~\cite{llvm_bpf} to compile its \gls{bpf} programs at runtime before
+they can be loaded into the kernel.
+
+\subsection{Policy Enforcement at a High Level}%
+\label{ss:bpfbox-enforcement-overview}
+
+To confine an application, a user first authors a high-level policy written in \bpfbox{}'s
+domain-specific policy language (outlined in \Cref{s:bpfbox-policies}). The policy
+language is designed in such a way as to permit the authorship of simple confinement
+policies while offering the ability to augment them with specific context. Thus, the user
+has full control over the balance between policy expressiveness and policy simplicity. We
+expect that application authors may wish to take advantage of \bpfbox{}'s full
+expressiveness, whereas end-users may wish to overlook advanced features in favour of
+simple, light-weight confinement policy.
+
+Once a policy has been written, the user places it in a pre-determined policy directory
+and loads \texttt{bpfboxd}, the \bpfbox{} daemon. The daemon compiles and loads its
+\gls{bpf} programs and maps into the kernel, then parses the user-supplied policy and
+encodes it into policy maps. When a user launches the target application, \bpfbox{} begins
+tracing the lifecycle of the corresponding processes and associates them with the correct
+policy. As the application runs, \bpfbox{} continually updates security-critical aspects
+of its state, stored in intermediary maps. As the application makes requests to sensitive
+resources, \bpfbox{} queries policy maps and state maps and uses this information to come
+to an enforcement decision. \Cref{fig:bpfbox-policy-overview} outlines this process in full.
 
 \begin{figure}[htpb]
   \centering
@@ -54,6 +73,27 @@ At a high level, \bpfbox{} is a confinement mechanism based on \gls{ebpf}. \todo
   }%
   \label{fig:bpfbox-policy-overview}
 \end{figure}
+
+
+
+\section{\bpfbox{} Implementation}%
+\label{s:bpfbox-implementation}
+
+This section presents the implementation details and full architecture of \bpfbox{}.  In
+particular, we provide an architectural overview and discuss \bpfbox{}'s policy
+enforcement implementation, along with how it tracks and manages the state and lifecycle
+of sandboxed processes. We focus specifically on implementation details here, leaving
+policy language design and documentation to \Cref{s:bpfbox-policies}.
+
+\subsection{Architectural Overview}%
+\label{ss:bpfbox-architecture}
+
+\todo{Architectural overview here? Maybe provide more detail than what is in the regular overview}
+\begin{inprogress}
+  \begin{itemize}
+    \item
+  \end{itemize}
+\end{inprogress}
 
 \bpfbox{}'s fundamental enforcement strategy is based on several \gls{bpf} program and map
 types, summarized as follows. Maps are outlined in \textbf{\green{green}} and programs are
@@ -107,26 +147,6 @@ clarification on specific program and map types.
   \gls{usdt} program. These are used to load policy into the kernel and perform various
   other interactions between the daemon and its \gls{bpf} programs and maps.
 \end{itemize}
-
-
-\section{\bpfbox{} Implementation}%
-\label{s:bpfbox-implementation}
-
-This section presents the implementation details and full architecture of \bpfbox{}.  In
-particular, we provide an architectural overview and discuss \bpfbox{}'s policy
-enforcement implementation, along with how it tracks and manages the state and lifecycle
-of sandboxed processes. We focus specifically on implementation details here, leaving
-policy language design and documentation to \Cref{s:bpfbox-policies}.
-
-\subsection{Architectural Overview}%
-\label{ss:bpfbox-architecture}
-
-\todo{Architectural overview here? Maybe provide more detail than what is in the regular overview}
-\begin{inprogress}
-  \begin{itemize}
-    \item
-  \end{itemize}
-\end{inprogress}
 
 \subsection{\bpfbox{} Policy Enforcement}%
 \label{ss:bpfbox-enforcement}
@@ -253,17 +273,17 @@ a 64-bit vector representing the \textit{state} of the running process.  This st
 is used to track whether the process is currently tainted and what important function
 calls are currently in progress.
 
- \begin{figure}[htbp]
-     \centering
-     \includegraphics[width=0.8\linewidth]{figs/bpfbox/process-lifecycle.pdf}
-     \caption[The various mechanisms that \bpfbox{} uses to manage process state]{
-       The various mechanisms that \bpfbox{} uses to manage process state.
-       Probes marked \texttt{sched:*} are tracepoints instrumenting scheduler events
-       in the kernel. Uprobes and kprobes instrument userspace
-       and kernelspace function calls respectively.
-     }%
-     \label{fig:bpfbox-process-lifecycle}
- \end{figure}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/bpfbox/process-lifecycle.pdf}
+  \caption[The various mechanisms that \bpfbox{} uses to manage process state]{
+    The various mechanisms that \bpfbox{} uses to manage process state.
+    Probes marked \texttt{sched:*} are tracepoints instrumenting scheduler events
+    in the kernel. Uprobes and kprobes instrument userspace
+    and kernelspace function calls respectively.
+  }%
+  \label{fig:bpfbox-process-lifecycle}
+\end{figure}
 
 %% \begin{lstlisting}[language=c, caption={The data structure stored in the \textit{process states} hashmap,
 %% which \bpfbox{} uses to track the state of running tasks. The map is keyed by
@@ -307,18 +327,18 @@ return, flipping the corresponding bit back to a \texttt{0}.
 \Cref{fig:bpfbox-function-calls} depicts how \bpfbox{} instruments userspace and
 kernelspace function calls for policy enforcement.
 
- \begin{figure}[p]
-     \centering
-     \includegraphics[width=1\linewidth]{figs/bpfbox/function-calls.pdf}
-     \caption[How \bpfbox{} tracks function calls]{
-       How \bpfbox{} uses kprobes and uprobes to track function calls.  If a policy
-       identifies that a rule should apply within the context of a certain function call,
-       \bpfbox{} instruments a probe on function entry and return. These probes flip the
-       corresponding bit in the process' state vector, indicating to policy enforcement
-       probes whether or not the process is in the middle of making the function call.
-     }%
-     \label{fig:bpfbox-function-calls}
- \end{figure}
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=1\linewidth]{figs/bpfbox/function-calls.pdf}
+  \caption[How \bpfbox{} tracks function calls]{
+    How \bpfbox{} uses kprobes and uprobes to track function calls.  If a policy
+    identifies that a rule should apply within the context of a certain function call,
+    \bpfbox{} instruments a probe on function entry and return. These probes flip the
+    corresponding bit in the process' state vector, indicating to policy enforcement
+    probes whether or not the process is in the middle of making the function call.
+  }%
+  \label{fig:bpfbox-function-calls}
+\end{figure}
 
 This approach is subject to a few inherent limitations.  Firstly, compile-time
 optimizations such as function in-lining can invalidate the probe by removing the
@@ -356,12 +376,250 @@ provides strong order guarantees and high performance under contention, we can e
 
 
 
-\section{\bpfbox{} Policy Language}
+\section{\bpfbox{} Policy Language}%
 \label{s:bpfbox-policies}
 
-\todo{This section will present and document the policy language of \bpfbox{}, taken from our paper.}
+\bpfbox{} policies are a series of rules and accompanying decorators. A decorator may
+annotate either individual rules or blocks of rules denoted by braces and is used to
+specify additional context or policy actions. The first line in a \bpfbox{} policy is
+always a special profile decorator, written as \lstinline[language=bpfbox]{#![profile "/path/to/exe"]},
+which marks the executable to which the policy should be associated.
+Other than the profile decorator, all others take the form of
+\lstinline[language=bpfbox]|#[decorator]{rule()}|. Multiple decorators may be specified
+before a set of rules, meaning that all decorators apply to each rule.
+
+Profile assignment occurs when a process makes an \texttt{execve(2)} call that results in
+loading the specified executable.  Once a process has been assigned a profile, this
+profile cannot change again, unless an \texttt{execve(2)} occurs which has been explicitly
+marked with the \lstinline[language=bpfbox]{#[transition]} decorator. This ensures that
+policy transitions only occur when expected and prevents malicious \texttt{execve(2)}
+calls from changing \bpfbox{}'s treatment of a process.
+
+The sections that follow describe the rule categories supported by
+\bpfbox{} (\Crefrange{ss:bpfbox-filesystem-rules}{ss:bpfbox-ptrace-rules}) and the decorators that may
+optionally be used to augment them
+(\Crefrange{ss:bpfbox-allow}{ss:bpfbox-kfunc}).
+\Cref{lst:bpfbox-policy-example} depicts a simple example \bpfbox{} policy.
+
+\begin{lstlisting}[language=bpfbox, gobble=4, caption={An example of a \bpfbox{} policy.}, label={lst:bpfbox-policy-example}, float]
+    /* This policy applies to the /usr/bin/mylogin
+     * executable */
+    #![profile "/usr/bin/mylogin"]
+
+    /* Taint process state upon binding to
+     * any IPv4/IPv6 network socket */
+    #[taint] {
+        net(inet, bind)
+        net(inet6, bind)
+    }
+
+    /* Allow the check_login function to read
+     * /etc/passwd and /etc/shadow */
+    #[func "check_login"] {
+        fs("/etc/passwd", read)
+        fs("/etc/shadow", read)
+    }
+
+    /* Allow the add_user function to read
+     * and append to /etc/passwd, but log such
+    events to the audit logs */
+    #[func "add_user"]
+    #[audit] {
+        fs("/etc/passwd", read|append)
+    }
+
+    /* Read and append to any immediate child
+     * of the /var/log/mylogin/ directory */
+    fs("/var/log/mylogin/*", read|append)
+
+    /* Allow the execution of /bin/bash, transitioning
+     * profiles to bash's profile after the execve(2)
+     * and untainting the process */
+    #[transition]
+    #[untaint] {
+        fs("/bin/bash", read|exec)
+    }
+\end{lstlisting}
 
 
+
+\subsection{Filesystem Rules}%
+\label{ss:bpfbox-filesystem-rules}
+
+Filesystem rules in \bpfbox{} govern what operations a process may perform on filesystem
+objects such as files and directories. They are written as
+\lstinline[language=bpfbox]{fs("pathname", access)} where
+\lstinline[language=bpfbox]{"pathname"} is a string containing the pathname of the file
+and \lstinline[language=bpfbox]{access} is a list of one or more file access permissions
+joined by the vertical bar symbol.  For instance, to represent read and
+append permissions on \texttt{/var/log/my\_log}, the corresponding \bpfbox{} rule would be
+\lstinline[language=bpfbox]{fs("/var/log/my_log", read|append)}.  In total, \bpfbox{}
+supports nine distinct filesystem access flags as shown in \Cref{tab:fs-access}.
+
+\begin{table}[htpb]
+    \centering
+    \caption{The filesystem access flags supported in \bpfbox{}.}
+    \label{tab:fs-access}
+    \begin{tabular}{lp{0.7\linewidth}}
+    \toprule
+    Flag & Meaning \\
+    \midrule
+    \texttt{read}    & The subject may read the object. \\
+    \texttt{write}   & The subject may write to the object. \\
+    \texttt{append}  & The subject may append to the object. \\
+    \texttt{exec}    & The subject may execute the object. \\
+    \texttt{setattr} & The subject may change the object's filesystem attributes. \\
+    \texttt{getattr} & The subject may read the object's filesystem attributes. \\
+    \texttt{rm}      & The subject may remove the object's inode. \\
+    \texttt{link}    & The subject may create a link to the object's inode. \\
+    \texttt{ioctl}   & The subject may perform an ioctl call on the object. \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\bpfbox{} supports a limited globbing syntax when defining pathnames, allowing multiple
+rules matching similar files to be combined into one.  Although filesystem rules are
+specified using pathnames, \bpfbox{} internally uses inode and device numbers rather than
+the pathnames themselves. When loading policies, \bpfbox{} automatically resolves the
+provided pathnames into their respective inode-device number pairs. This information is
+then used to look up the correct policy whenever a sandboxed application attempts to
+access an inode.  Since \bpfbox{} does not check the pathnames themselves when referring
+to files, it is able to defeat \glsentryfull{toctou} attacks, where an
+attacker quickly swaps out one file with a link to another in an attempt to circumvent
+access control restrictions in a privileged (most often setuid)
+binary~\cite{bishop1996_checking}.  In such a situation, \bpfbox{} would simply see
+a different inode and deny access.
+
+In addition to regular filesystem rules, \bpfbox{} provides a special rule type for
+\texttt{/proc/pid} entries in the \texttt{procfs} virtual filesystem. \texttt{procfs}
+rules, written as \lstinline[language=bpfbox]{proc("exe", access)} where
+\lstinline[language=bpfbox]{"exe"} is a string containing the pathname of another
+executable and \lstinline[language=bpfbox]{access} is the desired access. For example,
+read-only access to the \texttt{procfs} entries of executables running
+\texttt{/usr/bin/ls} may be specified with \lstinline[language=bpfbox]{proc("/usr/bin/ls", read)}.
+Access to \lstinline[language=bpfbox]{any} \texttt{procfs} entry may be specified
+using the special keyword \lstinline[language=bpfbox]{any}.
+
+
+
+\subsection{Network Rules}%
+\label{ss:bpfbox-network-rules}
+
+\bpfbox{} implements networking policy at the socket level, covering both Internet sockets
+as well as Unix domain sockets. Networking rules are specified using
+\lstinline[language=bpfbox]{net(protocol, access)}, where
+\lstinline[language=bpfbox]{protocol} is a networking protocol like \texttt{inet},
+\texttt{inet6}, or \texttt{unix} and \lstinline[language=bpfbox]{access} is a list of
+socket operations (\Cref{tab:net-access}) separated by vertical bars. For example, a rule
+targeting \texttt{bind}, \texttt{accept}, and \texttt{connect} operations on an
+\texttt{inet6} socket would look like \lstinline[language=bpfbox]{net(inet6, bind|connect|accept)},
+while a rule targeting \texttt{create} operations on a \texttt{unix} socket would look
+like \lstinline[language=bpfbox]{net(unix, create)}.
+
+\begin{table}[htpb]
+    \centering
+    \caption{The socket operation flags supported in \bpfbox{}.}
+    \label{tab:net-access}
+    \begin{tabular}{lp{0.7\linewidth}}
+    \toprule
+    Flag & Meaning \\
+    \midrule
+    \texttt{connect}  & Subject may connect a socket to a remote address. \\
+    \texttt{bind}     & Subject may bind a socket to a local address. \\
+    \texttt{accept}   & Subject may accept an incoming socket connection. \\
+    \texttt{listen}   & Subject may listen for incoming socket connections. \\
+    \texttt{send}     & Subject may send messages over a socket. \\
+    \texttt{recv}     & Subject may receive messages over a socket. \\
+    \texttt{create}   & Subject may create new sockets. \\
+    \texttt{shutdown} & Subject may shut down a socket connection. \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+
+
+\subsection{Signal Rules}%
+\label{ss:bpfbox-signal-rules}
+
+Specifying signal behaviour in \bpfbox{} is done using the
+\lstinline[language=bpfbox]{signal("exe", access)} where
+\lstinline[language=bpfbox]{"exe"} is the pathname of another executable and
+\lstinline[language=bpfbox]{access} is a list of signals allowed to be sent, separated by
+vertical bars. Normally, only processes running the executable
+\lstinline[language=bpfbox]{"exe"} are allowed to be signalled, but the special keyword
+\lstinline[language=bpfbox]{any} may be used instead to specify the ability to signal
+\textit{any} process on the system. Two additional keywords,
+\lstinline[language=bpfbox]{parent} and \lstinline[language=bpfbox]{child}, allow parent
+and child processes to be signalled instead.  The \lstinline[language=bpfbox]{access}
+argument supports any Linux signal, in addition to a few helper keywords that can be used
+to specify broad categories, such as \lstinline[language=bpfbox]{fatal} for fatal signals
+and \lstinline[language=bpfbox]{nohandle} for signals that cannot be handled.  For
+example, to specify the ability to send fatal signals to any process running
+\texttt{/usr/bin/ls}, the corresponding \bpfbox{} rule would be
+\lstinline[language=bpfbox]{signal("/usr/bin/ls", fatal)}.  To narrow permissions such
+that only \texttt{SIGTERM} and \texttt{SIGINT} are allowed,
+\lstinline[language=bpfbox]{signal("/usr/bin/ls", sigterm|sigint)} could be used instead.
+
+
+
+\subsection{Ptrace Rules}%
+\label{ss:bpfbox-ptrace-rules}
+
+Just like with signals, \texttt{ptrace} access is specified as
+\lstinline[language=bpfbox]{ptrace("exe", access)}, where
+\lstinline[language=bpfbox]{access} is a list of allowed \texttt{ptrace} modes separated
+by vertical bars. The \lstinline[language=bpfbox]{child} keyword is also available for
+\texttt{ptrace} rules to allow tracing of any child process, regardless of the child's
+current profile. For instance, a rule that allows a process to read and attach to a child
+process would be written as \lstinline[language=bpfbox]{ptrace(child, read|attach)}, while
+a rule that allows only read access to processes running \texttt{/usr/bin/ls} would be
+written as \lstinline[language=bpfbox]{ptrace("/usr/bin/ls", read)}.  Note that currently
+\texttt{ptrace} rules do not override other \texttt{ptrace} restrictions, such as those
+imposed by Yama~\cite{yama}.
+
+
+
+\subsection{Allow, Taint, and Audit Decorators}%
+\label{ss:bpfbox-allow}
+
+\bpfbox{} supports three distinct decorators for defining \textit{actions} that should be
+taken when a given access matches a rule. The \lstinline[language=bpfbox]{#[allow]}
+decorator causes \bpfbox{} to allow the access; however, it is not typically necessary to
+explicitly specify this as undecorated rules are assumed to be allowed by default.
+Regardless, it may be desirable to decorate such rules with
+\lstinline[language=bpfbox]{#[allow]} to improve the clarity of the policy.
+\lstinline[language=bpfbox]{#[taint]} is used to mark a rule as a \textit{taint rule},
+which causes the process to enter a tainted state when matched. These rules can be thought
+of as gateways into the rest of the policy.  Once a process is tainted, this cannot be
+reversed unless it makes an \texttt{execve(2)} call explicitly marked with
+\lstinline[language=bpfbox]{#[untaint]}.  Finally, \lstinline[language=bpfbox]{#[audit]}
+may be combined with \lstinline[language=bpfbox]{#[allow]} to cause \bpfbox{} to log the
+matching operation to its audit logs. This can be useful for marking rare behaviour that
+should be investigated or for determining how often a given rule is matched in practice.
+
+
+
+\subsection{Func and Kfunc Decorators}%
+\label{ss:bpfbox-kfunc}
+
+One of the key features of \bpfbox{} is the ability to specify specific application-level
+and kernel-level context for rules. In the policy language, this is done by decorating
+rules with the \lstinline[language=bpfbox]{#[func "fn_name" ("filename")]} and
+\lstinline[language=bpfbox]{#[kfunc "fn_name"]} decorators for userspace and kernelspace
+instrumentation respectively. Here, \lstinline[language=bpfbox]{"fn_name"} refers to the
+name of the function to be instrumented and \lstinline[language=bpfbox]{"filename"} refers
+to the filename where the function symbol should be looked up --- this parameter is
+optional and allows for the instrumentation of shared libraries.  These decorators provide
+powerful tools for defining extremely fine-grained, sub-application level policy. For
+instance, to declare that read access to the file \texttt{/etc/shadow} should only occur
+during a call to the function \texttt{check\_password()}, the corresponding \bpfbox{} rule
+would look like:
+\begin{lstlisting}[language=bpfbox]
+#[func "check_password"]
+fs("/etc/shadow", read)
+\end{lstlisting}
+A process that is sandboxed using this policy would be unable to access
+\texttt{/etc/shadow} except within a call to the specified function.
 
 
 
