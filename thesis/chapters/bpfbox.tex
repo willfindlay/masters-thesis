@@ -12,8 +12,36 @@ Barrera~\cite{findlay2020_bpfbox}.
 \section{\bpfbox{} Overview}
 
 At a high level, \bpfbox{} is a confinement mechanism based on \gls{ebpf}. \todo{Outline basic components}
+\begin{inprogress}
+  \begin{itemize}
+    \item Custom policy language designed with simplicity in mind
+    \item The idea is to make light-weight confinement and have policy authorship be accessible to end-users
+    \item \bpfbox{} uses \gls{ebpf} for its kernelspace implementation to achieve a number of desirable properties
+    \begin{itemize}
+      \item Takes advantage of multiple program types, the ability to share data across
+            programs using maps, and the ability to dynamically attach programs to \gls{lsm}
+            hooks
+    \end{itemize}
+    \item Enables hyper-fine-grained confinement by tracing individual user and kernel function calls
+    \begin{itemize}
+      \item Policy can define things like \enquote{These rules should only apply within this specific function call}
+      \item But this is totally optional
+    \end{itemize}
+    \item \todo{More?}
+  \end{itemize}
+\end{inprogress}
 
-\todo{Describe how \bpfbox{} enforces policy from start to finish, refer to \Cref{fig:bpfbox-overview}}
+\todo{Describe how \bpfbox{} enforces policy from start to finish, refer to \Cref{fig:bpfbox-policy-overview}}
+\begin{inprogress}
+  \begin{itemize}
+    \item User first writes a high-level policy in \bpfbox{}'s domain-specific policy language
+    \item Policy rules can be decorated with specific attributes for fine-grained enforcement, or can be left plain
+    \item A privileged daemon, \texttt{bpfboxd}, loads \gls{ebpf} programs and maps into the kernel
+    \item The daemon encodes policy into \gls{ebpf} maps
+    \item \gls{lsm} probes then read policy from the maps at runtime when making enforcement decisions
+    \item \Cref{fig:bpfbox-policy-overview} outlines the basic steps of this process
+  \end{itemize}
+\end{inprogress}
 
 \begin{figure}[htpb]
   \centering
@@ -24,7 +52,7 @@ At a high level, \bpfbox{} is a confinement mechanism based on \gls{ebpf}. \todo
     policy enforcement and tracing programs into the kernel. At runtime, \bpfbox{}'s
     \gls{bpf} programs trace the application and enforce policy.
   }%
-  \label{fig:bpfbox-overview}
+  \label{fig:bpfbox-policy-overview}
 \end{figure}
 
 \bpfbox{}'s fundamental enforcement strategy is based on several \gls{bpf} program and map
@@ -36,13 +64,14 @@ clarification on specific program and map types.
 \begin{itemize}
   \item \bpfbox{} uses \textbf{\green{Hashmaps}} to store runtime state, share state
   between its \gls{bpf} programs, and communicate with the userspace daemon. In
-  particular, we maintain a set of hashmaps to store per-process state and a set of
-  hashmaps to store policy. At runtime, \bpfbox{}'s \gls{lsm} programs query process state
-  and policy to make enforcement decisions.
+  particular, \bpfbox{} maintains a set of hashmaps to store per-process state and a set
+  of hashmaps to store policy. We call these \textit{state maps} and \textit{policy maps}
+  respectively.  At runtime, \bpfbox{}'s \gls{lsm} programs query these state maps and
+  policy maps to make enforcement decisions.
 
   \item \textbf{\green{Ringbufs}} provide \bpfbox{}'s \gls{bpf} programs with a canonical
   data store to push per-event audit data to userspace. In the kernel, the ringbuf map is
-  implemented as a circular ring buffer that is efficiently shared across all \glspl{cpu}.
+  implemented as a circular buffer that is efficiently shared across all \glspl{cpu}.
   In userspace, the \bpfbox{} daemon maps the ring buffer into memory and continually
   polls for new events over a fixed interval.
   % \item \textbf{State Maps} are \gls{ebpf} hash maps that associate a kernel \gls{tid}
@@ -72,7 +101,11 @@ clarification on specific program and map types.
   to the process' \textit{state map} to indicate this. \bpfbox{} then considers this state
   when making later enforcement decisions.
 
-  \item \textbf{\purple{\gls{usdt} Probes}} \todo{libbpfbox and USDT probes}
+  \item \textbf{\purple{\gls{usdt} Probes}} form the backbone of \textit{libbpfbox},
+  providing a kernel-side implementation for various \enquote{commands}. Commands are
+  implemented in userspace as stub \gls{usdt} functions that trap to a kernelspace
+  \gls{usdt} program. These are used to load policy into the kernel and perform various
+  other interactions between the daemon and its \gls{bpf} programs and maps.
 \end{itemize}
 
 
@@ -87,6 +120,13 @@ policy language design and documentation to \Cref{s:bpfbox-policies}.
 
 \subsection{Architectural Overview}%
 \label{ss:bpfbox-architecture}
+
+\todo{Architectural overview here? Maybe provide more detail than what is in the regular overview}
+\begin{inprogress}
+  \begin{itemize}
+    \item
+  \end{itemize}
+\end{inprogress}
 
 \subsection{\bpfbox{} Policy Enforcement}%
 \label{ss:bpfbox-enforcement}
@@ -103,7 +143,7 @@ implemented.
 
 \bpfbox{} policies are per-executable and are stored in an exclusively root-controlled
 directory (by default, \texttt{/var/lib/bpfbox/}), written in \bpfbox{}'s policy language
-(\Cref{sec:policies}). When an executable is loaded, \bpfbox{} loads the corresponding
+(c.f.~\Cref{s:bpfbox-policies}). When an executable is loaded, \bpfbox{} loads the corresponding
 policy file (if it exists) and translates it into a series of function calls to \gls{usdt}
 stub functions.  These function calls trigger the corresponding eBPF code, thus recording
 the policy in the policy maps as a set of policy structures.  A policy structure consists
@@ -325,14 +365,41 @@ provides strong order guarantees and high performance under contention, we can e
 
 
 
-\section{Limitations and the Transition Toward \bpfcontain{}}
+\section{Limitations and the Transition Toward \bpfcontain{}}%
+\label{s:bpfbox-bpfcontain}
 
 \todo{This section will discuss limitations of \bpfbox{}, how it was a rough first-cut at
 a solution to the confinement problem, and talk about the aspects of \bpfbox{} that
 \bpfcontain{} improves upon.}
 
+\todo{This will likely be an enumerated list with a small introductory paragraph... Fold it into summary? Perhaps.}
 \begin{inprogress}
 \begin{itemize}
-  \item
+  \item bcc Python + LLVM + kernel headers dependency (\bpfcontain{} uses BPF CO-RE and Rust instead).
+  \begin{itemize}
+    \item Many deployments do not or cannot meet these requirements. LLVM toolchain alone is
+          gigabytes of dependency, kernel headers add even bulkier requirements, Python can
+          be quite slow.
+    \item CO-RE allows a single compiled version of \bpfcontain{} to work on any kernel $\ge 5.8$
+    \item Rust allows \bpfcontain{}'s userspace components to be safe, secure, and fast.
+    \item Speed of C, zero-cost abstractions, and memory/thread safety guarantees provided by Rust's ownership model
+  \end{itemize}
+
+  \item \bpfcontain{} is container-specific
+  \begin{itemize}
+    \item \todo{Sub points here}
+  \end{itemize}
+
+  \item \bpfcontain{} simplifies policy
+  \begin{itemize}
+    \item \todo{Sub points here}
+  \end{itemize}
 \end{itemize}
 \end{inprogress}
+
+
+
+\section{Summary}%
+\label{s:bpfbox-summary}
+
+\todo{Chapter summary here}
