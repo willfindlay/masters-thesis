@@ -33,12 +33,15 @@ implicit safety guarantees thanks to the verifier, we ensure that \bpfbox{} is b
 relatively light-weight and adoptable in practice; all of \bpfbox{}'s kernelspace code is
 pre-verified and thus significantly less likely to adversely affect a production kernel.
 
-In userspace, a privileged daemon loads \bpfbox{}'s \gls{ebpf} programs and maps into the
-kernel, manages their lifecycle, and logs policy enforcement actions for later
-examination. This daemon is implemented in bcc~\cite{bcc}, a Python3 library that acts as
-a userspace \gls{ebpf} front-end.  bcc in turn is based on libbpf~\cite{libbpf} and uses
-the LLVM toolchain~\cite{llvm_bpf} to compile its \gls{bpf} programs at runtime before
-they can be loaded into the kernel.
+Whereas the kernelspace components are implemented using \gls{ebpf} programs written in C,
+\bpfbox{}'s userspace components are implemented in Python3. In particular, this consists
+of a privileged daemon loads \bpfbox{}'s \gls{ebpf} programs and maps into the kernel,
+manages their lifecycle, and logs policy enforcement actions for later examination.
+
+% This daemon is implemented in bcc~\cite{bcc}, a Python3 library that acts as
+% a userspace \gls{ebpf} front-end.  bcc in turn is based on libbpf~\cite{libbpf} and uses
+% the LLVM toolchain~\cite{llvm_bpf} to compile its \gls{bpf} programs at runtime before
+% they can be loaded into the kernel.
 
 \subsection{Policy Enforcement at a High Level}%
 \label{ss:bpfbox-enforcement-overview}
@@ -88,18 +91,21 @@ policy language design and documentation to \Cref{s:bpfbox-policies}.
 \subsection{Architectural Overview}%
 \label{ss:bpfbox-architecture}
 
-\todo{Architectural overview here? Maybe provide more detail than what is in the regular overview}
-\begin{inprogress}
-  \begin{itemize}
-    \item
-  \end{itemize}
-\end{inprogress}
+In userspace, \bpfbox{} runs as a privileged daemon (\texttt{bpfboxd}), implemented in
+Python3 using the bcc~\cite{bcc} userspace library for \gls{ebpf}. The daemon uses the
+LLVM toolchain~\cite{llvm_bpf} to compile \gls{ebpf} programs which are then loaded into
+the kernel using bcc-provided wrappers around the \texttt{bpf(2)} system call. The daemon
+provides a userspace front-end to \bpfbox{}, managing the lifecycle of its \gls{bpf}
+programs and maps and logging security-sensitive events as they occur. To load policy into
+the kernel, \texttt{bpfboxd} implements a full parser and lexer for \bpfbox{}'s custom
+policy language.  After parsing policy, \texttt{bpfboxd} encodes it into a format that can
+be subsequently loaded into kernelspace through \gls{bpf} maps.
 
-\bpfbox{}'s fundamental enforcement strategy is based on several \gls{bpf} program and map
-types, summarized as follows. Maps are outlined in \textbf{\green{green}} and programs are
-outlined in \textbf{\purple{purple}}. The reader is encouraged to revisit
-\Cref{ss:bpf-programs-bg,ss:bpf-maps-bg} in \Cref{c:background}, where necessary, for
-clarification on specific program and map types.
+\bpfbox{}'s kernelspace components are implemented in \gls{ebpf} and based on several
+\gls{bpf} program and map types, summarized as follows. Maps are outlined in
+\textbf{\green{green}} and programs are outlined in \textbf{\purple{purple}}. The reader
+is encouraged to revisit \Cref{ss:bpf-programs-bg,ss:bpf-maps-bg} in \Cref{c:background},
+where necessary, for clarification on specific program and map types.
 
 \begin{itemize}
   \item \bpfbox{} uses \textbf{\green{Hashmaps}} to store runtime state, share state
@@ -315,8 +321,8 @@ Finally, the \texttt{sched:process\_exit} tracepoint allows \bpfbox{} to detect 
 a task exits. This tracepoint deletes the corresponding entry in the \textit{process
 states} map.
 
-\subsubsection{Context-Aware Policy}
-\label{sec:context-aware}
+\subsection{Context-Aware Policy}
+\label{ss:bpfbox-context-aware}
 
 If the policy for a given executable defines specific function call contexts for
 particular rules, \bpfbox{} instruments these function calls using uprobes (for userspace
@@ -626,9 +632,59 @@ A process that is sandboxed using this policy would be unable to access
 \section{Limitations and the Transition Toward \bpfcontain{}}%
 \label{s:bpfbox-bpfcontain}
 
-\todo{This section will discuss limitations of \bpfbox{}, how it was a rough first-cut at
-a solution to the confinement problem, and talk about the aspects of \bpfbox{} that
-\bpfcontain{} improves upon.}
+While \bpfbox{} certainly offers a new perspective on confinement and improves the status
+quo, the extent to which it achieves the design goals outlined in \Cref{s:cp-design} is
+arguably hampered by a few inherent limitations. We address these limitations in its
+successor, \bpfcontain{}, the design of which is outlined in the next chapter. Before we
+examine \bpfcontain{} in full, we first address the fundamental limitations of \bpfbox{}
+as a confinement mechanism and offers some insights into how \bpfcontain{} addresses them.
+\begin{enumerate}
+  \item \textbf{Dependency Overhead and Runtime Overhead.}
+    Due to its userspace implementation using bcc, \bpfbox{} has a high dependency
+    overhead. This overhead is the combined result of a number of requirements imposed on
+    the host system by the bcc toolchain. On the userspace side, bcc depends on Python as
+    well as the entire LLVM toolchain for program compilation. Both of these are rather
+    hefty requirements on their own. Python requires an entire language runtime, and
+    a full LLVM toolchain can introduce gigabytes of additional code.
+
+    Furthermore, Python and bcc incur significant runtime overhead. Python is an
+    interpreted language with a much heavier runtime than compiled systems languages like
+    C or Rust.  This runtime incurs additional performance disadvantages due to safety
+    features like the global object lock, which impede concurrency. Since bcc compiles
+    \gls{ebpf} programs at runtime, we incur additional compilation overhead for each
+    program, sometimes resulting in significant startup delays depending on the complexity
+    of the application. This runtime compilation also necessitates the availability of
+    kernel headers as a compilation dependency in the target environment, adding further
+    storage overhead.
+
+    \bpfcontain{} solves these dependency and runtime overhead issues by leveraging Rust
+    and libbpf \gls{core}~\cite{nakryiko2020_core} rather than Python and bcc.  Unlike
+    bcc, libbpf \gls{core} enables \gls{bpf} programs to be compiled once and run
+    anywhere, thanks to \gls{btf} information provided by the kernel and load-time symbol
+    relocation. Program bytecode can then be embedded directly into the compiled object
+    file, meaning the single pre-compiled \bpfcontain{} binary can be deployed on any
+    target kernel that meets a minimal set of requirements. As a side effect,
+    \bpfcontain{} requires neither a full LLVM toolchain nor kernel headers to be
+    available in the target deployment, significantly reducing the dependency overhead.
+
+    Moreover, implementing the \bpfcontain{} daemon in Rust enables \bpfcontain{} to take
+    advantage of a myriad of benefits offered by the Rust language. In particular, Rust
+    enables \bpfcontain{}'s userspace components to be safe, secure, and fast. Thread- and
+    memory-safety guarantees provided by Rust ownership model eliminate many common
+    security bugs including memory corruption vulnerabilities and race conditions between
+    threads. These safety guarantees provide critical security advantages, particularly
+    given the fact that the \bpfcontain{} daemon is a long-running, privileged
+    process\,---\,a ripe target for attacker exploitation. Thanks to an emphasis on speed
+    and zero-cost abstractions, Rust can provide these benefits at virtually zero
+    overhead, in line with traditional systems programming languages like C and
+    significantly better than languages with a bulky runtime such as Python.
+
+  \item \textbf{Lack of Container Semantics.}
+    \todo{Write this}
+
+  \item \textbf{Room for Further Policy Simplification.}
+    \todo{Write this}
+\end{enumerate}
 
 \todo{This will likely be an enumerated list with a small introductory paragraph... Fold it into summary? Perhaps.}
 \begin{inprogress}
@@ -660,4 +716,14 @@ a solution to the confinement problem, and talk about the aspects of \bpfbox{} t
 \section{Summary}%
 \label{s:bpfbox-summary}
 
-\todo{Chapter summary here}
+This chapter has presented the design and implementation of \bpfbox{}, a prototype process
+confinement mechanism leveraging \gls{ebpf} for dynamically loadable policies that balance
+simplicity and flexibility. In particular, we outline \bpfbox{}'s architecture, the
+implementation details of its \gls{ebpf}-based policy enforcement mechanism, and the
+design of its custom policy language. Through a combination of \gls{ebpf}-based
+enforcement and a light-weight yet fine-grained policy language, \bpfbox{} represents
+a step towards the container-specific design outlined in \Cref{s:cp-design}. However, we
+acknowledge some fundamental limitations with \bpfbox{}'s design, including dependency
+overhead, lack of container semantics, and room for further simplification of its policy
+language. In the next chapter, we outline \bpfcontain{}, an iteration of \bpfbox{} that
+addresses these concerns.
