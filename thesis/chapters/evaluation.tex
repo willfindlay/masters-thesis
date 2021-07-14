@@ -1,3 +1,11 @@
+This chapter presents an evaluation of \bpfbox{} and \bpfcontain{} in terms of their
+performance and security. \Cref{s:eval-performance} presents the methodology and results
+of a performance evaluation involving micro- and macro-benchmarking of \bpfbox{} and
+\bpfcontain{}. Results are compared with AppArmor~\cite{cowan2000_apparmor}, a popular
+\gls{lsm} framework for \gls{mac} security policy. Finally, \Cref{s:eval-security}
+presents a security analysis of \bpfbox{} and \bpfcontain{} under the threat model
+outlined in \Cref{s:cp-threat-model} of \Cref{c:confinement-problem}.
+
 \begin{inprogress}
   \begin{itemize}
     \item Zhang \etal~\cite{zhang2021_lsm_file_overhead} evaluated the performance
@@ -5,3 +13,22 @@
     statistics for SELinux that can be compared with BPFContain and AppArmor
   \end{itemize}
 \end{inprogress}
+
+\section{Performance Evaluation}%
+\label{s:eval-performance}
+
+Here, we evaluate the overhead of \bpfbox{} and \bpfcontain by examining their performance
+over a series of macro- and micro-benchmarks. For
+
+\subsection{Methodology}%
+\label{ss:performance-methodology}
+
+
+
+\section{Security Analysis}%
+\label{s:eval-security}
+
+
+
+\section{Summary}%
+\label{s:eval-summary}

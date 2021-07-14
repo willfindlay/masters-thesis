@@ -1,15 +1,25 @@
+In this chapter, we present \bpfcontain{}, an iteration on the original \bpfbox{} system
+presented in \Cref{c:bpfbox}. \bpfcontain{} is a superset of \bpfbox; a full
+re-implementation that focuses on container-specific confinement policy, \todo{what else?}
 
+Portions of this chapter are taken from an upcoming paper, co-authored with David Barrera
+and Anil Somayaji, and planned for submission at USENIX Security 2022. A draft of this
+paper is currently available~\cite{findlay2021_bpfcontain}, although significant portions
+of this chapter differ from the publicly available archive due to subsequent updates to
+\bpfcontain{}.
 
-\section{\bpfcontain{} Overview}
+\section{\bpfcontain{} Overview}%
+\label{s:bpfcontain-overview}
 
 \todo{This section will present an architectural overview of \bpfcontain{}, summarize key
 features and what it can do.}
 
-\section{Extending \bpfbox{} to Model Containers}
+\section{Extending \bpfbox{} to Model Containers}%
+\label{s:bpfcontain-extending}
 
 \todo{This section will discuss how \bpfcontain{} extends \bpfbox{} to model containers.
 Specifically, the idea is to enforce policy at the granularity of an entire container
-rather than an individual process. This lets us get away with all sorts of implicit
+rather than an individual process. This lets us get away with all sorts of default
 policy\,---\,all operations within the confines of the container that do not affect the
 rest of the system are permitted. Operations that impact the rest of the system, such as
 those that modify kernel code, system parameters, or similar are denied. Everything else
@@ -19,27 +29,31 @@ the exceptions rather than the rules}.}
 
 
 
-\section{\bpfcontain{} Implementation}
+\section{\bpfcontain{} Implementation}%
+\label{s:bpfcontain-implementation}
 
 \todo{This section will present the implementation details of \bpfcontain{}, taken from our paper.}
 
 
 
 
-\section{\bpfcontain{} Policy Language}
+\section{\bpfcontain{} Policy Language}%
+\label{s:bpfcontain-policy}
 
 \todo{This section will present and document the policy language of \bpfcontain{}, taken from our paper.}
 
 
 
 
-\section{Implicit Policy Under \bpfcontain{}}
+\section{Default Policy Under \bpfcontain{}}%
+\label{s:bpfcontain-default}
 
-\todo{This section will describe \bpfcontain{}'s implicit policy in more detail and describe the rationale behind the approach.}
-
-
-
+\todo{This section will describe \bpfcontain{}'s default policy in more detail and describe the rationale behind the approach.}
 
 
 
-\todo{How do we conclude this chapter?}
+
+\section{Summary}%
+\label{s:bpfcontain-summary}
+
+\todo{Summary here.}

@@ -12,7 +12,7 @@ Barrera~\cite{findlay2020_bpfbox}.
 \section{\bpfbox{} Overview}
 
 At a high level, \bpfbox{} is a confinement mechanism based on \gls{ebpf}. As outlined in
-\Cref{s:cp-design} in \Cref{c:confinement-problem}, our primary design goals are
+\Cref{s:cp-design} of \Cref{c:confinement-problem}, our primary design goals are
 simplicity, flexibility, suitability for containerized applications, and flexibility. With
 this in mind, \bpfbox{} attempts to be as light-weight as possible, with a simple policy
 language that supports optional granularity. Perhaps the most important goal of \bpfbox{}
@@ -30,8 +30,10 @@ per-function-call level, something which no existing process confinement mechani
 
 Since \gls{ebpf} programs may be loaded dynamically into a vanilla kernel and provide
 implicit safety guarantees thanks to the verifier, we ensure that \bpfbox{} is both
-relatively light-weight and adoptable in practice; all of \bpfbox{}'s kernelspace code is
-pre-verified and thus significantly less likely to adversely affect a production kernel.
+light-weight and more adoptable than conventional solutions based in static \glspl{lsm}
+like SELinux or AppArmor. Since all of \bpfbox{}'s kernelspace code is pre-verified, it is
+also significantly less likely to adversely affect a production kernel than an alternative
+solution implemented as a kernel patch or kernel module.
 
 Whereas the kernelspace components are implemented using \gls{ebpf} programs written in C,
 \bpfbox{}'s userspace components are implemented in Python3. In particular, this consists
@@ -158,32 +160,32 @@ where necessary, for clarification on specific program and map types.
 \label{ss:bpfbox-enforcement}
 
 \bpfbox{} policies are written using a custom policy language.  \bpfbox{}'s policy
-language allows for specific operations to be allowed, audited (logged), and/or tainted.
-All unspecified operations are denied by default. Tainting is similar in spirit to Perl's
-classic taint mode~\cite{hurst2004_perl}, however, rather than marking data, it marks the
-entire process.  Tainting allows for more restrictive policies to be enforced once
-a process has engaged in specific unsafe operations, say by reading from a network socket.
-We present the design and syntax of the \bpfbox{} policy language in
-\Cref{s:bpfbox-policies}; here we discuss the functionality it provides and how it is
-implemented.
+language supports three distinct policy decisions for a given rule; the operation may be
+allowed, audited (logged), and/or tainted.  Any unspecified operations are denied by
+default. Tainting is similar in spirit to Perl's classic taint mode~\cite{hurst2004_perl},
+however, rather than marking data, it marks the entire process.  Tainting allows for more
+restrictive policies to be enforced once a process has engaged in specific unsafe
+operations, say by reading from a network socket.  We present the design and syntax of the
+\bpfbox{} policy language in \Cref{s:bpfbox-policies}; here we discuss the functionality
+it provides and how it is implemented.
 
 \bpfbox{} policies are per-executable and are stored in an exclusively root-controlled
 directory (by default, \texttt{/var/lib/bpfbox/}), written in \bpfbox{}'s policy language
 (c.f.~\Cref{s:bpfbox-policies}). When an executable is loaded, \bpfbox{} loads the corresponding
 policy file (if it exists) and translates it into a series of function calls to \gls{usdt}
-stub functions.  These function calls trigger the corresponding eBPF code, thus recording
+stub functions.  These function calls trigger the corresponding \gls{ebpf} code, thus recording
 the policy in the policy maps as a set of policy structures.  A policy structure consists
 of three distinct access vectors: one to define tainting operations, one to define allowed
 operations, and one to define audited operations.
 
 In order to enforce policy, \bpfbox{} leverages the KRSI patch by KP
 Singh~\cite{singh2019_krsi, corbet2019_krsi} which was upstreamed in Linux
-5.7. This patch provides the necessary tools to implement MAC policies in eBPF by
-instrumenting probes on LSM hooks provided by the kernel. The eBPF program can then
+5.7. This patch provides the necessary tools to implement MAC policies in \gls{ebpf} by
+instrumenting probes on \gls{lsm} hooks provided by the kernel. The \gls{ebpf} program can then
 audit the event and optionally enforce policy by returning a negative error value.
-\bpfbox{} instruments several LSM probes covering filesystem access, \gls{ipc}, network
+\bpfbox{} instruments several \gls{lsm} probes covering filesystem access, \gls{ipc}, network
 sockets, \texttt{ptrace(2)}, and even \texttt{bpf(2)} itself.  When these hooks are
-called in the kernel, they trigger the execution of the associated eBPF program which
+called in the kernel, they trigger the execution of the associated \gls{ebpf} program which
 is, in general, composed of the following six steps:
 \begin{enumerate}
 \item Look up the current process state.  If no state is found, the process is
@@ -193,18 +195,18 @@ is, in general, composed of the following six steps:
 \item Look up the policy corresponding to the \textit{policy key} calculated in step (2). If the
       process is \textit{tainted} and no such policy exists, \textbf{deny access}.
 \item If the process is \textit{not tainted} and the current access corresponds to
-      a \texttt{TAINT} rule, \textbf{taint} the process and \textbf{grant access}.
-\item If the current access matches an \texttt{ALLOW} rule, \textbf{grant access}.
+      a \textbf{taint rule}, \textbf{taint} the process and \textbf{grant access}.
+\item If the current access matches an \textbf{allow rule}, \textbf{grant access}.
       Otherwise \textbf{deny access}.
-\item If the current access matches an \texttt{AUDIT} rule or access is \textbf{denied},
+\item If the current access matches an \textbf{audit rule} or access is \textbf{denied},
       submit an \textit{audit event} to userspace.
 \end{enumerate}
 
 %\Cref{fig:bpfbox-enforcement} depicts \bpfbox{}'s mediation of a request
 %to a security-sensitive resource.
 
-When a sandboxed application requests access, a corresponding LSM hook is called which in
-turn traps to one or more of \bpfbox{}'s LSM probes. The probe queries the state of the
+When a sandboxed application requests access, a corresponding \gls{lsm} hook is called which in
+turn traps to one or more of \bpfbox{}'s \gls{lsm} probes. The probe queries the state of the
 currently running process along with the policy corresponding to the requested access and
 takes these factors together to come to a policy decision.
 
@@ -213,19 +215,19 @@ takes these factors together to come to a policy decision.
 %%     \includegraphics[width=1\linewidth]{figs/bpfbox-enforcement.png}
 %%     \caption{\bpfbox{}'s mediation of a security-sensitive operation.
 %%     Security-sensitive operations by sandboxed applications trap to an
-%%     LSM hook which in turn invokes the corresponding BPF LSM probe to
+%%     \gls{lsm} hook which in turn invokes the corresponding BPF \gls{lsm} probe to
 %%     query and enforce policy.
 %%     }%
 %%     \label{fig:bpfbox-enforcement}
 %% \end{figure}
 
-\bpfbox{} can optionally augment the information provided by the LSM hooks themselves with
+\bpfbox{} can optionally augment the information provided by the \gls{lsm} hooks themselves with
 additional context obtained by instrumenting other aspects of process behaviour. For
 instance, profiles may optionally define \textit{function contexts} which determine the
 validity of specified rules; a rule could specify that a certain filesystem access must
 occur within a call to the function \texttt{foo()} or that it must be audited within
 a call to the function \texttt{bar()}. The ability to combine various aspects of system
-behaviour, both in kernelspace and in userspace, is a key advantage of an eBPF-based
+behaviour, both in kernelspace and in userspace, is a key advantage of an \gls{ebpf}-based
 solution over traditional techniques. This allows for the creation of extremely
 fine-grained policies at the discretion of the policy author. The mechanisms by which this
 is accomplished are discussed further in \Cref{ss:bpfbox-state}.
@@ -245,14 +247,14 @@ automatically cleaned up when the process exits or transitions to a new profile.
 
 Another important detail to consider is the possibility of other applications using the
 \texttt{bpf(2)} system call to interfere with \bpfbox{}'s mediation of sandboxed
-applications. For instance, another application might attempt to unload an LSM probe
+applications. For instance, another application might attempt to unload an \gls{lsm} probe
 program or make changes to the policy or process state maps. To prevent this, \bpfbox{}
-instruments an additional LSM probe to mediate access to \texttt{bpf}. It uses this probe
+instruments an additional \gls{lsm} probe to mediate access to \texttt{bpf}. It uses this probe
 to deny all calls to \texttt{bpf} that attempt to modify \bpfbox{}'s programs or maps that
 do not directly come from \bpfbox{} itself. Further, all sandboxed applications are
 strictly prohibited from making \textit{any} calls to \texttt{bpf}---a sandboxed
 application has \textit{no business} performing the kind of powerful system introspection
-that eBPF provides.
+that \gls{ebpf} provides.
 
 Similarly to mandatory access control systems like SELinux~\cite{smalley2001_selinux} and
 AppArmor~\cite{cowan2000_apparmor}, \bpfbox{} supports the ability to run in either a
@@ -388,11 +390,11 @@ provides strong order guarantees and high performance under contention, we can e
 \bpfbox{} policies are a series of rules and accompanying decorators. A decorator may
 annotate either individual rules or blocks of rules denoted by braces and is used to
 specify additional context or policy actions. The first line in a \bpfbox{} policy is
-always a special profile decorator, written as \lstinline[language=bpfbox]{#![profile "/path/to/exe"]},
-which marks the executable to which the policy should be associated.
-Other than the profile decorator, all others take the form of
-\lstinline[language=bpfbox]|#[decorator] { rule() }|. Multiple decorators may be specified
-before a set of rules, meaning that all decorators apply to each rule.
+always a special \enquote{profile decorator}, written as
+\lstinline[language=bpfbox]{#![profile "/path/to/exe"]}, which marks the executable to
+which the policy should be associated.  Other than the profile decorator, all others take
+the form of \lstinline[language=bpfbox]|#[decorator] { rule() }|. Multiple decorators may
+be specified before a set of rules, meaning that all decorators apply to each rule.
 
 Profile assignment occurs when a process makes an \texttt{execve(2)} call that results in
 loading the specified executable.  Once a process has been assigned a profile, this
@@ -513,8 +515,8 @@ rules, written as \lstinline[language=bpfbox]{proc("exe", access)} where
 executable and \lstinline[language=bpfbox]{access} is the desired access. For example,
 read-only access to the \texttt{procfs} entries of executables running
 \texttt{/usr/bin/ls} may be specified with \lstinline[language=bpfbox]{proc("/usr/bin/ls", read)}.
-Access to \lstinline[language=bpfbox]{any} \texttt{procfs} entry may be specified
-using the special keyword \lstinline[language=bpfbox]{any}.
+Access to any \texttt{procfs} entry may be specified using the special keyword
+\lstinline[language=bpfbox]{any}.
 
 
 
@@ -707,14 +709,31 @@ as a confinement mechanism and offers some insights into how \bpfcontain{} addre
     this way, \bpfcontain{} policies can grant access to objects that exist within the
     container and revoke access to objects that exist outside the container. Policies then
     focus on defining exceptions to this boundary, exposing fine-grained interfaces into
-    the container and implicitly locking down the rest.
+    the container and locking down the rest by default.
 
-  \item \textbf{Room for Further Policy Language Simplification.}
-    \begin{inprogress}
-      \begin{itemize}
-        \item
-      \end{itemize}
-    \end{inprogress}
+  \item \textbf{Policy Language Simplification.}
+    In addition to adding container semantics, other aspects of the \bpfbox{} policy
+    language can also be improved and simplified. For instance, \bpfbox{} implements
+    policy in a domain-specific policy language, designed specifically with \bpfbox{}'s
+    enforcement engine in mind. While effective, this approach is tightly-coupled with
+    policy enforcement and introduces additional cognitive overhead when making extensions
+    to or modifying the policy language design. Furthermore, learning the syntax of
+    a custom policy language can introduce an additional barrier-to-entry for new policy
+    authors, to the detriment of \bpfbox{}'s original goal of making policy authorship
+    available to end-users.
+
+    To rectify these issues in the policy language design, \bpfcontain{} eschews the
+    original policy language and instead reaches for a more modular approach.  Rather than
+    defining an entire new policy language, \bpfcontain{} instead defines a policy
+    language \textit{schema}. This schema can then be encoded in any number of available
+    data serialization formats, including YAML~\todo{CITE}, JSON~\todo{CITE},
+    TOML~\todo{CITE} and others. The end result is that the user is able to choose
+    whichever policy encoding they are most comfortable with, using serialization
+    languages that are both commonly available and that have stood the test of time across
+    a variety of production use cases. Another implicit advantage of this approach is that
+    it enables the future integration of \bpfcontain{} policy into existing container
+    specification schemas, such as the \gls{oci} specification, which is encoded in
+    JSON\@.
 \end{enumerate}
 
 

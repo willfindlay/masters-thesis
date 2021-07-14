@@ -429,8 +429,9 @@ through \gls{lsm} hooks.
 
 \bpfcontain{} (c.f.~\Cref{c:bpfcontain}) extends \bpfbox{} to model container semantics,
 enabling it to clearly define a hard boundary around containerized processes.
-\bpfcontain{} policies then define explicit exceptions to the implicit boundary, offering
-fine-grained control over the interface that a container exposes to the outside world.
+\bpfcontain{} policies then define explicit exceptions to the default protection boundary,
+offering fine-grained control over the interface that a container exposes to the outside
+world.
 
 The ultimate goal of \bpfbox{} and \bpfcontain{} is to expose centralized, flexible
 policies that are simple enough for an end-user to perform ad-hoc confinement. In the case
