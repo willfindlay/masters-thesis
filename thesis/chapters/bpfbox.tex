@@ -3,9 +3,9 @@ prototype of an \gls{ebpf}-based confinement framework. \bpfbox{} is the first
 full-fledged confinement framework to leverage \gls{krsi}'s \gls{lsm} programs to enforce
 high-level policy. Using \gls{ebpf}, it combines various behavioural aspects of the
 sandboxed application from both userspace and kernelspace to enforce a simple, yet
-fine-grained policy defined in a domain-specific policy language. This chapter was a part
-of a previously published paper at CCSW'2020, co-authored with Anil Somayaji and David
-Barrera~\cite{findlay2020_bpfbox}.
+fine-grained policy defined in a domain-specific policy language. Portions of this chapter
+were part of a previously published paper at CCSW'2020, co-authored with Anil Somayaji and
+David Barrera~\cite{findlay2020_bpfbox}.
 
 
 
@@ -69,12 +69,13 @@ to an enforcement decision. \Cref{fig:bpfbox-policy-overview} outlines this proc
 
 \begin{figure}[htpb]
   \centering
-  \includegraphics[width=0.8\linewidth]{figs/bpfbox/overview.pdf}
+  \includegraphics[width=1\linewidth]{figs/bpfbox/overview.pdf}
   \caption[A high-level overview of how \bpfbox{} confines applications]{
     A high-level overview of how \bpfbox{} confines applications. Users write policy files
-    which the daemon encodes into \gls{ebpf} maps. The daemon loads these maps, along with
-    policy enforcement and tracing programs into the kernel. At runtime, \bpfbox{}'s
-    \gls{bpf} programs trace the application and enforce policy.
+    which the daemon encodes into \gls{ebpf} maps. Using the bcc toolchain for Python, the
+    daemon compiles and loads its \gls{ebpf} programs and maps into the kernel. At
+    runtime, \bpfbox{}'s \gls{bpf} programs trace the application and enforce security
+    policy by querying the state stored in its maps.
   }%
   \label{fig:bpfbox-policy-overview}
 \end{figure}
@@ -641,101 +642,6 @@ A process that is sandboxed using this policy would be unable to access
 
 
 
-\section{Limitations and the Transition Toward \bpfcontain{}}%
-\label{s:bpfbox-bpfcontain}
-
-While \bpfbox{} certainly offers a new perspective on confinement and improves the status
-quo, the extent to which it achieves the design goals outlined in \Cref{s:cp-design} is
-arguably hampered by a few inherent limitations. We address these limitations in its
-successor, \bpfcontain{}, the design of which is outlined in the next chapter. Before we
-examine \bpfcontain{} in full, we first address the fundamental limitations of \bpfbox{}
-as a confinement mechanism and offers some insights into how \bpfcontain{} addresses them.
-\begin{enumerate}
-  \item \textbf{Dependency Overhead and Runtime Overhead.}
-    Due to its userspace implementation using bcc, \bpfbox{} has a high dependency
-    overhead. This overhead is the combined result of a number of requirements imposed on
-    the host system by the bcc toolchain. On the userspace side, bcc depends on Python as
-    well as the entire LLVM toolchain for program compilation. Both of these are rather
-    hefty requirements on their own. Python requires an entire language runtime, and
-    a full LLVM toolchain can introduce gigabytes of additional code.
-
-    Furthermore, Python and bcc incur significant runtime overhead. Python is an
-    interpreted language with a much heavier runtime than compiled systems languages like
-    C or Rust.  This runtime incurs additional performance disadvantages due to safety
-    features like the global object lock, which impede concurrency. Since bcc compiles
-    \gls{ebpf} programs at runtime, we incur additional compilation overhead for each
-    program, sometimes resulting in significant startup delays depending on the complexity
-    of the application. This runtime compilation also necessitates the availability of
-    kernel headers as a compilation dependency in the target environment, adding further
-    storage overhead.
-
-    \bpfcontain{} solves these dependency and runtime overhead issues by leveraging Rust
-    and libbpf \gls{core}~\cite{nakryiko2020_core} rather than Python and bcc.  Unlike
-    bcc, libbpf \gls{core} enables \gls{bpf} programs to be compiled once and run
-    anywhere, thanks to \gls{btf} information provided by the kernel and load-time symbol
-    relocation. Program bytecode can then be embedded directly into the compiled object
-    file, meaning the single pre-compiled \bpfcontain{} binary can be deployed on any
-    target kernel that meets a minimal set of requirements. As a side effect,
-    \bpfcontain{} requires neither a full LLVM toolchain nor kernel headers to be
-    available in the target deployment, significantly reducing the dependency overhead.
-
-    Moreover, implementing the \bpfcontain{} daemon in Rust allows \bpfcontain{} to take
-    advantage of a myriad of benefits offered by the Rust language. In particular, Rust
-    enables \bpfcontain{}'s userspace components to be safe, secure, and fast. Thread- and
-    memory-safety guarantees provided by Rust ownership model eliminate many common
-    security bugs including memory corruption vulnerabilities and race conditions between
-    threads. These safety guarantees provide critical security advantages, particularly
-    given the fact that the \bpfcontain{} daemon is a long-running, privileged
-    process\,---\,a ripe target for attacker exploitation. Thanks to an emphasis on speed
-    and zero-cost abstractions, Rust can provide these benefits at virtually zero
-    overhead, in line with traditional systems programming languages like C and
-    significantly better than languages with a bulky runtime such as Python.
-
-  \item \textbf{Lack of Container Semantics.}
-    Although \bpfbox{} exposes a light-weight policy language with high-level semantics to
-    the user, it fails to consider container semantics, as outlined in design goal
-    \ref{i:dg-suitability} in \Cref{s:cp-design}. While this marks an improvement over
-    existing confinement solutions by offering a terse yet fine-grained and expressive
-    policy language, it fails to fully address the container-specific use case; in other
-    words, \bpfbox{} is more suitable to generic, ad-hoc application sandboxing than to
-    container-specific applications. In improving the way the \bpfbox{} model handles
-    containers, we can simultaneously simplify policies and improve security by defining
-    a clear protection boundary around a container.
-
-    \bpfcontain{} rectifies this gap by incorporating container semantics into the design
-    of both its policy language and enforcement engine. This includes properties such as
-    namespace and container membership, defining an implicit boundary around the container
-    and related resources, similar in spirit to FreeBSD Jails~\cite{kamp2000_jails}. In
-    this way, \bpfcontain{} policies can grant access to objects that exist within the
-    container and revoke access to objects that exist outside the container. Policies then
-    focus on defining exceptions to this boundary, exposing fine-grained interfaces into
-    the container and locking down the rest by default.
-
-  \item \textbf{Policy Language Simplification.}
-    In addition to adding container semantics, other aspects of the \bpfbox{} policy
-    language can also be improved and simplified. For instance, \bpfbox{} implements
-    policy in a domain-specific policy language, designed specifically with \bpfbox{}'s
-    enforcement engine in mind. While effective, this approach is tightly-coupled with
-    policy enforcement and introduces additional cognitive overhead when making extensions
-    to or modifying the policy language design. Furthermore, learning the syntax of
-    a custom policy language can introduce an additional barrier-to-entry for new policy
-    authors, to the detriment of \bpfbox{}'s original goal of making policy authorship
-    available to end-users.
-
-    To rectify these issues in the policy language design, \bpfcontain{} eschews the
-    original policy language and instead reaches for a more modular approach.  Rather than
-    defining an entire new policy language, \bpfcontain{} instead defines a policy
-    language \textit{schema}. This schema can then be encoded in any number of available
-    data serialization formats, including YAML~\todo{CITE}, JSON~\todo{CITE},
-    TOML~\todo{CITE} and others. The end result is that the user is able to choose
-    whichever policy encoding they are most comfortable with, using serialization
-    languages that are both commonly available and that have stood the test of time across
-    a variety of production use cases. Another implicit advantage of this approach is that
-    it enables the future integration of \bpfcontain{} policy into existing container
-    specification schemas, such as the \gls{oci} specification, which is encoded in
-    JSON\@.
-\end{enumerate}
-
 
 
 \section{Summary}%
@@ -747,8 +653,11 @@ simplicity and flexibility. In particular, we outline \bpfbox{}'s architecture, 
 implementation details of its \gls{ebpf}-based policy enforcement mechanism, and the
 design of its custom policy language. Through a combination of \gls{ebpf}-based
 enforcement and a light-weight yet fine-grained policy language, \bpfbox{} represents
-a step towards the container-specific design outlined in \Cref{s:cp-design}. However, we
-acknowledge some fundamental limitations with \bpfbox{}'s design, including dependency
-overhead, lack of container semantics, and room for further simplification of its policy
-language. In the next chapter, we outline \bpfcontain{}, an iteration of \bpfbox{} that
-addresses these concerns.
+a step towards the container-specific design outlined in \Cref{s:cp-design}.  In the next
+chapter, we outline \bpfcontain{}, an iteration of \bpfbox{} that addresses a few of its
+fundamental limitations and makes a transition toward container-specific policies.
+
+% However, we
+% acknowledge some fundamental limitations with \bpfbox{}'s design, including dependency
+% overhead, lack of container semantics, and room for further simplification of its policy
+% language.
