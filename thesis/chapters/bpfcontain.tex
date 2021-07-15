@@ -9,20 +9,17 @@ differ from the publicly available archive due to subsequent updates to \bpfcont
 
 
 
-\section{\bpfbox{} Limitations and the Transition Toward \bpfcontain{}}%
+\section{\bpfbox{}'s Limitations and the Transition Toward \bpfcontain{}}%
 \label{s:bpfcontain-bpfbox-limitations}
 
-% While \bpfbox{} certainly offers a new perspective on confinement and improves the status
-% quo, the extent to which it achieves the design goals outlined in \Cref{s:cp-design} is
-% arguably hampered by a few inherent limitations. We address these limitations in its
-% successor, \bpfcontain{}, the design of which is outlined in the next chapter. Before we
-% examine \bpfcontain{} in full, we first address the fundamental limitations of \bpfbox{}
-% as a confinement mechanism. \Cref{s:bpfcontain-improvements} of \Cref{c:bpfcontain} offers
-% some insights into how \bpfcontain{} addresses these limitations.
-
-\todo{Introductory paragraph, explaining that \bpfbox{} has some fundamental limitations
-and that \bpfcontain{} was created to address them. \enquote{We enumerate these
-limitations as follows.}}
+The previous chapter presented \bpfbox{}, a prototype process confinement mechanism and
+precursor to \bpfcontain{}. While \bpfbox{} certainly offers a new perspective on
+confinement and improves the status quo, the extent to which it achieves the design goals
+outlined in \Cref{s:cp-design} of \Cref{c:confinement-problem} is arguably hampered by
+a few inherent limitations. We enumerate and describe these limitations as follows.  The
+goal is to examine these limitations as an early motivating factor for the development of
+\bpfcontain{}, which will inform later comparisons between these two systems
+(c.f.~\Cref{s:bpfcontain-improvements}).
 
 \begin{enumerate}
   \item \textbf{Dependency Overhead and Runtime Overhead.}
@@ -50,7 +47,7 @@ limitations as follows.}}
     existing confinement solutions by offering a terse yet fine-grained and expressive
     policy language, it fails to fully address the container-specific use case; in other
     words, \bpfbox{} is more suitable to generic, ad-hoc application sandboxing than to
-    container-specific applications. In improving the way the \bpfbox{} model handles
+    container-specific applications. In improving how the \bpfbox{} model handles
     containers, we can simultaneously simplify policies and improve security by defining
     a clear protection boundary around a container.
 
@@ -66,25 +63,36 @@ limitations as follows.}}
     available to end-users.
 \end{enumerate}
 
-\todo{Differences that are motivating and differences in how it came out. Talk about
-granularity of policies: with bpfbox it's the executable, with bpfcontain it's the
-container. Things like Docker integration wouldn't be possible with bpfbox for a number of
-reasons.}
+\subsection{Motivating \bpfcontain{}}
 
-\todo{Process confinement problem: nobody has really phrased it as the process group
-confinement problem... Almost ignored. Confining a single process is very different from
-confining a process group, bpfbox does the former, bpfcontain does the latter. Developers
-can do a good job at confining their own binaries... In practice people don't just run one
-binary.}
+The key insight behind \bpfcontain{} is that \bpfbox{} approached the confinement problem
+(c.f.~\Cref{c:confinement-problem}) from a \textit{per-process} perspective. When dealing
+with containers, we should instead approach the confinement problem from
+a \textit{per-process-group} perspective. That is, we expand the unit of confinement from
+an individual process to a collection of related processes. Specifically, our goal is to
+define a clear boundary between the container and the outside world, while minimizing the
+friction between two subjects that operate within this boundary.
 
-\todo{Explain the limitations of \bpfbox{} and in a couple of paragraphs explain how we address this}
-\todo{bpfbox really doesn't talk about groups of processes}
-\todo{Active patches to the kernel that enabled new functionality, so it follows that
-later on in the thesis we are able to more than we could before}
+Implementing confinement in this way requires some fundamental changes to both the
+underlying policy language and policy enforcement mechanism. Specifically, we alter the
+policy language to work with higher level semantics that support container-level
+confinement. Moreover, \bpfcontain{}'s enforcement engine employs a more nuanced default
+policy that considers the relationship between processes and resources that exist within
+the context of a container. These changes from a policy and enforcement perspective enable
+\bpfcontain{} to enforce simple container-level policies while reusing the initial ideas
+from \bpfbox{}: namely, dynamic, light-weight enforcement based on \gls{ebpf}.
 
-\todo{Forward reference to the end part}
+While implementing \bpfcontain{}, opportunities arose to improve how it handles
+dependencies and manages the lifecycle of its \gls{bpf} programs and maps. Specifically,
+we architect \bpfcontain{} based on Rust, libbpf-rs~\cite{libbpf-rs}, and \gls{bpf}
+\gls{core}~\cite{nakryiko2020_core}. These changes totally eliminate the runtime overhead
+introduced by \gls{bpf} program compilation and the dependency overhead from LLVM and
+kernel headers. Further, \gls{core} enables \bpfcontain{} to work seamlessly across
+multiple kernel versions and configurations. These changes improve the adoptability of
+\bpfcontain{}, particularly in containerized environments, wherein heavy-weight
+dependencies can critically impact deployments.
 
-
+\todo{Maybe add a short paragraph here to lead into the next sections?}
 
 \section{\bpfcontain{} Overview}%
 \label{s:bpfcontain-overview}
@@ -135,22 +143,6 @@ parameters.  From there, the user may specify zero or more policy rules over thr
 distinct categories: allow, deny, and taint. We cover \bpfcontain{} policy in more detail
 in \Cref{s:bpfcontain-policy}.
 
-The \bpfcontain{} daemon runs as a privileged process, parsing and loading user policy by
-encoding it into a series of \gls{bpf} maps. The user then launches their container using
-an unprivileged wrapper program, \texttt{bpfcontain-run}. The sole task of this wrapper
-application is to invoke a stub function which does nothing more than pass the desired
-policy ID as an argument. \bpfcontain{} traces this function call and uses it to confine
-the container with the correct policy. Unlike \bpfbox{}, this technique enables the user
-to associate any container with any policy, rather than a fixed one-to-one mapping.
-
-At runtime, \bpfcontain{}'s \gls{bpf} programs trace the behaviour of processes running
-under the container and confine it according to a mixture of default policy and policy
-rules specified by the user. Like \bpfbox{}, enforcement is accomplished primarily through
-\gls{bpf} programs attached to \gls{lsm} hooks in the kernel. The precise implementation
-details of these programs vary significantly, and are covered in detail in
-\Cref{s:bpfcontain-implementation}. \Cref{fig:bpfcontain-overview} illustrates
-a high-level overview of the policy enforcement process described here.
-
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=1\linewidth]{figs/bpfcontain/overview.pdf}
@@ -167,12 +159,33 @@ a high-level overview of the policy enforcement process described here.
   \label{fig:bpfcontain-overview}
 \end{figure}
 
+The \bpfcontain{} daemon runs as a privileged process, parsing and loading user policy by
+encoding it into a series of \gls{bpf} maps. The user then launches their container using
+an unprivileged wrapper program, \texttt{bpfcontain-run}. The sole task of this wrapper
+application is to invoke a stub function which does nothing more than pass the desired
+policy ID as an argument. \bpfcontain{} traces this function call and uses it to confine
+the container with the correct policy. Unlike \bpfbox{}, this technique enables the user
+to associate any container with any policy, rather than a fixed one-to-one mapping.
+
+At runtime, \bpfcontain{}'s \gls{bpf} programs trace the behaviour of processes running
+under the container and confine it according to a mixture of default policy and policy
+rules specified by the user. Like \bpfbox{}, enforcement is accomplished primarily through
+\gls{bpf} programs attached to \gls{lsm} hooks in the kernel. The precise implementation
+details of these programs vary significantly, and are covered in detail in
+\Cref{s:bpfcontain-implementation}. \Cref{fig:bpfcontain-overview} illustrates
+a high-level overview of the policy enforcement process described here.
+
 
 
 \section{\bpfcontain{} Implementation}%
 \label{s:bpfcontain-implementation}
 
-\todo{This section will present the implementation details of \bpfcontain{}, taken from our paper.}
+This section presents the implementation details and architecture of \bpfcontain{}'s
+policy enforcement mechanism. Specifically, we provide an initial overview of
+\bpfcontain{}'s userspace and kernelspace components, then examine how \bpfcontain{}
+enforces policy in the kernel using \gls{ebpf}. Whereas this section focuses specifically
+on policy enforcement, \Cref{s:bpfcontain-policy} outlines and documents the details of
+\bpfcontain{}'s policy language.
 
 \subsection{Architectural Overview}%
 \label{ss:bpfcontain-architecture}
@@ -198,18 +211,18 @@ any supported kernel, regardless of the underlying configuration or architectura
 
 \bpfcontain{} leverages several \gls{bpf} program and map types to implement container
 tracing and confinement. While many of the major program types are shared with \bpfbox{},
-there are a few distinct differences. We enumerate these differences as follows.  Maps
-types are outlined in \textbf{\green{green}} and program types are outlined in
-\textbf{\purple{purple}}.  The reader is encouraged to revisit
-\Cref{ss:bpfbox-architecture} of \Cref{c:bpfbox} for a comparison between the two systems.
+there are a few distinct differences (c.f.~\Cref{ss:bpfbox-architecture} of
+\Cref{c:bpfbox}). We enumerate these differences as follows. Map types are outlined in
+\textbf{\green{green}} and program types are outlined in \textbf{\purple{purple}}.
 \begin{itemize}
   \item \bpfcontain{} replaces many of \bpfbox{}'s \textbf{\green{Hash Maps}},
   particularly those used to track process state, with equivalent \textbf{\green{Local
   Storage Maps}}. Local storage is a new \gls{ebpf} map type supported in the latest
   kernels (Linux 5.11 and onwards). Local storage maps tether the underlying value to
   a kernel data structure, such as a task or inode, used as a key into the map. The result
-  is a dynamically-allocated and garbage-collected per-structure storage blob. \bpfcontain{}
-  leverages these for more memory-efficient storage of per-task and per-inode state.
+  is a dynamically-allocated and garbage-collected per-structure storage blob.
+  \bpfcontain{} leverages these for more memory-efficient storage of per-task and
+  per-inode state.
 
   \item \bpfcontain{} replaces the use of scheduler \textbf{\purple{Tracepoints}} with
   equivalent \textbf{\purple{\gls{lsm} Probes}} that expose the same information. This
@@ -228,6 +241,95 @@ and map types as \bpfbox{}. However, the underlying implementation details of ea
 container semantics, new policy rules, and more nuanced policy defaults. We examine the
 most important implementation details in the subsections that follow.
 
+
+
+\subsection{Policy Deserialization and Loading}%
+\label{ss:bpfcontain-serde}
+
+\bpfcontain{} implements policy deserialization using the Serde data serialization
+crate~\todo{CITE} for Rust. Serde leverages Rust's powerful type system and procedural
+macros to derive serialization and deserialization logic for vanilla Rust structs and
+enums. Rust crates that consume Serde's \gls{api} can then use the automatically generated
+facade for serialization and deserialization. This design enables a plug-and-play
+relationship between a data schema, defined as a Rust data structure and any data
+serialization language supported through the Rust crates ecosystem. \bpfcontain{} uses
+Serde to automatically generate the accompanying deserialization logic for
+a \texttt{Policy} struct and several \texttt{Rule} structs, one for each supported rule
+type. \Cref{lst:bpfcontain-serde} depicts a simplified example of how this works.
+
+\begin{lstlisting}[language=Rust, gobble=2, caption={[A simplified example of \bpfcontain{}'s policy deserialization logic]
+  A simplified example of \bpfcontain{}'s policy deserialization logic. Policy rules are
+  specified declaratively using Rust structs and the corresponding deserialization logic
+  is automatically generated by the Serde crate, using a simple decorator macro.
+},
+label={lst:bpfcontain-serde}]
+  use serde::Deserialize;
+
+  /// The policy data structure
+  #[derive(Deserialize)]
+  pub struct Policy {
+    name: String,
+    /* Other policy metadata would go here... */
+    allow: Vec<Rule>,
+    deny: Vec<Rule>,
+    taint: Vec<Rule>,
+  }
+
+  /// An enum encompassing all rule types
+  #[derive(Deserialize)]
+  pub enum Rule {
+    FileRule(FileRule),
+    /* Other rule types would go here... */
+  }
+
+  /// A "file access" rule
+  #[derive(Deserialize)]
+  pub struct FileRule {
+    pathname: String,
+    access: String,
+  }
+
+  /* Other rule types would go here... */
+\end{lstlisting}
+
+To enable the daemon to encode policy as an \gls{ebpf} map, each rule type implements the
+\texttt{LoadableRule} trait. The daemon uses this logic to convert a policy rule into
+a canonical format that can be represented in the kernel and thus used to enforce security
+policy. Implementing this trait is as simple as writing a \texttt{load()} function that
+makes a series of map updates to load the rule into the kernel; we leverage
+libbpf-rs~\cite{libbpf-rs} for this purpose. When loading a policy into the kernel, the
+daemon simply invokes this \texttt{load()} function for each policy rule.
+
+Implementing policy deserialization and loading logic in this way has a number of
+advantages. Since the policy schema is simply encoded declaratively in vanilla Rust, it is
+easy for a developer (even a new contributor to \bpfcontain{}) to implement a new rule
+type and add it to \bpfcontain{}. Adding a new rule type is as simple as defining a new
+Rust data type to represent the rule and implementing the \texttt{LoadableRule} trait,
+enabling the daemon to encode the rule as an \gls{ebpf} map. Due to Serde's modular
+design, supporting a new serialization language for \bpfcontain{} policies is trivial; we
+simply pull in the corresponding consuming crate as a dependency. Currently, \bpfcontain{}
+supports YAML, JSON, and TOML as policy language encodings, but this can easily be
+extended in future versions.
+
+\subsection{Policy Enforcement}%
+\label{ss:bpfcontain-enforcement}
+
+Policy enforcement under \bpfcontain{} can be thought of as a combination of
+\textit{explicit policy} (the rules defined in the policy file) and a nuanced
+\textit{default policy} (the set of sensible defaults that \bpfcontain{} enforces to
+define a boundary around the container). \todo{Explain in more details}
+
+\todo{Have a list of steps here, similar to that of \bpfbox{}.}
+\begin{enumerate}
+  \item
+\end{enumerate}
+
+\subsection{Default Policy}%
+\label{ss:bpfcontain-default}
+
+
+
+
 \section{\bpfcontain{} Policy Language}%
 \label{s:bpfcontain-policy}
 
@@ -242,14 +344,6 @@ most important implementation details in the subsections that follow.
 \subsection{\glsentryshort{ipc} Rules}
 
 \subsection{Capability Rules}
-
-
-
-
-\section{Default Policy Under \bpfcontain{}}%
-\label{s:bpfcontain-default}
-
-\todo{This section will describe \bpfcontain{}'s default policy in more detail and describe the rationale behind the approach.}
 
 
 
