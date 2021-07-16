@@ -246,11 +246,11 @@ most important implementation details in the subsections that follow.
 \subsection{Policy Deserialization and Loading}%
 \label{ss:bpfcontain-serde}
 
-\bpfcontain{} implements policy deserialization using the Serde data serialization
-crate~\todo{CITE} for Rust. Serde leverages Rust's powerful type system and procedural
+\bpfcontain{} implements policy deserialization using Serde~\todo{CITE}, a data
+serialization crate for Rust. Serde leverages Rust's powerful type system and procedural
 macros to derive serialization and deserialization logic for vanilla Rust structs and
 enums. Rust crates that consume Serde's \gls{api} can then use the automatically generated
-facade for serialization and deserialization. This design enables a plug-and-play
+logic for serialization and deserialization. This design enables a plug-and-play
 relationship between a data schema, defined as a Rust data structure and any data
 serialization language supported through the Rust crates ecosystem. \bpfcontain{} uses
 Serde to automatically generate the accompanying deserialization logic for
@@ -327,6 +327,12 @@ define a boundary around the container). \todo{Explain in more details}
 \subsection{Default Policy}%
 \label{ss:bpfcontain-default}
 
+\subsection{Managing Container State}%
+\label{ss:bpfcontain-state}
+
+\subsection{Collecting and Logging Audit Data}%
+\label{ss:bpfcontain-audit}
+
 
 
 
@@ -335,8 +341,6 @@ define a boundary around the container). \todo{Explain in more details}
 
 \todo{This section will present and document the policy language of \bpfcontain{}, taken from our paper.}
 
-\subsection{Allow, Deny, and Taint Policy}
-
 \subsection{File, Filesystem, and Device Rules}
 
 \subsection{Network Rules}
@@ -344,6 +348,8 @@ define a boundary around the container). \todo{Explain in more details}
 \subsection{\glsentryshort{ipc} Rules}
 
 \subsection{Capability Rules}
+
+\subsection{Allow, Deny, and Taint Policy}
 
 
 
