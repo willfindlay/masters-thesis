@@ -127,7 +127,7 @@ programs and maps into the kernel, which then enforce policy.
 
 \bpfcontain{} enforces confinement policy using \gls{ebpf} programs attached to \gls{lsm}
 hooks in the kernel. Like \bpfbox{}, \bpfcontain{} leverages the
-\gls{krsi}~\cite{singh2019_krsi} \gls{lsm} programs introduced in Linux 5.8 for this
+\gls{krsi}~\cite{singh2019_krsi} \gls{lsm} programs introduced in Linux 5.7 for this
 purpose. Unlike \bpfbox{}, \bpfcontain{} generates \gls{bpf} bytecode at
 \textit{compile-time} rather than at runtime. The bytecode is then embedded directly in
 \bpfcontain{}'s binary object file, where it can subsequently be loaded into the kernel at
@@ -136,12 +136,12 @@ runtime.
 To confine a container, a user authors a high-level confinement policy that specifies
 which operating system interfaces and resources should be exposed to the container.
 Thanks to a modular approach to encoding and decoding policies, \bpfcontain{} policies may
-be written in a number of user-facing data serialization languages, including YAML, TOML,
-and JSON. (For the rest of this thesis, we assume the YAML format for simplicity.) At
-a minimum, \bpfcontain{} policies include a policy name, along with a few tunable
-parameters.  From there, the user may specify zero or more policy rules over three
-distinct categories: allow, deny, and taint. We cover \bpfcontain{} policy in more detail
-in \Cref{s:bpfcontain-policy}.
+be written in a number of user-facing data serialization languages, including
+YAML~\cite{yaml}, TOML~\cite{toml}, and JSON~\cite{json}. (For the rest of this thesis, we
+assume the YAML format for simplicity.) At a minimum, \bpfcontain{} policies include
+a policy name, along with a few tunable parameters. From there, the user may specify zero
+or more policy rules over three distinct categories: allow, deny, and taint. We cover
+\bpfcontain{} policy in more detail in \Cref{s:bpfcontain-policy}.
 
 \begin{figure}[htpb]
   \centering
@@ -246,7 +246,7 @@ most important implementation details in the subsections that follow.
 \subsection{Policy Deserialization and Loading}%
 \label{ss:bpfcontain-serde}
 
-\bpfcontain{} implements policy deserialization using Serde~\todo{CITE}, a data
+\bpfcontain{} implements policy deserialization using Serde~\cite{serde}, a data
 serialization crate for Rust. Serde leverages Rust's powerful type system and procedural
 macros to derive serialization and deserialization logic for vanilla Rust structs and
 enums. Rust crates that consume Serde's \gls{api} can then use the automatically generated
@@ -317,18 +317,150 @@ extended in future versions.
 Policy enforcement under \bpfcontain{} can be thought of as a combination of
 \textit{explicit policy} (the rules defined in the policy file) and a nuanced
 \textit{default policy} (the set of sensible defaults that \bpfcontain{} enforces to
-define a boundary around the container). \todo{Explain in more details}
+define a boundary around the container). In particular, default access to resources is
+determined based on whether that resource belongs within a container or without.
+Resources within the container, such as files mapped into the container's mount namespace
+via an overlay filesystem are considered default-allow. Conversely, resources outside of
+the container, such as external files or processes, are considered default-deny.
+Similarly, access is also denied to any operating system interfaces that could affect
+global system state, such as character devices, kernel modules, \gls{ebpf}, special
+filesystems, and the like. Exceptions to these defaults may be explicitly defined in the
+policy file as required. \Cref{ss:bpfcontain-default} examines the implementation of
+\bpfcontain{}'s default policy in more detail.
 
-\todo{Have a list of steps here, similar to that of \bpfbox{}.}
-\begin{enumerate}
-  \item
-\end{enumerate}
+Like \bpfbox{}, \bpfcontain{} maintains its policy files in a root-controlled directory
+(\texttt{/var/lib/bpfcontain/policy} by default). These policy files may be written in any
+policy language supported by \bpfcontain{}'s policy deserializer, as documented in
+\Cref{ss:bpfcontain-serde}. The \bpfcontain{} daemon watches the policy directory for
+updates to policy files, and triggers a reload of the corresponding policy when a file
+changes. To load a policy, the daemon deserializes the policy file into a Rust data
+structure consisting of a series of policy rules and accompanying metadata. It then
+encodes this policy structure into a series of resource IDs and access vectors, and loads
+these into the correct policy maps in the kernel using the \texttt{bpf(2)} system call.
+Once a policy has been loaded into the kernel, \bpfcontain{}'s \gls{ebpf} programs can
+begin enforcing it.
+
+To start confinement, a user invokes an unprivileged application, \texttt{bpfcontain-run},
+which wraps the target executable. This wrapper's only purpose is to enable
+\bpfcontain{}'s \gls{ebpf} programs to associate its process group with the correct policy
+in the kernel.  This is done by invoking a stub function, traced by a \gls{usdt} probe.
+When the probe fires, it reads the policy ID, passed as an argument to the stub, along
+with other information such as the task's \gls{pid} and namespace membership, taken from
+its task struct in the kernel. The probe then updates a global process state map with this
+information. Subsequent \gls{ebpf} programs use this information when making enforcement
+decisions and when managing the container's state. \Cref{ss:bpfcontain-state} describes
+state management in more detail.
+
+\bpfcontain{} enforces the majority its policy using \gls{krsi}~\cite{singh2019_krsi},
+which enables it to attach \gls{ebpf} programs to \gls{lsm} hooks in the kernel. In cases
+where \gls{lsm} hooks alone are insufficient or no \gls{lsm} hook is exposed to guard the
+target operation, \bpfcontain{} falls back to an fentry probe, hooking the underlying
+kernel functions directly. In total, \bpfcontain{} instruments 39 \gls{lsm} probes,
+covering filesystem, network socket, \gls{ipc}, and capability-level access, in addition
+to miscellaneous privileged operations like loading a kernel module or updating an
+\gls{ebpf} program or map.  One fentry probe is used to prevent a container from modifying
+its namespace membership after starting confinement.
+
+\bpfcontain{} supports four distinct policy decisions for every security-sensitive
+operation: \texttt{allow}, \texttt{deny}, \texttt{taint}, or \texttt{kill}. A decision of
+\texttt{allow} causes the access to be allowed, as normal. A decision of \texttt{deny}
+results in the access being denied, and the corresponding system call returning
+\texttt{-EACCES} to the user. A decision of \texttt{taint} causes \bpfcontain{} to taint
+the container, a process that is similar in spirit to tainting under \bpfbox{}
+(c.f.~\Cref{ss:bpfbox-enforcement} of \Cref{c:bpfbox}). When a container is tainted, it
+transitions into a stricter default-deny policy. Finally, a decision of \texttt{kill}
+causes the kernel to terminate the offending process by delivering an uncatchable
+\texttt{SIGKILL}.
+
+When enforcing policy, \bpfcontain{} employs a simple heuristic to judge what the
+resulting policy decision should be. If any rule matches a \texttt{kill} decision, the
+process is killed.  Similarly, if any rule matches a \texttt{deny} decision, the operation
+is denied. If any rule matches a \texttt{taint} decision, the container is tainted.
+Finally, if no rule matches a \texttt{deny} or \texttt{kill} decision and any rule matches
+an \texttt{allow} decision, the operation is allowed. In the case where no rule matches
+are found, \bpfcontain{} falls through to its default policy
+(\Cref{ss:bpfcontain-default}). This process is depicted in full in
+\Cref{fig:bpfcontain-enforcement} on page \pageref{fig:bpfcontain-enforcement}.
 
 \subsection{Default Policy}%
 \label{ss:bpfcontain-default}
 
+Since \bpfcontain{} is designed to confine containers, it is able to achieve some nuanced
+policy defaults by leveraging container-level semantics. This marks a significant
+improvement over both conventional \glspl{lsm} and the original \bpfbox{} system, which
+require the user to either explicitly mark each desired access or to over-generalize
+access in favour of simpler policies. By taking container semantics into account,
+\bpfcontain{} policies can be simultaneously expressive and secure, yet offer a simple
+path to achieving strong protection defaults. \Cref{fig:bpfcontain-enforcement} depicts
+\bpfcontain{}'s default enforcement strategy.
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/bpfcontain/enforcement.pdf}
+  \caption[The policy enforcement strategy under \bpfcontain{}]{
+    The policy enforcement strategy under \bpfcontain{}, expressed as a flowchart. Using
+    container semantics, \bpfcontain{} achieves rich policy defaults, denying access to
+    global resources and operations which can affect global system state, while preserving
+    intra-container access. This greatly simplifies the resulting confinement policy and
+    enables the user to focus on specific exceptions to default protection, where they may
+    be required.
+  }%
+  \label{fig:bpfcontain-enforcement}
+\end{figure}
+
+\bpfcontain{}'s default policy depends largely on the type of access that a container is
+requesting. If the requested access is to a regular file, \bpfcontain{} checks to see if
+this file exists under the container's user namespace, provided that this namespace is
+non-global. This accommodates the use case where a container is attempting to access
+a file that has been mapped into its mount namespace using an overlay filesystem.
+Similarly, default \gls{ipc} access is gated by whether or not the processes on either end
+of the \gls{ipc} handle belong to the same container. If they do, access is granted;
+otherwise, access is denied. In this way, we preserve the semantics of the container;
+resources that exist \textit{within} a container should be accessible by processes within
+the same container.
+
+Special files such as character or block devices are treated separately from regular
+files. Since these provide direct interfaces into the kernel, it does not make sense to
+treat them with the same semantics. Instead, access to special files is \textit{always}
+denied, unless they are covered by an explicit \texttt{allow} rule. Similar protections
+are applied to security-sensitive special filesystems such as \texttt{procfs},
+\texttt{sysfs}, \texttt{securityfs}, and others. These filesystems are responsible for
+exposing direct interfaces into the kernel, often with the ability to manipulate
+behavioural parameters. For these special filesystems, \bpfcontain{} also always assumes
+a default-deny policy, except in cases that are explicitly covered by an \texttt{allow}
+rule. The only major exception to this policy is in the case of per-process entries
+exposed by \texttt{procfs}; in this case, \bpfcontain{} assumes default-allow provided
+that the corresponding process is a member of the container.
+
+An implicit assumption underlying \bpfcontain{}'s default enforcement strategy is that
+a container is unable to mutate its namespace membership or manipulate its view of the
+filesystem in any way. To ensure this, \bpfcontain{} strictly prohibits a container from
+altering its namespace membership using an fentry probe on the kernel's
+\texttt{switch\_task\_namespaces()} function. Similarly, \bpfcontain{} prohibits
+a container from ever mounting a new filesystem after starting confinement. In both cases,
+violating this policy results in immediate delivery of \texttt{SIGKILL} to the offending
+process.
+
+Another underlying assumption is that a container cannot interfere with \bpfcontain{}'s
+normal operation. Without this assumption, \bpfcontain{} would be unable to enforce any
+security guarantees whatsoever, as an attacker could trivially bypass or disable it. To
+enforce this, \bpfcontain{} prohibits a container from ever loading code into the kernel,
+or interacting with \gls{ebpf} in anyway. This design choice makes practical sense from
+a container security perspective, as a container has no business loading code into the
+kernel to begin with. As with namespace and mount policy, violating these restrictions
+results in the immediate delivery of an uncatchable \texttt{SIGKILL}.
+
+Aside from the aforementioned defaults, \bpfcontain{} also denies other miscellaneous
+operations that can affect global state, including rebooting the system, attempting to
+modify global system time, access to the kernel keyring, and access to the kernel's perf
+events subsystem, among others. Using a capability that has not been expressly marked with
+an \texttt{allow} rule is considered default-deny. Any other access is considered
+default-deny, if the container has been tainted.
+
 \subsection{Managing Container State}%
 \label{ss:bpfcontain-state}
+
+Like \bpfbox{},
 
 \subsection{Collecting and Logging Audit Data}%
 \label{ss:bpfcontain-audit}
@@ -349,7 +481,7 @@ define a boundary around the container). \todo{Explain in more details}
 
 \subsection{Capability Rules}
 
-\subsection{Allow, Deny, and Taint Policy}
+\subsection{Allow, Deny, Taint, and Kill Policy}
 
 
 
