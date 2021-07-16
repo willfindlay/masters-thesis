@@ -460,11 +460,54 @@ default-deny, if the container has been tainted.
 \subsection{Managing Container State}%
 \label{ss:bpfcontain-state}
 
-Like \bpfbox{},
+Like \bpfbox{}, \bpfcontain{} tracks the association of processes with policy profiles,
+along with other state. However, under \bpfcontain{}, this state-tracking happens
+at the level of individual containers rather than individual processes\,---\,we are
+concerned with \textit{groups of processes}, loosely associated by a shared sense of
+virtualization and confinement. Tracking state at the level of containers rather than
+individual processes is a major enabling factor behind \bpfcontain{}'s nuanced policy
+defaults, as described in \Cref{ss:bpfcontain-default}.
+
+To start tracing a container, \bpfcontain{} relies on the \texttt{bpfcontain-run} shim to
+provide it with basic information about which confinement policy to associate with the
+container. Specifically, we care about the desired policy ID, a unique 64-bit integer
+associated with each \bpfcontain{} policy. In addition to a policy ID, \bpfcontain{}
+generates a unique container ID for the container, a combination of a 32-bit random
+integer and the 32-bit process ID of the container's \textit{init} process. \bpfcontain{}
+maintains a hash map, mapping a container ID to a policy ID, to track the association of
+a container with a confinement policy.
+
+In addition to policy association, \bpfcontain{} tracks other metadata about the
+container, including namespace membership, a reference count of how many processes are
+running under the container, whether the container has been \textit{tainted}, and whether
+the container is running in \textit{complaining mode}. These metadata are associated with
+using an \gls{ebpf} hash map with a simple data structure as a map value and the container
+ID as the key. Namespace membership is determined at runtime by taking the namespace IDs
+associated with the container's \textit{init} process' task struct.
+
+To manage container membership, \bpfcontain{} maintains a security blob in each
+containerized task using a task local storage map. Each task is associated with a given
+container ID. When a task makes a request to a sensitive resource, \bpfcontain{} makes
+a chain of map lookups, querying the task's container ID from the local storage map, then
+using this container ID to query the associated policy ID. When a task forks itself,
+\bpfcontain{} looks up its container membership, and applies the same membership to the
+child process, incrementing the container's reference count. When a task exits,
+\bpfcontain{} simply decrements the container's reference count, cleaning up the container
+when its reference count reaches zero. Any task-specific metadata is automatically cleaned
+up by the local storage map.
 
 \subsection{Collecting and Logging Audit Data}%
 \label{ss:bpfcontain-audit}
 
+While \bpfcontain{} does not expressly define audit rules, it still uses logging to record
+any policy decisions to a file for subsequent analysis. To achieve this, \bpfcontain{}
+uses the same strategy as \bpfbox{}, relying on a ring buffer map to pass events to
+userspace for further treatment. Using this ring buffer, \bpfcontain{} achieves efficient,
+in-order event logging across all \glspl{cpu}. Like \bpfbox{}, \bpfcontain{} supports
+placing a container into a \textit{complaining mode}, enabling it so log denials that
+would have happened while still granting access. This enables a policy author to test
+their policy before running it in production, and may be used to accommodate log-based
+policy generation in the future.
 
 
 
