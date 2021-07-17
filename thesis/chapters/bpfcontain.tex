@@ -514,17 +514,170 @@ policy generation in the future.
 \section{\bpfcontain{} Policy Language}%
 \label{s:bpfcontain-policy}
 
-\todo{This section will present and document the policy language of \bpfcontain{}, taken from our paper.}
+This section presents the \bpfcontain{} policy language in detail. In particular, we
+document the policy language schema and offer some insight into how rules can be used to
+define exceptions to \bpfcontain{}'s default enforcement. Due to the modular design of
+\bpfcontain{}'s policy deserializer, it supports a number of different serialization
+formats to encode policy. In particular, YAML, TOML, and JSON are currently supported,
+with the possibility to add others in the future. For the purposes of this section, we
+assume the YAML format for consistency and readability.
 
-\subsection{File, Filesystem, and Device Rules}
+\bpfcontain{} policies are stored in a central, root-controlled directory. At runtime, the
+daemon watches policy files for changes and parses and loads the policy into the kernel
+when updates occur. At a minimum, each \bpfcontain{} policy contains some metadata,
+including the policy name and a few tunable parameters. Tunables include the ability to
+mark a container as pre-tainted and the ability to specify a command to use as the default
+entrypoint for \texttt{bpfcontain-run}. A pre-tainted container spawns tainted rather than
+untainted, falling back to stricter defaults when no rule matches the requested access
+(c.f.~\Cref{fig:bpfcontain-enforcement} on page \pageref{fig:bpfcontain-enforcement}).
+
+Aside from policy metadata, the policy is divided into four sections: allow, deny, taint,
+and kill. Each of these sections specifies the corresponding policy decision for any rules
+declared within. When the \bpfcontain{} enforcement engine matches on a rule, it takes the
+rule's policy decision as an enforcement action. In turn, policy rules are divided into
+several categories, based on the type of access that they specify. The subsections that
+follow examine and document each supported rule category.
+
+Note that, unlike \bpfbox{}, \bpfcontain{} does not currently support the ability to
+define function-level policy. The rationale for this design choice is that
+hyper-fine-grained policy makes little sense in the context of a container, particularly
+considering \bpfcontain{}'s highly-nuanced policy defaults. Future work may involve
+examining this design choice, along with other aspects of the \bpfcontain{} policy
+language design, in the context of a user study (see the discussion
+in~\Cref{c:discussion}). \Cref{lst:bpfcontain-policy-example} depicts an example
+\bpfcontain{} policy for a simple remote login program.
+
+\begin{lstlisting}[language=yaml, gobble=4,
+  caption={[An example \bpfcontain{} policy  written in YAML]
+    An example \bpfcontain{} policy for a simple remote login program, written in YAML.
+    This example offers a fairly complete idea of the \bpfcontain{} policy language's
+    various features. Note that, in the context of a Docker container, all of the
+    \enquote{file rules} under this policy would be unnecessary; they would be implicitly
+    covered by the container's namespace membership. The reader is encouraged to compare
+    this policy with the policy depicted in \Cref{lst:bpfbox-policy-example} on page
+    \pageref{lst:bpfbox-policy-example}.
+  },
+  label={lst:bpfcontain-policy-example}, float]
+    # Name of the policy
+    name: mylogin
+    # Container entrypoint
+    cmd: /usr/bin/mylogin
+    # Spawn container untainted
+    defaultTaint: false
+
+    allow:
+      # Perform any network operation
+      net: [client, server, send, recv]
+      # Grant read and append access to /etc/passwd
+      file: {pathname: /etc/passwd, access: ra}
+      # Grant read-only access to /etc/shadow
+      file: {pathname: /etc/shadow, access: r}
+      # Grant read and append access to any immediate child of /var/log/mylogin
+      file: {pathname: /var/log/mylogin/*, access: ra}
+      # Grant read and execute access to bash
+      file: {pathname: /bin/bash, access: rx}
+      # Grant read/write access to the TTY
+      dev: terminal
+
+    taint:
+      # Taint after performing any network operation
+      net: [client, server, send, recv]
+\end{lstlisting}
+
+\subsection{File and Filesystem Rules}
+
+For specifying access to regular files, \bpfcontain{} supports two major rule types.
+\textit{File} rules specify access at the granularity of individual files, while
+\textit{filesystem} rules specify access at the granularity of a filesystem.  These may be
+combined to grant or restrict coarse-grained access to entire filesystems and define
+fine-grained exceptions to this coarse-grained access for specific files. Each file and
+filesystem rule consists of a pathname and an access pattern. In the case of filesystem
+rules, the given pathname must be the mountpoint of the filesystem. \bpfcontain{} supports
+several access flags for fine-grained control over file access.
+\Cref{tab:bpfcontain-file-access} describes each flag and its corresponding effect.
+
+\begin{table}[htbp]
+  \centering
+  \caption[File access flags in \bpfcontain{}]{
+    File access flags in \bpfcontain{}.
+  }%
+  \label{tab:bpfcontain-file-access}
+  \begin{tabular}{ll}
+  \toprule
+  Pattern & Access \\
+  \midrule
+  \texttt{r} & Read (\texttt{read(2)}, etc.) \\
+  \texttt{w} & Write (\texttt{write(2)}, etc.)\\
+  \texttt{a} & Append (\texttt{write(2)} with append-only flag set) \\
+  \texttt{x} & Execute (\texttt{execve(2)})\\
+  \texttt{m} & Map executable memory (\texttt{mmap(2)}) \\
+  \texttt{c} & Modify Unix \gls{dac} (\texttt{chmod(2)}/\texttt{chown(2)}) \\
+  \texttt{d} & Unlink/Delete \\
+  \texttt{l} & Create hard link \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
+When loading a file rule into the kernel, \bpfcontain{} translates the pathname into
+a list of tuples uniquely describing the file. Each tuple contains the file's inode number
+along with the unique device ID associated with the filesystem on which the inode resides.
+These two numbers taken together can uniquely identify any file on the system.
+\bpfcontain{}'s file rules similarly take the device ID of the filesystem root, ignoring
+the inode. An implicit side effect of this technique is that files are immutably resolved
+at policy load time, meaning that \bpfcontain{} can achieve pathname resolution without
+becoming vulnerable to \gls{toctou} attacks. Like \bpfbox{}, \bpfcontain{} deals with
+newly-created files by associating them with the task that created them, granting default
+access to these files for the owning task\,---\,this resolves the use case where a task
+requires access to a file created \textit{after} its policy has already been loaded.
+
+\subsection{Device Rules}
+
+Unlike \bpfbox{}, \bpfcontain{} takes great care to avoid conflating regular files and
+special files. The key insight underlying this design choice is that the semantics of
+regular files and special files are quite different, despite supporting fundamentally the
+same operations. Provisioning over-permissive access to the wrong special file
+(e.g.~\texttt{/dev/mem}, which provides access to the system memory map) can have
+devastating security consequences. For this reason, access to a special file must be
+specified with the \lstinline[language=yaml]|dev| keyword, rather than
+\lstinline[language=yaml]|file|.
+
+\bpfcontain{} supports several major classes of character device, each with a default
+access pattern according to the device's semantics.  For instance
+\lstinline[language=yaml]|dev: terminal| enables read and write access on
+\texttt{/dev/tty} to support standard input and output to the terminal. Likewise,
+\lstinline[language=yaml]|dev: random| grants read-only access to \texttt{/dev/random} and
+\texttt{/dev/urandom}. When loading a device rule into the kernel, \bpfcontain{} resolves
+the device's major and minor number pair and maps it to the corresponding access pattern.
+
+More nuanced device access patterns may be specified using a numbered device rule,
+specified as \lstinline[language=yaml]|numberedDev: {major: major, minor: minor, access: access}|
+where \textit{major} and \textit{minor} are the device's major and minor number, and
+\textit{access} is an access flag pattern. This access pattern uses the same file access
+flags as outlined in \Cref{tab:bpfcontain-file-access}. The minor number is optional and
+may be omitted to match \textit{any} device of the specified major number.
 
 \subsection{Network Rules}
+
+\bpfcontain{} simplifies \bpfbox{}'s network policy by categorizing network accesses into
+high-level use cases, rather than the underlying socket operations.
+
+\begin{table}[htpb]
+  \centering
+  \caption[Network access categories in \bpfcontain{}]{
+    Network access categories in \bpfcontain{}.
+  }%
+  \label{tab:label}
+  \begin{tabular}{ll}
+  \toprule
+  Category & Access \\
+  \midrule
+  \bottomrule
+  \end{tabular}
+\end{table}
 
 \subsection{\glsentryshort{ipc} Rules}
 
 \subsection{Capability Rules}
-
-\subsection{Allow, Deny, Taint, and Kill Policy}
 
 
 
