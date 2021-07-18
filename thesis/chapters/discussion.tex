@@ -1,3 +1,10 @@
+This chapter discusses the relevance of \bpfbox{} and \bpfcontain{}, positioning them as
+novel extensions on top of the existing confinement literature. We also examine
+limitations of both research systems and present opportunities for future work. Namely, we
+propose ways to address current limitations, improve the \gls{ebpf} ecosystem for
+confinement use cases, add features to \bpfbox{} and \bpfcontain{}, and conduct further
+research on the usability of both systems.
+
 \section{Improving the Status Quo}%
 \label{s:disc-improving}
 
@@ -22,8 +29,79 @@ place to put diversity in.}
 \todo{This section will discuss the limitations of \bpfbox{} and \bpfcontain{}}
 
 \begin{inprogress}
+  Limitations related to pathname support
   \begin{itemize}
-    \item
+    \item Hard to refer to files from \gls{ebpf}
+    \item Currently, \bpfbox{} and \bpfcontain{} translate file policy into inodes and filesystem device IDs
+    \item This is a crude workaround; it has some convenient side effects for security,
+    but issues arise when we want to refer to pathnames that don't exist yet
+    \item It can also cause an explosion in the size of maps storing file rules, as
+    globbed paths get translated into multiple rules: one for each file that matches the
+    glob
+
+    \item The difficulty working with pathnames is partially a result of a fundamental limitation of \gls{ebpf}: difficulty manipulating strings
+    \item Problem generally arises from three factors, primarily related to the verifier:
+    \begin{itemize}
+      \item Verifier imposes a hard 512 byte limit on stack allocations (strings need to be heap-allocated, stored in an map)
+      \item Verifier imposes restrictions on how programs can loop (looping needs to provably terminate, the verifier errs on the side of caution here)
+      \item Helper functions can get around these restrictions, but decent string and pathname helpers are no here yet
+    \end{itemize}
+    \item Another fundamental issue is that support for sleepable \gls{bpf} is new and has
+    not yet matured (only a small subset of \gls{lsm} programs can currently be marked
+    sleepable)
+    \item Linux 5.(11?) added \texttt{bpf\_d\_path}, but this is only callable from sleepable programs, a subset of \gls{lsm} programs
+    \item In the current \bpfbox{} and \bpfcontain{} design, this limitation is too restrictive
+    \item Luckily, it seems like the community is working towards a general solution to
+    this problem (dynamic map allocation and making more program types sleepable)
+    \item As the \gls{ebpf} ecosystem evolves, it may be possible to support pathnames as
+    a first class citizen, removing the requirement for working with inodes and filesystem
+    numbers
+  \end{itemize}
+
+  Limitations related to policy map size
+  \begin{itemize}
+    \item Currently, policy maps are of a fixed size
+    \item It's okay to make them big, since \gls{ebpf} does support map growth up to a fixed limit
+    \item But we are still limited in total map size (todo: get current figure)
+    \item In our current implementation, we simply grow policy maps from userspace when the map size would be too small to fit current rules
+    \item But this approach is still limited, as it doesn't support map resizing at runtime, only at load time
+    \item Once sleepable \gls{bpf} matures, we can have dynamically allocated maps of
+    arbitrary size at runtime (link Alexei's LKML thread), as we can now have runtime map
+    allocators where is it okay to sleep on a page fault
+  \end{itemize}
+
+  Limitations related to overhead
+  \begin{itemize}
+    \item Currently, \bpfbox{} and \bpfcontain{} are competitive with mainstream
+    confinement solutions based on \gls{lsm} (e.g.~AppArmor, see chapter 6)
+    \item This competitiveness is actually an advantage, considering that \bpfbox{} and
+    \bpfcontain{} can be dynamically loaded and attached to various system events. In this sense,
+    we are getting increased flexibility without paying much of a cost in performance.
+    \item But, \bpfbox{} and \bpfcontain{} have the potential to be far more performant than
+    conventional \gls{lsm}s in one critical case: passive overhead on the rest of the system.
+    \item Due to a current limitation of how KRSI works, its \gls{ebpf} \gls{lsm} hooks are
+    always globally invoked, regardless of whether the target process is of interest to us or not.
+    \item The current pattern looks like (Invoke Syscall $\rightarrow$ Invoke Hook
+    $\rightarrow$ Invoke BPF Program $\rightarrow$ Filter Logic $\rightarrow$ Return from
+    BPF Program $\rightarrow$ Return from Hook $\rightarrow$ Return from Syscall).
+    \item In the future, we may be able to move the filter logic to the step
+    \textit{before}  the hook is called, or at the very least before the BPF program is
+    called. This would nearly eliminate any passive overhead on the unconfined parts of the system.
+    \item I have a plan for this: introducing a new namespace for \gls{bpf} programs and
+    maps. (Forward ref to BPF namespace and unprivileged BPF)
+  \end{itemize}
+
+  Limitations in network policy granularity
+  \begin{itemize}
+    \item Network policy in \bpfbox{} and \bpfcontain{} is currently very coarse-grained
+    \item Only operates at the socket level, and does not considered nuanced access
+    controls such as at the per-IP-address level.
+    \item This means that specifying access to the network essentially gives the process or container
+    access to the global network.
+    \item While this is not problematic for applications that do not require network access,
+    it quickly becomes an overprivilege issue for applications that do.
+    \item To fix this, we can introduce protocol-level network policy, an extension which
+    is possible using currently available \gls{ebpf} technology. (Forward ref to protocol-level network policy)
   \end{itemize}
 \end{inprogress}
 
