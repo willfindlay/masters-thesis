@@ -28,7 +28,8 @@ goal is to examine these limitations as an early motivating factor for the devel
     the host system by the bcc toolchain. On the userspace side, bcc depends on Python as
     well as the entire LLVM toolchain for program compilation. Both of these are rather
     hefty requirements on their own. Python requires an entire language runtime, and
-    a full LLVM toolchain can introduce gigabytes of additional code.
+    a full LLVM toolchain can introduce hundreds of megabytes of additional code
+    (approximately 587MiB when installing LLVM version 12.0 on Arch Linux).
 
     Furthermore, Python and bcc incur significant runtime overhead. Python is an
     interpreted language with a much heavier runtime than compiled systems languages like
@@ -36,9 +37,10 @@ goal is to examine these limitations as an early motivating factor for the devel
     features like the global object lock, which impede concurrency. Since bcc compiles
     \gls{ebpf} programs at runtime, we incur additional compilation overhead for each
     program, sometimes resulting in significant startup delays depending on the complexity
-    of the application. This runtime compilation also necessitates the availability of
-    kernel headers as a compilation dependency in the target environment, adding further
-    storage overhead.
+    of the application. The is runtime compilation of \gls{ebpf} programs also
+    necessitates the availability of kernel headers as a compilation dependency in the
+    target environment, adding further storage overhead (approximately 129MiB for Linux
+    5.12 on a stock Arch kernel).
 
   \item \textbf{Lack of Container Semantics.}
     Although \bpfbox{} exposes a light-weight policy language with high-level semantics to
@@ -415,9 +417,11 @@ non-global. This accommodates the use case where a container is attempting to ac
 a file that has been mapped into its mount namespace using an overlay filesystem.
 Similarly, default \gls{ipc} access is gated by whether or not the processes on either end
 of the \gls{ipc} handle belong to the same container. If they do, access is granted;
-otherwise, access is denied. In this way, we preserve the semantics of the container;
-resources that exist \textit{within} a container should be accessible by processes within
-the same container.
+otherwise, access is denied. Ptrace is similarly restricted; a process may only ptrace
+another if both processes exist in the same container. In this way, we preserve the
+semantics of the container; resources that exist \textit{within} a container should be
+accessible by processes within the same container, but resources that exist
+\textit{without} should not be accessible by default.
 
 Special files such as character or block devices are treated separately from regular
 files. Since these provide direct interfaces into the kernel, it does not make sense to
@@ -566,8 +570,8 @@ in~\Cref{c:discussion}). \Cref{lst:bpfcontain-policy-example} depicts an example
     defaultTaint: false
 
     allow:
-      # Perform any network operation
-      net: [client, server, send, recv]
+      # Perform send/recv operations as a client
+      net: [client, send, recv]
       # Grant read and append access to /etc/passwd
       file: {pathname: /etc/passwd, access: ra}
       # Grant read-only access to /etc/shadow
@@ -581,14 +585,14 @@ in~\Cref{c:discussion}). \Cref{lst:bpfcontain-policy-example} depicts an example
 
     taint:
       # Taint after performing any network operation
-      net: [client, server, send, recv]
+      net: any
 \end{lstlisting}
 
 \subsection{File and Filesystem Rules}
 
 For specifying access to regular files, \bpfcontain{} supports two major rule types.
-\textit{File} rules specify access at the granularity of individual files, while
-\textit{filesystem} rules specify access at the granularity of a filesystem.  These may be
+\textit{File rules} specify access at the granularity of individual files, while
+\textit{filesystem rules} specify access at the granularity of a filesystem.  These may be
 combined to grant or restrict coarse-grained access to entire filesystems and define
 fine-grained exceptions to this coarse-grained access for specific files. Each file and
 filesystem rule consists of a pathname and an access pattern. In the case of filesystem
@@ -638,8 +642,9 @@ regular files and special files are quite different, despite supporting fundamen
 same operations. Provisioning over-permissive access to the wrong special file
 (e.g.~\texttt{/dev/mem}, which provides access to the system memory map) can have
 devastating security consequences. For this reason, access to a special file must be
-specified with the \lstinline[language=yaml]|dev| keyword, rather than
-\lstinline[language=yaml]|file|.
+specified via a \textit{device rule} using the \lstinline[language=yaml]|dev| keyword,
+rather than the \lstinline[language=yaml]|file| or \lstinline[language=yaml]|filesystem|
+keywords.
 
 \bpfcontain{} supports several major classes of character device, each with a default
 access pattern according to the device's semantics.  For instance
@@ -659,36 +664,84 @@ may be omitted to match \textit{any} device of the specified major number.
 \subsection{Network Rules}
 
 \bpfcontain{} simplifies \bpfbox{}'s network policy by categorizing network accesses into
-high-level use cases, rather than the underlying socket operations.
+high-level use cases, rather than the underlying socket operations themselves. This
+approach is informed by the insight that specific applications tend use specific sets of
+socket operations, depending on if the application is designed as a client, a server, or
+some combination of the two (e.g.~a peer-to-peer model). Specifically, a server would
+require the ability to create sockets, bind them to an \gls{ip} address, listen for and
+accept incoming connections, and shut down existing connections. Conversely, a client
+generally needs to connect to an existing bound socket. We further partition access by
+provisioning send and receive access separately. \Cref{tab:bpfcontain-network} provides an
+overview of these access categories.
 
 \begin{table}[htpb]
   \centering
   \caption[Network access categories in \bpfcontain{}]{
     Network access categories in \bpfcontain{}.
   }%
-  \label{tab:label}
+  \label{tab:bpfcontain-network}
   \begin{tabular}{ll}
   \toprule
   Category & Access \\
   \midrule
+  \texttt{server} & Create, bind, listen, accept, and shut down socket connections \\
+  \texttt{client} & Connect to a bound socket \\
+  \texttt{send} & Send data over the socket \\
+  \texttt{recv} & Receive data over the socket \\
   \bottomrule
   \end{tabular}
 \end{table}
 
-\subsection{\glsentryshort{ipc} Rules}
+\bpfcontain{}'s network policy covers \gls{ip}v4 and \gls{ip}v6 sockets. Netlink and raw
+packet sockets are prohibited by default, and Unix domain sockets are relegated to
+\gls{ipc} rules rather than network rules (c.f.~\Cref{ss:bpfcontain-ipc}).
+
+\subsection{\glsentryshort{ipc} Rules}%
+\label{ss:bpfcontain-ipc}
+
+In general, container \gls{ipc} policy is handled by \bpfcontain{}'s default enforcement,
+which permits \gls{ipc} between two processes, provided that they belong to the same
+container. All other instances of \gls{ipc} are denied by default. In cases where
+inter-container \gls{ipc} is required, \bpfcontain{} provisions \gls{ipc} rules, which are
+defined as \lstinline[language=yaml]|ipc: name| where \textit{name} is the name of another
+\bpfcontain{} policy. In order for inter-container \gls{ipc} to be allowed, both policies
+must mutually grant each other \gls{ipc} access. This ensures that any communication
+between containers is mutually authorized, preventing attackers from bypassing the
+security assumptions of a policy. \bpfcontain{}'s \gls{ipc} rules cover all forms of
+\gls{ipc} available on the system, including signals, System V \gls{ipc} objects, and Unix
+domain sockets.
 
 \subsection{Capability Rules}
 
+Since container execution models can be (and often are) privileged by default,
+\bpfcontain{} takes great care to be distrustful of any POSIX capabilities assigned to the
+container. Specifically, \bpfcontain{} denies the use of \textit{any} POSIX capabilities
+as part of its default policy. While this is a simple and highly effective strategy for
+limiting the privileged of containers running under root's \gls{uid}, some container use
+cases require additional privileges to correctly function. To accommodate these use cases,
+\bpfcontain{} provisions a \textit{capability rule}, which can be used to specify allowed
+capabilities. The capability rule is specified using \lstinline[language=yaml]|capability: [capabilities...]|
+where \textit{capabilities} is a list of POSIX capabilities.
 
+Note that capability rules \textit{do not grant} additional capabilities to a container;
+rather they are mask over the set of all capabilities that a container can ever possess.
+Thus, a container must already have the corresponding capability under the traditional
+POSIX capabilities model in order to be able to use it. Capability rules merely add an
+extra level of protection on top of the existing model, preventing overprivilege by
+restricting the bounding capability set.
 
 
 \section{Improvements Over \bpfbox{}}%
 \label{s:bpfcontain-improvements}
 
+As a successor to \bpfbox{}, \bpfcontain{} makes several fundamental improvements in terms
+of dependency overhead, policy language simplification, and container-specific extensions
+on top of the \bpfbox{} confinement model. This section summarizes some of these
+improvements in light of the implementation details discussed earlier in this chapter.
+
 \subsection{Minimizing Runtime Dependencies}%
 \label{ss:bpfcontain-minimizing}
 
-\begin{inprogress}
 \bpfcontain{} solves \bpfbox{}'s dependency and runtime overhead issues by leveraging Rust
 and libbpf \gls{core}~\cite{nakryiko2020_core} rather than Python and bcc.  Unlike bcc,
 libbpf \gls{core} enables \gls{bpf} programs to be compiled once and run anywhere, thanks
@@ -708,74 +761,132 @@ These safety guarantees provide critical security advantages, particularly given
 that the \bpfcontain{} daemon is a long-running, privileged process\,---\,a ripe target
 for attacker exploitation. Thanks to an emphasis on speed and zero-cost abstractions, Rust
 can provide these benefits at virtually zero overhead, in line with traditional systems
-programming languages like C and significantly better than languages with a bulky runtime
-such as Python.
-\end{inprogress}
+programming languages like C and significantly better than interpreted languages such as
+Python.
 
 \subsection{Simplified Policy Language}%
 \label{ss:bpfcontain-simplified}
 
-\begin{inprogress}
-To rectify these issues in the policy language design, \bpfcontain{} eschews the original
-policy language and instead reaches for a more modular approach.  Rather than defining an
-entire new policy language, \bpfcontain{} instead defines a policy language
-\textit{schema}. This schema can then be encoded in any number of available data
-serialization formats, including YAML~\todo{CITE}, JSON~\todo{CITE}, TOML~\todo{CITE} and
-others. The end result is that the user is able to choose whichever policy encoding they
-are most comfortable with, using serialization languages that are both commonly available
-and that have stood the test of time across a variety of production use cases. Another
-implicit advantage of this approach is that it enables the future integration of
-\bpfcontain{} policy into existing container specification schemas, such as the \gls{oci}
-specification, which is encoded in JSON\@.
-\end{inprogress}
+\bpfcontain{} greatly simplifies the original \bpfbox{} policy language. Rather than
+defining a specific policy language syntax, \bpfcontain{} defines a schema that can be
+encoded in multiple different data serialization languages.  This simultaneously enables
+\bpfcontain{} to support a policy language that users will be familiar with (e.g.~YAML)
+and provides a clear path for extending \bpfcontain{} to support additional policy
+languages in the future. Further, this approach presents an opportunity for integrating
+\bpfcontain{} policy with existing specifications, such as the \gls{oci} specification or
+the rego~\todo{CITE} policy framework, both of which are encoded in JSON\@.
+
+Further simplifications to the \bpfcontain{} policy language are afforded by its goal of
+container-specific confinement. By focusing on container-specific use cases,
+\bpfcontain{}'s default policy enforcement can be far more nuanced than a traditional
+sandboxing framework. This property enables the user to focus on defining specific
+exceptions to a well-defined security boundary rather than enumerating every single
+possible resource that a container can access. Along with the simplifications afforded by
+\bpfcontain{}'s sensible policy defaults, we make additional changes to the policy
+language that help decouple it from the underlying details of the operating system, such
+as higher-level network policy and semantically-guided device driver access defaults.
+
+% \begin{inprogress}
+% \bpfcontain{} eschews the original policy language and instead reaches for a more modular
+% approach.  Rather than defining an entire new policy language, \bpfcontain{} instead
+% defines a policy language \textit{schema}. This schema can then be encoded in any number
+% of available data serialization formats, including YAML, JSON, and TOML\@. The end result
+% is that the user is able to choose whichever policy encoding they are most comfortable
+% with, using serialization languages that are both commonly available and that have stood
+% the test of time across a variety of production use cases. Another implicit advantage of
+% this approach is that it enables the future integration of \bpfcontain{} policy into
+% existing container specification schemas, such as the \gls{oci} specification~\cite{oci},
+% which is encoded in JSON\@.
+% \end{inprogress}
 
 \subsection{Container-Specific Extensions}%
 \label{ss:bpfcontain-extending}
 
-\todo{This section will discuss how \bpfcontain{} extends \bpfbox{} to model containers.
-Specifically, the idea is to enforce policy at the granularity of an entire container
-rather than an individual process. This lets us get away with all sorts of default
-policy\,---\,all operations within the confines of the container that do not affect the
-rest of the system are permitted. Operations that impact the rest of the system, such as
-those that modify kernel code, system parameters, or similar are denied. Everything else
-can be specified as a rule. This basically allows us to get away with almost no policy
-language whatsoever. A nice way to put it: \enquote{The policy language is used to define
-the exceptions rather than the rules}.}
+Perhaps the most significant improvement over the original \bpfbox{} design is that
+\bpfcontain{} implements container-specific confinement. Whereas \bpfbox{} is well-suited
+to fine-grained, process-level confinement, \bpfcontain{} extends this design to model
+containers. In particular, \bpfcontain{} tracks namespace membership as well as the
+association between processes and containers, enabling access to resources within
+a container and restricting access to the outside world. This approach is similar in
+spirit to FreeBSD Jails~\cite{kamp2000_jails}. These container-specific extensions enable
+\bpfcontain{} to enforce container-level policy with a well-defined security boundary
+around the container, simultaneously improving security and greatly simplifying the
+resulting policies. Rather than focusing on each and every resource associated with the
+container, security policies can instead focus on defining exceptions in \bpfcontain{}'s
+security boundary, resulting in policies that closely mirror the exposed interface to the
+outside world.
 
-\begin{inprogress}
-\bpfcontain{} rectifies this gap by incorporating container semantics into the design of
-both its policy language and enforcement engine. This includes properties such as
-namespace and container membership, defining an implicit boundary around the container and
-related resources, similar in spirit to FreeBSD Jails~\cite{kamp2000_jails}. In this way,
-\bpfcontain{} policies can grant access to objects that exist within the container and
-revoke access to objects that exist outside the container. Policies then focus on defining
-exceptions to this boundary, exposing fine-grained interfaces into the container and
-locking down the rest by default.
-\end{inprogress}
+% \todo{This section will discuss how \bpfcontain{} extends \bpfbox{} to model containers.
+% Specifically, the idea is to enforce policy at the granularity of an entire container
+% rather than an individual process. This lets us get away with all sorts of default
+% policy\,---\,all operations within the confines of the container that do not affect the
+% rest of the system are permitted. Operations that impact the rest of the system, such as
+% those that modify kernel code, system parameters, or similar are denied. Everything else
+% can be specified as a rule. This basically allows us to get away with almost no policy
+% language whatsoever. A nice way to put it: \enquote{The policy language is used to define
+% the exceptions rather than the rules}.}
 
-
+% \begin{inprogress}
+% \bpfcontain{} rectifies this gap by incorporating container semantics into the design of
+% both its policy language and enforcement engine. This includes properties such as
+% namespace and container membership, defining an implicit boundary around the container and
+% related resources, similar in spirit to FreeBSD Jails~\cite{kamp2000_jails}. In this way,
+% \bpfcontain{} policies can grant access to objects that exist within the container and
+% revoke access to objects that exist outside the container. Policies then focus on defining
+% exceptions to this boundary, exposing fine-grained interfaces into the container and
+% locking down the rest by default.
+% \end{inprogress}
 
 
 \section{Summary}%
 \label{s:bpfcontain-summary}
 
-\todo{Summary here.}
+This chapter has presented the design and implementation of \bpfcontain{}, an extension on
+top of the original \bpfbox{} design that promotes container-specific confinement and uses
+container semantics to simplify policies while providing strong security guarantees.
+Using \gls{ebpf}, \bpfcontain{} supports container-level semantics in a kernel-level
+enforcement engine without sacrificing adoptability or tying the kernel down to a specific
+definition of a container. \bpfcontain{} uses these container-level semantics to define
+a clear protection boundary around containers, and provides a simple policy language for
+defining exceptions to this protection boundary. \Cref{tab:bpfcontain-comparison} presents
+a summary comparison between \bpfbox{} and \bpfcontain{}, highlighting the properties of
+each system.
 
+% \begingroup\footnotesize
+% \begin{longtable}[c]{llllll}
+% \caption[Comparing \bpfbox{} and \bpfcontain{}]{
+%     Comparing \bpfbox{} and \bpfcontain{} by their properties and how well each satisfies
+%     the design goals outlined in \Cref{s:cp-design}.
+% }%
+% \label{tab:bpfcontain-comparison}\\
+%   \toprule
+%                  & Userspace        & Kernelspace & Dependencies & Default Policy & Policy Language \\
+%   \midrule
+%   \bpfbox{}      & Python + bcc     & bcc + LLVM  & $>800\text{MiB}$ & Deny & Custom DSL \\
+%   \bpfcontain{}  & Rust + libbpf-rs & \glsentryshort{bpf} \glsentryshort{core} & $<5\text{MiB}$ & Container Boundary & YAML/JSON/TOML \\
+%   \bottomrule
+% \end{longtable}
+% \endgroup
 
-
-\todo{Add the three design goals here by fulfillment?}
-\begingroup
-\begin{longtable}[c]{llll}
+\begingroup\small
+\begin{longtable}[c]{l||ll}
 \caption[Comparing \bpfbox{} and \bpfcontain{}]{
     Comparing \bpfbox{} and \bpfcontain{} by their properties and how well each satisfies
     the design goals outlined in \Cref{s:cp-design}.
 }%
 \label{tab:bpfcontain-comparison}\\
   \toprule
-                 & Userspace        & Kernelspace & Dependencies \\
+                            & \bpfbox{}        & \bpfcontain{} \\
   \midrule
-  \bpfbox{}      & Python + bcc     & bcc & High \\
-  \bpfcontain{}  & Rust + libbpf-rs & \glsentryshort{bpf} \glsentryshort{core} & Minimal \\
+  Userspace                 & Python + bcc     & Rust + libbpf-rs\\
+  Kernelspace               & bcc + LLVM       & \glsentryshort{bpf} \glsentryshort{core} \\
+  Dependencies              & $>800\text{MiB}$ & $<5\text{MiB}$ \\
+  Default Policy            & Default-Deny     & Container Boundary \\
+  Policy Language           & Custom DSL       & YAML/JSON/TOML \\
+  \midrule
+  Simple/Flexible Policies? & Yes              & Yes \\
+  Suitable for Containers?  & No               & Yes \\
+  High Adoptability?        & Somewhat         & Yes \\
   \bottomrule
 \end{longtable}
 \endgroup
