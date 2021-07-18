@@ -869,24 +869,25 @@ each system.
 % \endgroup
 
 \begingroup\small
-\begin{longtable}[c]{l||ll}
+\begin{longtable}[c]{r||ll}
 \caption[Comparing \bpfbox{} and \bpfcontain{}]{
     Comparing \bpfbox{} and \bpfcontain{} by their properties and how well each satisfies
     the design goals outlined in \Cref{s:cp-design}.
 }%
 \label{tab:bpfcontain-comparison}\\
   \toprule
-                            & \bpfbox{}        & \bpfcontain{} \\
+  Property/Goal              & \bpfbox{}        & \bpfcontain{} \\
   \midrule
-  Userspace                 & Python + bcc     & Rust + libbpf-rs\\
-  Kernelspace               & bcc + LLVM       & \glsentryshort{bpf} \glsentryshort{core} \\
-  Dependencies              & $>800\text{MiB}$ & $<5\text{MiB}$ \\
-  Default Policy            & Default-Deny     & Container Boundary \\
-  Policy Language           & Custom DSL       & YAML/JSON/TOML \\
+  Userspace Implementation   & Python + bcc     & Rust + libbpf-rs\\
+  Kernelspace Implementation & bcc + LLVM       & \glsentryshort{bpf} \glsentryshort{core} \\
+  Dependencies               & $>800\text{MiB}$ & $<5\text{MiB}$ \\
+  State Management           & Process-Level    & Container-Level    \\
+  Default Policy             & Default-Deny     & Container Boundary \\
+  Policy Language            & Custom DSL       & YAML/JSON/TOML \\
   \midrule
-  Simple/Flexible Policies? & Yes              & Yes \\
-  Suitable for Containers?  & No               & Yes \\
-  High Adoptability?        & Somewhat         & Yes \\
+  Simple/Flexible Policies?  & Yes              & Yes \\
+  Suitable for Containers?   & No               & Yes \\
+  High Adoptability?         & Somewhat         & Yes \\
   \bottomrule
 \end{longtable}
 \endgroup
