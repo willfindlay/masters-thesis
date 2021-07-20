@@ -141,32 +141,79 @@ required to achieve policy-level diversity at scale.
 
 \subsection{\glsentryshort{ebpf}, Adoptability, and Future Innovation}
 
-\begin{inprogress}
-  \gls{ebpf} and adoptability
-  \begin{itemize}
-    \item Adoptability that comes with \gls{ebpf} compared with traditional \glspl{lsm}
-    \item Companies are already using \gls{ebpf} in production for performance monitoring use cases
-    \item The KRSI patch that provides \gls{lsm} probes was invented at Google for custom policies and security auditing in their production servers
-    \item The barrier to entry for running new \gls{ebpf} code on a production system is much lower than a new kernel module or kernel patch
-    \item \gls{ebpf} kernel code is far less likely to have adverse side effects, security vulnerabilities
+A third improvement over the status quo in confinement lies in \bpfbox{} and
+\bpfcontain{}'s novelty as \gls{ebpf}-based confinement implementations. Whereas existing
+kernel security mechanisms are based on kernel patches or loadable kernel modules,
+\bpfbox{} and \bpfcontain{} leverage \gls{ebpf} for dynamic runtime security monitoring,
+verified for safety and correctness before being loaded into the kernel. An
+\gls{ebpf}-based implementation affords \bpfbox{} and \bpfcontain{} a number of advantages
+over traditional security solutions.
 
-    \item Another advantage of an \gls{ebpf}-based solution over traditional solutions is that it is far easier to extend and modify
-    \item Rapidly prototype, test, and deploy new kernel security mechanisms
-    \item Easy to modify \bpfbox{} and \bpfcontain{} to support new rule types, employ different policy defaults, and to include other aspects of system state
-    \item In the future, we will likely see \gls{ebpf} being increasingly used to develop new and innovative security solutions, combining
-    system observability with policy enforcement
-  \end{itemize}
-\end{inprogress}
+\begin{enumerate}
+  \item \textbf{\gls{ebpf} is already widely-used in production Linux environments.} At
+  the time of writing this thesis, major software companies like Facebook, Netflix, and
+  Google~\cite{gregg2019_bpf} already use \gls{ebpf} in production servers for performance
+  and security monitoring, the implementation of L4 routing and load balancing algorithms,
+  and other various use cases. In fact, the KRSI patch that provides the \gls{lsm} probes
+  used by \bpfbox{} and \bpfcontain{} was initially developed at Google for dynamic
+  security monitoring use cases~\cite{singh2019_krsi}. As time goes on, \gls{ebpf}-based
+  kernel code is seeing increasing deployment across multidisciplinary areas of industry.
+  This widespread deployment is a key incentive toward the adoption of security mechanisms
+  like \bpfbox{} and \bpfcontain{}. Not only is this widespread adoption an emergent
+  phenomenon from \gls{ebpf}'s safety and flexibility properties, but it is also
+  a valuable case study in how \gls{ebpf} is reshaping the way we think about kernel
+  observability in practice.
+
+  \item \textbf{The barrier to entry for running new \gls{ebpf} code on a production
+  system is much lower than a new kernel module or kernel patch.}
+  Since \gls{ebpf} programs and maps can be dynamically loaded into the kernel and are
+  checked for safety and correctness before they are allowed to run, the barrier to entry
+  for running a new \gls{ebpf}-based implementation in production is far lower than that
+  of a kernel module or kernel patch. \gls{ebpf} programs are far less likely to contain
+  memory safety errors or other software bugs that plague kernel code in practice. Due to
+  new technologies like \gls{bpf} \gls{core}~\cite{nakryiko2020_core}, \gls{ebpf}-based
+  solutions are also far more portable across different kernel versions and
+  configurations. These factors combined make \bpfbox{} and particularly \bpfcontain{} far
+  more adoptable as novel kernel security mechanisms. Future security implementations
+  based on \gls{ebpf} can also enjoy these advantages.
+
+  \item \textbf{\gls{ebpf} enables rapid prototyping and deployment of kernel security mechanisms.}
+  Due to its dynamic nature, safety, and portability across kernels, it is far easier to
+  rapidly prototype, test, and deploy novel security solutions based on \gls{ebpf}. In the
+  case of \bpfbox{} and \bpfcontain{}, this enables rapid prototyping of the policy
+  language and enforcement engine, and makes it easy to incorporate novel extensions on
+  top of these research systems, redefining key aspects of policy enforcement and adding
+  new data sources from the kernel and userspace programs. In the future, we will likely see
+  \gls{ebpf} positioned as a key enabling factor behind the rapid development of novel kernel
+  security extensions, further combining system observability with dynamic policy enforcement.
+\end{enumerate}
+
+% \begin{inprogress}
+%   \gls{ebpf} and adoptability
+%   \begin{itemize}
+%     \item Adoptability that comes with \gls{ebpf} compared with traditional \glspl{lsm}
+%     \item Companies are already using \gls{ebpf} in production for performance monitoring use cases
+%     \item The KRSI patch that provides \gls{lsm} probes was invented at Google for custom policies and security auditing in their production servers
+%     \item The barrier to entry for running new \gls{ebpf} code on a production system is much lower than a new kernel module or kernel patch
+%     \item \gls{ebpf} kernel code is far less likely to have adverse side effects, security vulnerabilities
+
+%     \item Another advantage of an \gls{ebpf}-based solution over traditional solutions is that it is far easier to extend and modify
+%     \item Rapidly prototype, test, and deploy new kernel security mechanisms
+%     \item Easy to modify \bpfbox{} and \bpfcontain{} to support new rule types, employ different policy defaults, and to include other aspects of system state
+%     \item In the future, we will likely see \gls{ebpf} being increasingly used to develop new and innovative security solutions, combining
+%     system observability with policy enforcement
+%   \end{itemize}
+% \end{inprogress}
 
 
 \section{Limitations}%
 \label{s:disc-limitations}
 
-In this section, we discuss some limitations of the \bpfbox{} and \bpcontain{}.
-While some limitations arise due to a lack of support for the correct primitives
-in the current \gls{ebpf} ecosystem, others arise due to the prototypical nature of \bpfbox{}
-and \bpfcontain{} as research systems. In both cases, we discuss how future iterations
-of \bpfbox{} and \bpfcontain can address these limitations, either through extensions to
+In this section, we discuss some limitations of the \bpfbox{} and \bpfcontain{}.  While
+some limitations arise due to a lack of support for the correct primitives in the current
+\gls{ebpf} ecosystem, others arise due to the prototypical nature of \bpfbox{} and
+\bpfcontain{} as research systems. In both cases, we discuss how future iterations of
+\bpfbox{} and \bpfcontain{} can address these limitations, either through extensions to
 the policy enforcement mechanism or future improvements to the \gls{ebpf} ecosystem.
 
 \subsection{Pathname Support in \glsentryshort{ebpf}}
