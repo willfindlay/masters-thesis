@@ -313,20 +313,46 @@ policy enforcement in their kernelspace implementations.
 
 \subsection{Fixed-Size Policy Maps}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item Currently, policy maps are of a fixed size
-    \item It's okay to make them big, since \gls{ebpf} does support map growth up to a fixed limit
-    \item But we are still limited in total map size (todo: get current figure)
-    \item In our current implementation, we simply grow policy maps from userspace when the map size would be too small to fit current rules
-    \item But this approach is still limited, as it doesn't support map resizing at runtime, only at load time
-    \item Once sleepable \gls{bpf} matures, we can have dynamically allocated maps of
-    arbitrary size at runtime (link Alexei's LKML thread), as we can now have runtime map
-    allocators where is it okay to sleep on a page fault
-  \end{itemize}
-\end{inprogress}
+Currently, policy maps under \bpfbox{} and \bpfcontain{} are of a fixed size, determined
+at policy load time. This is due to a fundamental limitation of \gls{ebpf}: maps must be
+allocated at a fixed size and may not be directly resized at runtime. To get around this
+limitation, \bpfbox{} and \bpfcontain{} tailor policy map size to the number of rules that
+will be loaded into the kernel. While this approach is effective, it would be better to
+have the ability to dynamically grow policy maps at runtime. This would enable \bpfbox{}
+and \bpfcontain{} to support loading arbitrary length policies at runtime, and even
+runtime policy generation, without over-fitting map sizes.
+
+As with string helpers in the previous section, the primary bottleneck preventing
+dynamically-sized maps is the adoption of sleepable \gls{bpf}. Alexei Starovoitov expects
+that subsequent versions of the kernel will support dynamically allocated maps as the
+number of sleepable \gls{bpf} programs increases. When support for this lands, \bpfbox{}
+and \bpfcontain{} will be able to leverage this new functionality to greatly improve the
+memory efficiency of policy maps and support runtime policy generation from the \gls{ebpf}
+side.
+
+% \begin{inprogress}
+%   \begin{itemize}
+%     \item Currently, policy maps are of a fixed size
+%     \item It's okay to make them big, since \gls{ebpf} does support map growth up to a fixed limit
+%     \item But we are still limited in total map size (todo: get current figure)
+%     \item In our current implementation, we simply grow policy maps from userspace when the map size would be too small to fit current rules
+%     \item But this approach is still limited, as it doesn't support map resizing at runtime, only at load time
+%     \item Once sleepable \gls{bpf} matures, we can have dynamically allocated maps of
+%     arbitrary size at runtime (link Alexei's LKML thread), as we can now have runtime map
+%     allocators where is it okay to sleep on a page fault
+%   \end{itemize}
+% \end{inprogress}
 
 \subsection{Passive Performance Overhead}
+
+According to the performance evaluation results in \Cref{s:eval-performance} of
+\Cref{c:evaluation}, both \bpfbox{} and \bpfcontain{} offer competitive performance with
+AppArmor while offering the higher flexibility afforded to an \gls{ebpf}-based
+implementation. While these results are satisfactory, based on the number of additional benefits
+these research systems provide, there is a key opportunity to improve performance in one
+critical area: passive overhead on the system as a whole.
+
+The problem is as follows. \todo{Explain problem here}
 
 \begin{inprogress}
   \begin{itemize}
