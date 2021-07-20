@@ -17,51 +17,127 @@ potential to drive further innovation going forward.
 
 \subsection{Application-Specific and Container-Specific Policies}
 
-\begin{inprogress}
-  Application-specific and container-specific policies
-  \begin{itemize}
-    \item \bpfbox{} policies are \textit{application-specific}
-    \item Specifically, \bpfbox{} doesn't try to enforce policy over the entire system like AppArmor or SELinux
-    \item Instead, we focus on ad-hoc confinement of a specific application
-    \item This affords the user a great deal of flexibility; no need to author complex policies that cover the entire system. Instead, focus on the specific behaviours you want your application to exhibit
-    \item In turn, this flexibility means that different types of users can leverage \bpfbox{} in different ways. Application developers can write fine-grained policies that enforce behaviours at the function-call-level. End-users can deploy custom \bpfbox{} policies to restrict specific behaviours, such as access to the home directory.
+Due to their simplicity and flexibility, \bpfbox{} and \bpfcontain{} encourage a different
+kind of confinement compared with existing \gls{lsm}-based solutions. Rather than focusing
+on global, system-wide \gls{mac} policy enforcement like
+SELinux~\cite{smalley2001_selinux} or AppArmor~\cite{cowan2000_apparmor}, \bpfbox{} and
+\bpfcontain{} focus on application-specific and container-specific confinement
+respectively. The former enables light-weight, ad-hoc confinement of individual Linux
+processes, while the latter extends this model to work with container semantics.  This
+represents a stark contrast over existing work in the confinement space, which generally
+focuses on reusing existing primitives designed for global enforcement.  Rather than
+outright simple policies, these confinement frameworks compile down into hundreds or even
+thousands of lines of policy for the underlying confinement primitive.
 
-    \item \bpfcontain{} extends the \bpfbox{} model to be \textit{container-specific}
-    \item Like \bpfbox{}, a lot of the implicit strength behind this approach is that policies are not trying to enforce system-wide behaviour
-    \item But the container-specific approach also affords even more implicit advantages
-    \item First, it is designed to be applicable to the container use-case, unlike traditional \gls{lsm} which are designed to enforce generic confinement policy on the whole system
-    \item Using container semantics, we can avoid the need to use overly coarse-grained policy templates, instead focusing on protecting the container at a per-resource level
-    \item We can significantly simplify policy and improve container security by defining a clear protection boundary around the container
-    \item User-defined policies then focus on defining specific exceptions to the security boundary
-    \item This mirrors the idea of provisioning shared resources in a virtual machine
-  \end{itemize}
-\end{inprogress}
+The \textit{application-specific} approach of \bpfbox{} takes a different path\,---\,a
+\bpfbox{} policy directly applies to the \bpfbox{} enforcement engine, without relying on
+existing primitives like SELinux, AppArmor, or Seccomp-bpf. The result is policies that
+are far simpler without being too coarse-grained or abstracted beyond the point of
+auditability\,---\,expressiveness without complexity. Further, application-specific
+policies afford a great deal of flexibility to the end-user; rather than authoring complex
+policies that cover the entire system, instead they may focus on the specific behaviours
+that they want their applications to exhibit. In turn, this flexibility means that
+different types of users can leverage \bpfbox{} in different ways.  Application developers
+can write fine-grained policies that enforce behaviours at the function-call-level.
+Conversely, end-users can deploy custom \bpfbox{} policies to restrict specific
+behaviours, such as access to the home directory.
+
+\bpfcontain{} extends the \bpfbox{} model to be \textit{container-specific}. Like
+\bpfbox{}, much of the implicit strength inherent in this model is that it does not rely
+on existing primitives and does not attempt to enforce policy over the entire system.
+Instead, we focus on individual containers, identifying the specific \gls{os} interfaces
+needed for the container to function.  This approach introduces additional advantages
+specific to the container use case, on top of the advantages already present in the
+\bpfbox{} design. By including container semantics as part of its internal model of the
+system, \bpfcontain{} can enforce highly nuanced policy defaults, defining an enforcement
+boundary around the container. This boundary, in turn, simplifies resulting policies by
+allowing the policy author to focus on which external interfaces the container needs,
+without worrying about specifying access to internal resources. In this way, \bpfcontain{}
+policies mirror the process of provisioning resources in a virtual machine.
+
+% \begin{inprogress}
+%   Application-specific and container-specific policies
+%   \begin{itemize}
+%     \item \bpfbox{} policies are \textit{application-specific}
+%     \item Specifically, \bpfbox{} doesn't try to enforce policy over the entire system like AppArmor or SELinux
+%     \item Instead, we focus on ad-hoc confinement of a specific application
+%     \item This affords the user a great deal of flexibility; no need to author complex policies that cover the entire system. Instead, focus on the specific behaviours you want your application to exhibit
+%     \item In turn, this flexibility means that different types of users can leverage \bpfbox{} in different ways. Application developers can write fine-grained policies that enforce behaviours at the function-call-level. End-users can deploy custom \bpfbox{} policies to restrict specific behaviours, such as access to the home directory.
+
+%     \item \bpfcontain{} extends the \bpfbox{} model to be \textit{container-specific}
+%     \item Like \bpfbox{}, a lot of the implicit strength behind this approach is that policies are not trying to enforce system-wide behaviour
+%     \item But the container-specific approach also affords even more implicit advantages
+%     \item First, it is designed to be applicable to the container use-case, unlike traditional \gls{lsm} which are designed to enforce generic confinement policy on the whole system
+%     \item Using container semantics, we can avoid the need to use overly coarse-grained policy templates, instead focusing on protecting the container at a per-resource level
+%     \item We can significantly simplify policy and improve container security by defining a clear protection boundary around the container
+%     \item User-defined policies then focus on defining specific exceptions to the security boundary
+%     \item This mirrors the idea of provisioning shared resources in a virtual machine
+%   \end{itemize}
+% \end{inprogress}
 
 \subsection{Encouraging Local Policy Variation}
 
-\begin{inprogress}
-  Simple yet expressive policies encourage local policy variation
-  \begin{itemize}
-    \item Diversity in computer security is an area that is now seeing increasing exploration (cite some of Anil's papers)
-    \item Increasing the diversity of software deployments can make it difficult for an attacker to re-use knowledge of one
-    system configuration to attack another. For example, software configuration might have a particular vulnerability, but
-    another might have a totally different vulnerability. By invalidating attacker knowledge and assumptions, we can preemptively
-    make it much harder to execute successful attacks at scale
+An implicit advantage of simple yet flexible confinement policies is that they encourage
+\textit{policy variation}. In computer security, \textit{diversity} is an area that has
+seen some exploration in the past~\cite{somayaji2007_immunology, persaud2016_frankenssl,
+matrawy2005_mitigating, neti2012_software}. The idea is deceptively simple, inspired by
+biological sources of diversity found in nature. Attackers rely on similarities between
+system for widespread exploitation; for instance, consider a set of deployed systems all
+running the same vulnerable version of a piece of a software with similar configurations.
+Since each of these systems have the same vulnerability, exploiting one system is much
+like exploiting the others; thus, the knowledge and effort required to exploit each system
+will be roughly equivalent to exploiting just one. The point of introducing diversity into
+software deployments and configurations is to confound this basic assumption. On
+a macroscopic scale, increased diversity improves the security of the entire population.
 
-    \item Classically, researchers have investigated source-level or binary-level variations as a source of diversity
-    \item However, these are often quite baroque and have limited practical use, since diversity at the source or binary level can
-    lead to difficulties in scalable deployment, reliability, and the effectiveness of software
-    \item This notion goes against much of what we want to do as computer scientists: have a system be as predictable and reproducible as possible
+Classically, computer diversity has primarily been explored through source- or
+binary-level variations~\cite{somayaji2007_immunology, persaud2016_frankenssl,
+neti2012_software}. Solutions recombine existing software in new ways, such that each
+deployment has a unique code footprint. However, a primary limiting factor to the adoption
+of such security solutions is that they fly in the face of the traditional approach to
+computing. Namely, we want our software to be as predictable, reliable, and effective as
+possible. The same input into a piece of software should produce the same (or at least
+predictable) output, regardless of the underlying system configuration. Source- or
+binary-level software diversity invalidates this assumption, by introducing potential
+variations in common code paths.
 
-    \item However, security policies make good sense as a layer to introduce diversity. By diversifying security policies, we can
-    make the exploitation targets less reliable and consistent for attackers, without necessarily impacting the usefulness of an application.
-    For instance, one end-user of a piece of software might only need a certain subset of its functionality. In this case, their security policy
-    might look very different from another end-user that requires a different subset of functionality. Introducing variations in security policy
-    for this software can confound attackers, much in the same way that source-level or binary-level variations would.
-    \item \bpfbox{} and \bpfcontain{} are ideal security mechanisms for encouraging this kind of policy variation,
-    because they are designed for a local administrator to tailor a security policy to precisely the set of desired functionality
-  \end{itemize}
-\end{inprogress}
+Unlike traditional sources of diversity in computing, \textit{policy-level diversity} has
+the potential to be quite effective while maintaining the underlying assumption that
+software should \enquote{just work}. Security policies may be tailored to some
+locally-desired use case, only invalidating code paths that would never be taken to begin
+with. For example, consider an Apache web server configuration. In one deployment, it may
+be necessary to support the execution of \gls{cgi} helper scripts, whereas another may
+only need to serve static webpages. Each configuration could use a different security
+policy, based on the needs of the local deployment. A natural diversity arises as an
+emergent property of this model when scaled up over thousands of deployments across
+thousands of applications.  Since \bpfbox{} and \bpfcontain{} policies are so simple yet
+so flexible, they naturally encourage precisely the soft of local policy variations
+required to achieve policy-level diversity at scale.
+
+
+% \begin{inprogress}
+%   Simple yet expressive policies encourage local policy variation
+%   \begin{itemize}
+%     \item Diversity in computer security is an area that is now seeing increasing exploration (cite some of Anil's papers)
+%     \item Increasing the diversity of software deployments can make it difficult for an attacker to re-use knowledge of one
+%     system configuration to attack another. For example, software configuration might have a particular vulnerability, but
+%     another might have a totally different vulnerability. By invalidating attacker knowledge and assumptions, we can preemptively
+%     make it much harder to execute successful attacks at scale
+
+%     \item Classically, researchers have investigated source-level or binary-level variations as a source of diversity
+%     \item However, these are often quite baroque and have limited practical use, since diversity at the source or binary level can
+%     lead to difficulties in scalable deployment, reliability, and the effectiveness of software
+%     \item This notion goes against much of what we want to do as computer scientists: have a system be as predictable and reproducible as possible
+
+%     \item However, security policies make good sense as a layer to introduce diversity. By diversifying security policies, we can
+%     make the exploitation targets less reliable and consistent for attackers, without necessarily impacting the usefulness of an application.
+%     For instance, one end-user of a piece of software might only need a certain subset of its functionality. In this case, their security policy
+%     might look very different from another end-user that requires a different subset of functionality. Introducing variations in security policy
+%     for this software can confound attackers, much in the same way that source-level or binary-level variations would.
+%     \item \bpfbox{} and \bpfcontain{} are ideal security mechanisms for encouraging this kind of policy variation,
+%     because they are designed for a local administrator to tailor a security policy to precisely the set of desired functionality
+%   \end{itemize}
+% \end{inprogress}
 
 \subsection{\glsentryshort{ebpf}, Adoptability, and Future Innovation}
 
