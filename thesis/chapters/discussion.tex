@@ -261,39 +261,55 @@ runtime:
   This can result in safe programs that manipulate long strings being erroneously rejected.
 
   \item While helper functions can get around such restrictions, the current ecosystem for
-  string manipulation helpers in \gls{ebpf} is immature. For instance, Linux \todo{Continue}
+  string manipulation helpers in \gls{ebpf} is immature. For instance, Linux 5.10 added
+  a \texttt{bpf\_d\_path()} helper~\cite{olsa2020_d_path} to extract pathnames from
+  a kernel directory entry. However, this helper is only available for sleepable \gls{bpf}
+  programs, since allocating a buffer for the string can result in a page fault. Support
+  for sleepable \gls{bpf} is very new and has not had a chance to mature; currently,
+  sleepable programs are restricted to a small subset of \gls{lsm} programs. Aside from
+  pathname resolution, no other string helpers currently exist, although they have been on
+  the radar of \gls{ebpf} developers for some time.
 \end{enumerate}
 
+Although the current state of the \gls{ebpf} ecosystem makes it impossible for \bpfbox{}
+and \bpfcontain{} to directly use pathname-based enforcement in the kernel, this will not
+necessarily be the case in the future. \gls{ebpf} is in active development, and each
+subsequent kernel version adds new features and capabilities. For instance, the kernel
+community is currently working on a generic solution for sleepable \gls{bpf} that will
+greatly expand the number of programs that can handle page faults. When this support
+arrives, it is likely that working with strings will become much easier. Thus, future
+versions of \bpfbox{} and \bpfcontain{} will likely be able to incorporate pathname-based
+policy enforcement in their kernelspace implementations.
 
-\begin{inprogress}
-  \begin{itemize}
-    \item Hard to refer to files from \gls{ebpf}
-    \item Currently, \bpfbox{} and \bpfcontain{} translate file policy into inodes and filesystem device IDs
-    \item This is a crude workaround; it has some convenient side effects for security,
-    but issues arise when we want to refer to pathnames that don't exist yet
-    \item It can also cause an explosion in the size of maps storing file rules, as
-    globbed paths get translated into multiple rules: one for each file that matches the
-    glob
+% \begin{inprogress}
+%   \begin{itemize}
+%     \item Hard to refer to files from \gls{ebpf}
+%     \item Currently, \bpfbox{} and \bpfcontain{} translate file policy into inodes and filesystem device IDs
+%     \item This is a crude workaround; it has some convenient side effects for security,
+%     but issues arise when we want to refer to pathnames that don't exist yet
+%     \item It can also cause an explosion in the size of maps storing file rules, as
+%     globbed paths get translated into multiple rules: one for each file that matches the
+%     glob
 
-    \item The difficulty working with pathnames is partially a result of a fundamental limitation of \gls{ebpf}: difficulty manipulating strings
-    \item Problem generally arises from three factors, primarily related to the verifier:
-    \begin{itemize}
-      \item Verifier imposes a hard 512 byte limit on stack allocations (strings need to be heap-allocated, stored in an map)
-      \item Verifier imposes restrictions on how programs can loop (looping needs to provably terminate, the verifier errs on the side of caution here)
-      \item Helper functions can get around these restrictions, but decent string and pathname helpers are no here yet
-    \end{itemize}
-    \item Another fundamental issue is that support for sleepable \gls{bpf} is new and has
-    not yet matured (only a small subset of \gls{lsm} programs can currently be marked
-    sleepable)
-    \item Linux 5.(11?) added \texttt{bpf\_d\_path}, but this is only callable from sleepable programs, a subset of \gls{lsm} programs
-    \item In the current \bpfbox{} and \bpfcontain{} design, this limitation is too restrictive
-    \item Luckily, it seems like the community is working towards a general solution to
-    this problem (dynamic map allocation and making more program types sleepable)
-    \item As the \gls{ebpf} ecosystem evolves, it may be possible to support pathnames as
-    a first class citizen, removing the requirement for working with inodes and filesystem
-    numbers
-  \end{itemize}
-\end{inprogress}
+%     \item The difficulty working with pathnames is partially a result of a fundamental limitation of \gls{ebpf}: difficulty manipulating strings
+%     \item Problem generally arises from three factors, primarily related to the verifier:
+%     \begin{itemize}
+%       \item Verifier imposes a hard 512 byte limit on stack allocations (strings need to be heap-allocated, stored in an map)
+%       \item Verifier imposes restrictions on how programs can loop (looping needs to provably terminate, the verifier errs on the side of caution here)
+%       \item Helper functions can get around these restrictions, but decent string and pathname helpers are no here yet
+%     \end{itemize}
+%     \item Another fundamental issue is that support for sleepable \gls{bpf} is new and has
+%     not yet matured (only a small subset of \gls{lsm} programs can currently be marked
+%     sleepable)
+%     \item Linux 5.(11?) added \texttt{bpf\_d\_path}, but this is only callable from sleepable programs, a subset of \gls{lsm} programs
+%     \item In the current \bpfbox{} and \bpfcontain{} design, this limitation is too restrictive
+%     \item Luckily, it seems like the community is working towards a general solution to
+%     this problem (dynamic map allocation and making more program types sleepable)
+%     \item As the \gls{ebpf} ecosystem evolves, it may be possible to support pathnames as
+%     a first class citizen, removing the requirement for working with inodes and filesystem
+%     numbers
+%   \end{itemize}
+% \end{inprogress}
 
 \subsection{Fixed-Size Policy Maps}
 
