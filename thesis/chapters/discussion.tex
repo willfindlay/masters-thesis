@@ -216,7 +216,54 @@ some limitations arise due to a lack of support for the correct primitives in th
 \bpfbox{} and \bpfcontain{} can address these limitations, either through extensions to
 the policy enforcement mechanism or future improvements to the \gls{ebpf} ecosystem.
 
-\subsection{Pathname Support in \glsentryshort{ebpf}}
+\subsection{Limited Pathname Support in \glsentryshort{ebpf}}
+
+It is hard to refer to files from \gls{ebpf}. In the kernel, files are generally uniquely
+described by an \textit{inode} structure, which in turn maps to one or more pathnames via
+a \textit{file} structure. Each inode belongs to a distinct filesystem, and is uniquely
+enumerated within that filesystem by an inode number.  In \bpfbox{} and \bpfcontain{}, we
+uniquely identify inodes using a combination of their inode number and the unique device
+identifier of the filesystem on which the inode resides. While this is an effective
+technique for runtime monitoring, things begin to fall apart when dealing with
+a \textit{user-facing} data store, such as a policy map.
+
+While the kernel refers to files by their inodes within a filesystem, users do not. For
+the most part, userspace does not deal in inode-level semantics\,---\,instead, we deal in
+\textit{pathnames}, a string that describes the path required to move from the filesystem
+root to a given file. Indeed, the \bpfbox{} and \bpfcontain{} policy languages use
+pathnames rather than inodes to refer to files. Unfortunately, this creates an undesired
+dichotomy between the user-facing components of \bpfbox{} and \bpfcontain{}, and the
+kernelspace implementation.  To resolve this dichotomy, we translate the pathnames into
+inode and device pairs at policy load-time. This is a workaround, subject to several
+fundamental limitations. In particular, referring to a pathname that doesn't yet exist
+becomes difficult, as inode numbers do not yet exist; inodes that are deleted or freshly
+created at runtime must be treated as special cases, dynamically updating the policy as
+required; finally, globbing pathnames can result in an explosion in the size of maps
+storing file rules, as each globbed file is translated into a unique inode-device pair.
+
+To resolve these issues, it would be ideal if we could refer to pathnames directly from
+\gls{bpf} programs. In particular, a design using this capability might resolve pathnames
+within \gls{ebpf} programs and define a finite state machine to match globbing rules over
+the pathname. Unfortunately, current support for pathname resolution in \gls{ebpf} is primitive.
+Difficulties arise due to a few fundamental limitations imposed by the verifier and the \gls{ebpf}
+runtime:
+\begin{enumerate}
+  \item The verifier imposes a hard limit of 512 bytes of stack space for each \gls{bpf}
+  program. This makes it unrealistic to store strings on the stack, instead requiring that
+  a buffer be allocated in the heap. In the context of \gls{bpf}, this can only be done
+  using a dummy map as a scratch buffer.
+
+  \item The verifier also imposes restrictions on how \gls{ebpf} programs can loop and how
+  these loops can access map data. Specifically, loops must provably terminate and any
+  array access within a loop must be appropriately bounded by a fixed constant (to ensure
+  no buffer overflows or similar issues). In practice, enforcing these restrictions is
+  difficult, and the verifier errs on the side caution when reasoning about a loop is unclear.
+  This can result in safe programs that manipulate long strings being erroneously rejected.
+
+  \item While helper functions can get around such restrictions, the current ecosystem for
+  string manipulation helpers in \gls{ebpf} is immature. For instance, Linux \todo{Continue}
+\end{enumerate}
+
 
 \begin{inprogress}
   \begin{itemize}
