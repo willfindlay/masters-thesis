@@ -8,8 +8,14 @@ research on the usability of both systems.
 \section{Improving the Status Quo}%
 \label{s:disc-improving}
 
-\todo{This section will discuss how \bpfbox{} and \bpfcontain{} improve upon the status
-quo in confinement. Specifically, it will compare both systems with related work.}
+In this section, we discuss how \bpfbox{} and \bpfcontain{} improve upon the status quo in
+confinement, with a particular emphasis on how their unique properties encourage
+application- and container-specific confinement, and promote local policy variation. We
+also examine how their implementation as \gls{ebpf}-based security solutions positions
+them as highly adoptable alternatives to traditional kernel security mechanisms, with the
+potential to drive further innovation going forward.
+
+\subsection{Application-Specific and Container-Specific Policies}
 
 \begin{inprogress}
   Application-specific and container-specific policies
@@ -29,22 +35,11 @@ quo in confinement. Specifically, it will compare both systems with related work
     \item User-defined policies then focus on defining specific exceptions to the security boundary
     \item This mirrors the idea of provisioning shared resources in a virtual machine
   \end{itemize}
+\end{inprogress}
 
-  \gls{ebpf} and adoptability
-  \begin{itemize}
-    \item Adoptability that comes with \gls{ebpf} compared with traditional \glspl{lsm}
-    \item Companies are already using \gls{ebpf} in production for performance monitoring use cases
-    \item The KRSI patch that provides \gls{lsm} probes was invented at Google for custom policies and security auditing in their production servers
-    \item The barrier to entry for running new \gls{ebpf} code on a production system is much lower than a new kernel module or kernel patch
-    \item \gls{ebpf} kernel code is far less likely to have adverse side effects, security vulnerabilities
+\subsection{Encouraging Local Policy Variation}
 
-    \item Another advantage of an \gls{ebpf}-based solution over traditional solutions is that it is far easier to extend and modify
-    \item Rapidly prototype, test, and deploy new kernel security mechanisms
-    \item Easy to modify \bpfbox{} and \bpfcontain{} to support new rule types, employ different policy defaults, and to include other aspects of system state
-    \item In the future, we will likely see \gls{ebpf} being increasingly used to develop new and innovative security solutions, combining
-    system observability with policy enforcement
-  \end{itemize}
-
+\begin{inprogress}
   Simple yet expressive policies encourage local policy variation
   \begin{itemize}
     \item Diversity in computer security is an area that is now seeing increasing exploration (cite some of Anil's papers)
@@ -65,6 +60,25 @@ quo in confinement. Specifically, it will compare both systems with related work
     for this software can confound attackers, much in the same way that source-level or binary-level variations would.
     \item \bpfbox{} and \bpfcontain{} are ideal security mechanisms for encouraging this kind of policy variation,
     because they are designed for a local administrator to tailor a security policy to precisely the set of desired functionality
+  \end{itemize}
+\end{inprogress}
+
+\subsection{\glsentryshort{ebpf}, Adoptability, and Future Innovation}
+
+\begin{inprogress}
+  \gls{ebpf} and adoptability
+  \begin{itemize}
+    \item Adoptability that comes with \gls{ebpf} compared with traditional \glspl{lsm}
+    \item Companies are already using \gls{ebpf} in production for performance monitoring use cases
+    \item The KRSI patch that provides \gls{lsm} probes was invented at Google for custom policies and security auditing in their production servers
+    \item The barrier to entry for running new \gls{ebpf} code on a production system is much lower than a new kernel module or kernel patch
+    \item \gls{ebpf} kernel code is far less likely to have adverse side effects, security vulnerabilities
+
+    \item Another advantage of an \gls{ebpf}-based solution over traditional solutions is that it is far easier to extend and modify
+    \item Rapidly prototype, test, and deploy new kernel security mechanisms
+    \item Easy to modify \bpfbox{} and \bpfcontain{} to support new rule types, employ different policy defaults, and to include other aspects of system state
+    \item In the future, we will likely see \gls{ebpf} being increasingly used to develop new and innovative security solutions, combining
+    system observability with policy enforcement
   \end{itemize}
 \end{inprogress}
 
@@ -170,7 +184,14 @@ the policy enforcement mechanism or future improvements to the \gls{ebpf} ecosys
 \section{Future Work and Research Directions}%
 \label{s:disc-future-work}
 
-\todo{This section will discuss opportunities for future work.}
+This section discusses opportunities for future work, both in terms of directly extending
+\bpfbox{} and \bpfcontain{} and indirectly improving them through iterations on the
+\gls{ebpf} ecosystem. We also discuss future research directions, proposing new evaluation
+strategies and policy language experimentation that can further guide the development of
+these research systems. In particular, we discuss conducting a user study to evaluate the
+usability of \bpfbox{} and \bpfcontain{}, the addition of a new \gls{bpf} namespace and
+unprivileged \gls{bpf}, integration with Docker and the \gls{oci} specification,
+finer-grained network policy, automated policy generation, and a policy management \gls{gui}.
 
 \subsection{Policy Language Experimentation and Usability Study}
 
@@ -271,5 +292,27 @@ the policy enforcement mechanism or future improvements to the \gls{ebpf} ecosys
 \section{Conclusion}
 \label{s:disc-conclusion}
 
-\todo{This section will conclude the thesis, highlighting the important aspects of
-\bpfbox{} and \bpfcontain{} and contributions}
+This thesis has presented the design, implementation, and motivation behind \bpfbox{} and
+\bpfcontain{}, two novel confinement mechanisms for the Linux kernel, with an emphasis on
+simple yet precise policies, application- and container-specific confinement, and high
+adoptability. We analyze the performance of these research systems and find that they are
+competitive with existing confinement implementations while providing superior flexibility
+for local confinement. While undoubtedly useful on their own, perhaps the greatest value
+provided by these research systems is as a proof of concept, demonstrating the value of
+\gls{ebpf}-based confinement solutions.
+
+A myriad of potential extensions of \bpfbox{} and \bpfcontain{} can provide increased
+security and flexibility as well as significantly reduce overhead to achieve better
+performance than competitive solutions.  Extensions on top of the existing \gls{bpf}
+ecosystem can help to position it as the dominant framework for implementing future
+kernel-based security solutions. Such extensions can help to improve \bpfbox{} and
+\bpfcontain{} as well as promote the adoption of other security mechanisms based on
+\gls{ebpf}.
+
+In the future, a security solution based on \gls{ebpf} may comprise a generic framework,
+capable of loading and managing multiple \gls{bpf} program types to hook into any aspect
+of system behaviour. Such a solution would encompass the capabilities of \bpfbox{} and
+\bpfcontain{} and potentially expand them to include intrusion detection, network
+filtering, software hot patches, and beyond. In the short term, improvements on top of the
+\gls{ebpf} ecosystem as well as \bpfbox{} and \bpfcontain{} can make incremental progress
+towards such a system.
