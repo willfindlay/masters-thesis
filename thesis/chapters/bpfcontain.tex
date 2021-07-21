@@ -401,10 +401,10 @@ state management in more detail.
 enables it to attach \gls{ebpf} programs to \gls{lsm} hooks in the kernel. In cases where
 \gls{lsm} hooks alone are insufficient or no \gls{lsm} hook is exposed to guard the target
 operation, \bpfcontain{} falls back to an fentry probe, hooking the underlying kernel
-functions directly. In total, \bpfcontain{} instruments 39 \gls{lsm} probes, covering
+functions directly. In total, \bpfcontain{} instruments 46 \gls{lsm} probes, covering
 filesystem, network socket, \gls{ipc}, and capability-level access, in addition to
 miscellaneous privileged operations like loading a kernel module or updating an \gls{ebpf}
-program or map.  One fentry probe is used to prevent a container from modifying its
+program or map. One fentry probe is used to prevent a container from modifying its
 namespace membership after starting confinement.
 
 \bpfcontain{} supports four distinct policy decisions for security-sensitive operations:

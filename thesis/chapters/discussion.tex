@@ -352,45 +352,102 @@ implementation. While these results are satisfactory, based on the number of add
 these research systems provide, there is a key opportunity to improve performance in one
 critical area: passive overhead on the system as a whole.
 
-The problem is as follows. \todo{Explain problem here}
+The problem is as follows. \bpfbox{} and \bpfcontain{} are designed to be process- and
+container-specific, rather than enforcing policy globally. Thus, they would ideally exert
+no additional performance overhead on unconfined applications. However, \gls{ebpf} and the
+\gls{lsm} hooks themselves are both \textit{global} mechanisms. Whenever a process make
+a system call, it always triggers the corresponding \gls{lsm} hook, which in turn always
+triggers the corresponding \gls{bpf} program. To filter out unconfined processes, we use
+a simple map lookup to query the process state\,---\,if it exists, we assume a confined
+process; if not, we assume an unconfined process and return early. Item \Circled{A} in
+\Cref{fig:disc-hooks} depicts this code path.
 
-\begin{inprogress}
-  \begin{itemize}
-    \item Currently, \bpfbox{} and \bpfcontain{} are competitive with mainstream
-    confinement solutions based on \gls{lsm} (e.g.~AppArmor, see chapter 6)
-    \item This competitiveness is actually an advantage, considering that \bpfbox{} and
-    \bpfcontain{} can be dynamically loaded and attached to various system events. In this sense,
-    we are getting increased flexibility without paying much of a cost in performance.
-    \item But, \bpfbox{} and \bpfcontain{} have the potential to be far more performant than
-    conventional \gls{lsm}s in one critical case: passive overhead on the rest of the system.
-    \item Due to a current limitation of how KRSI works, its \gls{ebpf} \gls{lsm} hooks are
-    always globally invoked, regardless of whether the target process is of interest to us or not.
-    \item The current pattern looks like (Invoke Syscall $\rightarrow$ Invoke Hook
-    $\rightarrow$ Invoke BPF Program $\rightarrow$ Filter Logic $\rightarrow$ Return from
-    BPF Program $\rightarrow$ Return from Hook $\rightarrow$ Return from Syscall).
-    \item In the future, we may be able to move the filter logic to the step
-    \textit{before}  the hook is called, or at the very least before the BPF program is
-    called. This would nearly eliminate any passive overhead on the unconfined parts of the system.
-    \item I have a plan for this: introducing a new namespace for \gls{bpf} programs and
-    maps. (Forward ref to BPF namespace and unprivileged BPF)
-  \end{itemize}
-\end{inprogress}
+Ideally, we would like to implement a filter that triggers \textit{before} \gls{lsm} hook
+invocation. Item \Circled{B} in \Cref{fig:disc-hooks} depicts this alternative code path.
+By filtering early, we could avoid the overhead of dynamic dispatch into the \gls{lsm}
+hook and \gls{bpf} program invocation entirely in the passive case. Thus, such an
+implementation would significantly outperform traditional \glspl{lsm} such as AppArmor and
+SELinux in global overhead, at a slight fixed cost of invoking filter logic before hook
+invocation.  Intuitively, it makes sense that the current \gls{lsm} hooks implementation does
+not employ this strategy\,---\,classically, \gls{lsm} hooks were \textit{meant to be global}.
+With the advent of the \gls{bpf} \gls{lsm}, this is no longer necessarily the case.
+
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/discussion/hooks.pdf}
+  \caption[The code path taken by BPF LSM and accompanying overhead]{
+    The code path taken by \gls{bpf} \gls{lsm} and accompanying overhead. \Circled{A} shows the current \gls{bpf}
+    \gls{lsm} implementation. System calls invoke \gls{lsm} stubs which trigger dynamic
+    dispatch into \gls{lsm} hooks. These hooks then invoke a \gls{bpf} program, which
+    implements filtering and security enforcement logic. \Circled{B} shows the ideal
+    implementation that optimizes for overhead in the passive case by filtering
+    \textit{before} \gls{lsm} hook invocation.
+  }%
+  \label{fig:disc-hooks}
+\end{figure}
+
+Transitioning from the existing \gls{lsm} execution model to the model proposed above will
+require explicit support from the kernel. Since it likely does not make sense to offer
+such filtration logic in the general case, any implementation will likely need to be
+\gls{bpf}-specific. \Cref{ss:bpf-namespace} proposes a realistic extension to the
+\gls{bpf} ecosystem that could make such a change feasible: the \gls{bpf} namespace.
+
+% \begin{inprogress}
+%   \begin{itemize}
+%     \item Currently, \bpfbox{} and \bpfcontain{} are competitive with mainstream
+%     confinement solutions based on \gls{lsm} (e.g.~AppArmor, see chapter 6)
+%     \item This competitiveness is actually an advantage, considering that \bpfbox{} and
+%     \bpfcontain{} can be dynamically loaded and attached to various system events. In this sense,
+%     we are getting increased flexibility without paying much of a cost in performance.
+%     \item But, \bpfbox{} and \bpfcontain{} have the potential to be far more performant than
+%     conventional \gls{lsm}s in one critical case: passive overhead on the rest of the system.
+%     \item Due to a current limitation of how KRSI works, its \gls{ebpf} \gls{lsm} hooks are
+%     always globally invoked, regardless of whether the target process is of interest to us or not.
+%     \item The current pattern looks like (Invoke Syscall $\rightarrow$ Invoke Hook
+%     $\rightarrow$ Invoke BPF Program $\rightarrow$ Filter Logic $\rightarrow$ Return from
+%     BPF Program $\rightarrow$ Return from Hook $\rightarrow$ Return from Syscall).
+%     \item In the future, we may be able to move the filter logic to the step
+%     \textit{before}  the hook is called, or at the very least before the BPF program is
+%     called. This would nearly eliminate any passive overhead on the unconfined parts of the system.
+%     \item I have a plan for this: introducing a new namespace for \gls{bpf} programs and
+%     maps. (Forward ref to BPF namespace and unprivileged BPF)
+%   \end{itemize}
+% \end{inprogress}
 
 \subsection{Network Policy Granularity}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item Network policy in \bpfbox{} and \bpfcontain{} is currently very coarse-grained
-    \item Only operates at the socket level, and does not considered nuanced access
-    controls such as at the per-IP-address level.
-    \item This means that specifying access to the network essentially gives the process or container
-    access to the global network.
-    \item While this is not problematic for applications that do not require network access,
-    it quickly becomes an overprivilege issue for applications that do.
-    \item To fix this, we can introduce a finer-grained network policy that specifies per-IP network access, an extension which
-    is possible using currently available \gls{ebpf} technology. (Forward ref to protocol-level network policy)
-  \end{itemize}
-\end{inprogress}
+Currently, \bpfbox{} and \bpfcontain{} both expose a highly coarse-grained network policy
+to the user. In particular, network policy only operates at the socket level, and does not
+consider more nuanced access controls, such as filtering by \gls{ip} address. This means
+that specifying access to a network resource essentially gives a process of container
+global access to network resources, so long as any requested access conforms to a subset
+of specified operations. While this is not strictly problematic for applications that do
+not require network access, it quickly becomes an overprivilege issue for applications
+that do.
+
+Under the current implementation, provisioning a fine-grained network policy would require
+a netfilter-based firewall such as iptables. While this is not strictly an issue, one of
+the main goals of \bpfbox{} and \bpfcontain{} is to eliminate the need to recombine
+existing policy mechanisms. Therefore, it would be best if we could incorporate
+finer-grained network policy into future iterations. Such a network policy is possible to
+enforce using \gls{ebpf}; rather than \gls{lsm} probes, we would leverage another program
+type, \texttt{TC\_CLSACT}, to implement packet filtering decisions at the protocol-level.
+We discuss the specific details of such an implementation in
+\Cref{ss:disc-fine-grained-network}.
+
+% \begin{inprogress}
+%   \begin{itemize}
+%     \item Network policy in \bpfbox{} and \bpfcontain{} is currently very coarse-grained
+%     \item Only operates at the socket level, and does not considered nuanced access
+%     controls such as at the per-IP-address level.
+%     \item This means that specifying access to the network essentially gives the process or container
+%     access to the global network.
+%     \item While this is not problematic for applications that do not require network access,
+%     it quickly becomes an overprivilege issue for applications that do.
+%     \item To fix this, we can introduce a finer-grained network policy that specifies per-IP network access, an extension which
+%     is possible using currently available \gls{ebpf} technology. (Forward ref to protocol-level network policy)
+%   \end{itemize}
+% \end{inprogress}
 
 
 \section{Future Work and Research Directions}%
@@ -446,11 +503,49 @@ finer-grained network policy, automated policy generation, and a policy manageme
   \end{itemize}
 \end{inprogress}
 
-\subsection{The BPF Namespace and Unprivileged BPF}
+\subsection{The BPF Namespace and Unprivileged BPF}%
+\label{ss:bpf-namespace}
 
 \begin{inprogress}
+  The BPF namespace
   \begin{itemize}
-    \item
+    \item The missing component from \gls{ebpf} that would take \bpfbox{} and \bpfcontain{} to the next level
+    \item The idea is simple: Implement a new namespace category in Linux, specific to \gls{bpf} programs and maps
+    \item This namespace would then act as a preliminary filter, virtualizing \gls{bpf} programs and maps according to namespace membership
+    \item A program would only apply to a thread running under the same namespace, and map accesses would be virtualized in a similar way
+    \item This can be used to implement the kind of early filtering for \gls{bpf} \gls{lsm} discussed earlier in the chapter
+    \item Reduce the overhead of \bpfbox{} and \bpfcontain{} in the passive case by attaching programs to a specific \gls{bpf} namespace
+    \item Would just need to take care that a task cannot switch out of the \gls{bpf} namespace to escape confinement
+
+    \item The \gls{bpf} namespace would be useful for other \gls{bpf} program types as well, in addition to \gls{lsm}
+    \item For example, we might only want a specific kprobe or uprobe to apply for certain processes, rather than the entire system
+    \item Such a namespace likely wouldn't be difficult to implement, would just require
+    revisiting the way \gls{bpf} programs are attached and they way programs and maps are
+    referenced in the kernel
+  \end{itemize}
+
+  Unprivileged BPF
+  \begin{itemize}
+    \item A natural extension that arises from \gls{bpf} namespace support
+    \item If we can get the semantics of a \gls{bpf} namespace right, it could enable unprivileged processes to load \gls{bpf} programs for self-introspection
+    \item This is considered a \enquote{Holy Grail} of \gls{ebpf}
+    \item Note that others have tried and failed at introducing unprivileged \gls{bpf} in the past, it's easy to get burned if you're not careful
+    \item Cite Landlock as an example
+    \item A few things to consider:
+    \begin{enumerate}
+      \item BPF as an attack vector into the kernel... The verifier is often a ripe target
+      for exploitation due to its complexity, need to consider the additional attack
+      surface exposed by allowing arbitrary users to invoke the verifier.
+      \item Need to be careful not to accidentally enable arbitrary code execution in the
+      kernel. Helpers should probably be specifically allow-listed for unprivileged
+      \gls{bpf}, to avoid potential code execution issues
+      \item Need to be very careful to ensure that information cannot leak from outside
+      the \gls{bpf} namespace... Otherwise we enable unprivileged processes to spy on the
+      kernel
+    \end{enumerate}
+    \item Conclusion? Unprivileged \gls{bpf} would be very nice to have, and the \gls{bpf}
+    namespace seems like a clear path toward this, but we need to be very careful when
+    designing the \gls{api}, particularly from a security perspective
   \end{itemize}
 \end{inprogress}
 
@@ -458,11 +553,13 @@ finer-grained network policy, automated policy generation, and a policy manageme
 
 \begin{inprogress}
   \begin{itemize}
-    \item
+    \item Integration with Docker and the OCI spec seems like a natural path forward for \bpfcontain{}
+    \item \todo{Borrow some ideas from the discussion in our paper}
   \end{itemize}
 \end{inprogress}
 
-\subsection{Fine-Grained Network Policy}
+\subsection{Fine-Grained Network Policy}%
+\label{ss:disc-fine-grained-network}
 
 \begin{inprogress}
   The problem with existing network policy
