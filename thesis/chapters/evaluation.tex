@@ -6,27 +6,59 @@ of a performance evaluation involving micro- and macro-benchmarking of \bpfbox{}
 presents a security analysis of \bpfbox{} and \bpfcontain{} under the threat model
 outlined in \Cref{s:cp-threat-model} of \Cref{c:confinement-problem}.
 
+\section{Performance Evaluation}%
+\label{s:eval-performance}
+
+This section presents a performance evaluation of \bpfbox{} and \bpfcontain{}, measuring
+their performance overhead using a variety of benchmarking tests. In particular, we
+leverage the Phoronix Test Suite~\cite{phoronix} to measure overhead across a variety of
+computational tasks, workloads, and kernel interfaces. Each of these benchmarks exercises
+a different subset of \bpfbox{} and \bpfcontain{}'s enforcement engine, providing a good
+approximation of their impact on the overall system. The subsections that follow provide an
+overview of the testing methodology and present the benchmark results.
+
+\subsection{Methodology}%
+\label{ss:eval-methodology}
+
 \begin{inprogress}
-  Might be useful for later when we compare with AppArmor:
+  \begin{itemize}
+    \item Test environment
+    \begin{itemize}
+      \item Describe system specs
+      \item To improve benchmark accuracy, we disable ...
+      \item We run tests in a privileged Docker container
+      \item Arch Linux Kernel 5.12.15-arch-1
+    \end{itemize}
+
+    \item Phoronix Test Suite tests
+    \begin{itemize}
+      \item \todo{Describe each test in detail and explain what LSM hooks it exercises}
+    \end{itemize}
+
+    \item \todo{Other tests if we have time}
+
+    \item Explain each test case (base, \{bpfbox, bpfcontain, apparmor\}, \{passive, allow, complaining\})
+    \item Run reach test for at least 11 trials, until we achieve an acceptable standard deviation ($<2\%$)
+    \item Discard first run of each trial, to control for initial I/O transients and caching
+    \item Reproducibility, give \bpfbox{} and \bpfcontain{} version, with tags on GitHub
+    \item Link to the benchmarking repo
+
+  \end{itemize}
+\end{inprogress}
+
+\subsection{Results}%
+\label{ss:eval-results}
+
+\todo{Present each test, table of results, perhaps a graph of results. Accompany each test with some text explaining the result}
+
+\begin{inprogress}
+  \todo{Discuss a comparison with SELinux at the end, perhaps citing Zhang et al?}
   \begin{itemize}
     \item Zhang \etal~\cite{zhang2021_lsm_file_overhead} evaluated the performance
     overhead of LSMs on file system operations; they mentioned (really damning) performance
     statistics for SELinux that can be compared with BPFContain and AppArmor
   \end{itemize}
 \end{inprogress}
-
-\section{Performance Evaluation}%
-\label{s:eval-performance}
-
-\begin{inprogress}
-Here, we evaluate the overhead of \bpfbox{} and \bpfcontain{} by examining their performance
-over a series of macro- and micro-benchmarks. For
-\end{inprogress}
-
-\subsection{Methodology}%
-\label{ss:performance-methodology}
-
-
 
 \section{Security Analysis}%
 \label{s:eval-security}

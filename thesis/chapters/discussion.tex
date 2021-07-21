@@ -5,8 +5,20 @@ propose ways to address current limitations, improve the \gls{ebpf} ecosystem fo
 confinement use cases, add features to \bpfbox{} and \bpfcontain{}, and conduct further
 research on the usability of both systems.
 
+\section{Contributions}%
+\label{s:disc-contributions}
+
+\todo{Provide an overview of our contributions, what we did, state it in the least
+controversial way possible. Think of these as bringing together chapter 6 and 7, couple of
+sentences per section. Tie chapters together, say the uncontroversial part here.}
+
+\todo{So like, in chapter X, we did this. Then use a couple sections per section.
+Non-controversial, very matter-of-fact}
+
 \section{Improving the Status Quo}%
 \label{s:disc-improving}
+
+\todo{Move this section to after the limitations}
 
 In this section, we discuss how \bpfbox{} and \bpfcontain{} improve upon the status quo in
 confinement, with a particular emphasis on how their unique properties encourage
@@ -348,9 +360,11 @@ side.
 According to the performance evaluation results in \Cref{s:eval-performance} of
 \Cref{c:evaluation}, both \bpfbox{} and \bpfcontain{} offer competitive performance with
 AppArmor while offering the higher flexibility afforded to an \gls{ebpf}-based
-implementation. While these results are satisfactory, based on the number of additional benefits
-these research systems provide, there is a key opportunity to improve performance in one
-critical area: passive overhead on the system as a whole.
+implementation. While these results are satisfactory, based on the number of additional
+benefits these research systems provide, there is a key opportunity to improve performance
+in one critical area: passive overhead on the system as a whole. \todo{We are in SELinux
+territory, we are playing the same game they are... It's already what everyone uses, so
+overhead being in line is acceptable}
 
 The problem is as follows. \bpfbox{} and \bpfcontain{} are designed to be process- and
 container-specific, rather than enforcing policy globally. Thus, they would ideally exert
@@ -449,6 +463,16 @@ We discuss the specific details of such an implementation in
 %   \end{itemize}
 % \end{inprogress}
 
+\subsection{Security Guarantees}
+
+\todo{talk about fundamental limitations of \gls{ebpf} as a security mechanism, how we depend on the kernel}
+
+\todo{others have used \gls{ebpf} for security, but nobody has really thought through the implications of defining security policy in this way}
+
+\todo{talk about how a formal analysis/verification of \gls{ebpf} could help solidify it as a base}
+
+\todo{talk about how we have no formal analysis currently, left for future work}
+
 
 \section{Future Work and Research Directions}%
 \label{s:disc-future-work}
@@ -461,6 +485,8 @@ these research systems. In particular, we discuss conducting a user study to eva
 usability of \bpfbox{} and \bpfcontain{}, the addition of a new \gls{bpf} namespace and
 unprivileged \gls{bpf}, integration with Docker and the \gls{oci} specification,
 finer-grained network policy, automated policy generation, and a policy management \gls{gui}.
+
+\todo{Make it more clear that most of the limitations come from \gls{ebpf}}
 
 \subsection{Policy Language Experimentation and Usability Study}
 

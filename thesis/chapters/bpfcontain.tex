@@ -293,7 +293,11 @@ most important implementation details in the subsections that follow.
 \label{ss:bpfcontain-serde}
 
 \bpfcontain{} implements policy deserialization using Serde~\cite{serde}, a data
-serialization crate for Rust. Serde leverages Rust's powerful type system and procedural
+serialization crate for Rust. \todo{Explain the design choice that motivated us to move
+away from a DSL... We want to have people design policies and so the tooling around the
+policy is kind of important.}
+
+Serde leverages Rust's powerful type system and procedural
 macros to derive serialization and deserialization logic for vanilla Rust structs and
 enums. Rust crates that consume Serde's \gls{api} can then use the automatically generated
 logic for serialization and deserialization. This design enables a plug-and-play
