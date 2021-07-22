@@ -1,3 +1,11 @@
+In this chapter, we examine specific case studies, applying \bpfbox{} and \bpfcontain{}
+policies to solve realistic problems. In particular, we examine the default Docker policy,
+a more complex example involving a web server and database, and provide an example of how
+\bpfcontain{} can be used to apply basic confinement to an untrusted container. To offer
+a basis for comparison, we contrast presented policies with some available equivalents and
+discuss how the semantics of the policy language and enforcement engine can impact the
+resulting policy file.
+
 % \section{Methodology}
 
 % \todo{This section will present the methodology used to select existing policies and
@@ -6,11 +14,229 @@
 
 \section{The Default Docker Policy}
 
-\todo{This section will describe how \bpfbox{} and \bpfcontain{} can be used to implement
-the default Docker confinement policy and compare it with AppArmor/SELinux/Seccomp-bpf policy}
+Docker~\cite{docker_security} applies a coarse-grained default confinement policy to all
+containers using a combination of Linux confinement primitives. On supported
+systems\footnote{Recall that not all Linux distributions support AppArmor or Seccomp-bpf
+to begin with. In such cases, Docker simply discards its default confinement policy
+altogether.}, this includes a default AppArmor policy template~\cite{docker_apparmor,
+docker_default_apparmor}, a default Seccomp-bpf profile, and a set of POSIX capabilities
+which are dropped at runtime~\cite{docker_security}.
+
+Docker's policy defaults are highly coarse-grained, with an emphasis on practical security
+while ensuring that the vast majority of container configurations will \enquote{just
+work,} out of the box. This affords a practical opportunity to examine how \bpfbox{} and
+\bpfcontain{} policies compare with the default Docker policy. \Cref{tab:docker-default}
+summarizes the key aspects of Docker's confinement policy, highlighting default access
+levels enforced by various Linux confinement primitives. \Cref{lst:docker-default} depicts
+Docker's default AppArmor template, taken directly from the Docker sources on
+GitHub~\cite{docker_default_apparmor}.
+
+\begin{table}[htpb]
+  \centering
+  \caption[The default Docker confinement policy]{
+    A summary of Docker's default confinement policy~\cite{docker_security,
+    docker_apparmor, docker_default_apparmor}. Policy is enforced using a number of Linux
+    confinement primitives, including AppArmor, Seccomp-bpf, and dropped POSIX
+    capabilities at runtime. Docker generates and loads AppArmor policy at container
+    runtime using a pre-determined, coarse-grained AppArmor template file
+    (c.f.~\Cref{lst:docker-default}).
+  }%
+  \label{tab:docker-default}
+  \footnotesize
+  \begin{tabular}{lp{2in}p{1.6in}}
+  \toprule
+  Access Category & Default & Docker Implementation \\
+  \midrule
+  Files & Allow access to all files except specific procfs and sysfs entries. & AppArmor Template \\
+  Filesystem Mounts & Deny all filesystem mounts. & AppArmor Template \\
+  POSIX Capabilities & All capabilities enabled in AppArmor.  Drop specific capabilities at runtime. & AppArmor Template and Dropped Capabilities \\
+  Ptrace & Allowed within container. & AppArmor Template \\
+  Signals & Allowed within container. & AppArmor Template \\
+  Network & Allow all network access. & AppArmor Template \\
+  \gls{ipc} & Allow all \gls{ipc} access. & AppArmor Template \\
+  System Calls & Deny about 60 obsolete/dangerous system calls. & Seccomp-bpf \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{lstlisting}[language=none, gobble=4,
+  caption={[Docker's default AppArmor template]
+    Docker's default AppArmor template~\cite{docker_default_apparmor}, at the time of
+    writing this thesis. Docker uses Go's string templating syntax to modify the AppArmor
+    profile according to the current Docker version and container metadata.
+  },
+  label={lst:docker-default}, float]
+    {{range $value := .Imports}}
+      {{$value}}
+    {{end}}
+    profile {{.Name}} flags=(attach_disconnected,mediate_deleted) {
+    {{range $value := .InnerImports}}
+      {{$value}}
+    {{end}}
+      network,
+      capability,
+      file,
+      umount,
+    {{if ge .Version 208096}}
+      # Host (privileged) processes may send signals to container processes.
+      signal (receive) peer=unconfined,
+      # dockerd may send signals to container processes (for "docker kill").
+      signal (receive) peer={{.DaemonProfile}},
+      # Container processes may send signals amongst themselves.
+      signal (send,receive) peer={{.Name}},
+    {{end}}
+     # deny write for all files directly in /proc (not in a subdir)
+      deny @{PROC}/* w,
+      # deny write to files not in /proc/<number>/** or /proc/sys/**
+      deny @{PROC}/{[^1-9],[^1-9][^0-9],
+        [^1-9s][^0-9y][^0-9s],[^1-9][^0-9][^0-9][^0-9]*}/** w,
+      # deny /proc/sys except /proc/sys/k* (effectively /proc/sys/kernel)
+      deny @{PROC}/sys/[^k]** w,
+      # deny everything except shm* in /proc/sys/kernel/
+      deny @{PROC}/sys/kernel/{?,??,[^s][^h][^m]**} w,
+      deny @{PROC}/sysrq-trigger rwklx,
+      deny @{PROC}/kcore rwklx,
+      deny mount,
+      deny /sys/[^f]*/** wklx,
+      deny /sys/f[^s]*/** wklx,
+      deny /sys/fs/[^c]*/** wklx,
+      deny /sys/fs/c[^g]*/** wklx,
+      deny /sys/fs/cg[^r]*/** wklx,
+      deny /sys/firmware/** rwklx,
+      deny /sys/kernel/security/** rwklx,
+    {{if ge .Version 208095}}
+      # suppress ptrace denials when using 'docker ps' or using 'ps' inside a container
+      ptrace (trace,read,tracedby,readby) peer={{.Name}},
+    {{end}}
+    }
+\end{lstlisting}
+
+We begin by examining a mostly equivalent policy in \bpfbox{}, given in
+\Cref{lst:bpfbox-docker-default}.  Re-implementing Docker's default confinement policy in
+\bpfbox{} is surprisingly challenging. \bpfbox{} is not designed to implement
+coarse-grained confinement policy, and so specifying things like global access to all
+files is impossible. We compromise by granting recursive access to all files within
+a given filesystem, repeating the process for each filesystem as required. This is
+\textit{not} the intended use case for \bpfbox{} file rules, but it is required to match
+the over-permissive filesystem access provisioned by Docker. Aside from
+filesystem-specific policy, most of Docker's default policy can be implemented relatively
+easily and cleanly in \bpfbox{}'s policy language.
+
+\begin{lstlisting}[language=bpfbox, gobble=4,
+  caption={[Implementing the default Docker policy in \bpfbox{}]
+    Implementing the default Docker policy in \bpfbox{}.
+    \todo{High-level overview of the policy}
+  },
+  label={lst:bpfbox-docker-default}]
+    #![profile "/path/to/init/program"]
+
+    #[allow] {
+      /* Allow essentially global access to a filesystem */
+      fs("/path/to/filesystem/**", read|write|setattr|getattr|rm|link|ioctl)
+      /* Repeat for others... */
+
+      /* Allow access to /proc/sys/kernel/shm* */
+      fs("/proc/sys/kernel/shm*", read|write|setattr|getattr)
+
+      /* Sensible default access for procfs per-pid entries */
+      proc(self, read|write)
+      proc(child, read|write)
+    }
+
+    #[allow]
+    #[taint]
+    {
+      /* Access to network families */
+      net(inet, any)
+      net(inet6, any)
+      net(unix, any)
+      /* Ptrace child processes */
+      ptrace(child, read|write|attach)
+      /* Send sigchld up to parent processes, any signal to children */
+      signal(parent, sigchld)
+      signal(child, any)
+    }
+
+    #[transition]
+    #[untaint]
+    {
+      /* Allow execve calls to allowed executables,
+       * tainting and transitioning profiles when doing so */
+      fs("/path/to/allowed/executable", read|exec)
+      /* Repeat for others... */
+    }
+\end{lstlisting}
+
+Like Docker's AppArmor policy, our \bpfbox{} policy enables access to per-pid entries in
+procfs and uses \bpfbox{}'s default-deny enforcement to restrict all others. Similar logic
+applies to the \texttt{/proc/sys/kernel/shm**} entries under procfs. We also grant full
+networking stack access, ptrace access for child processes, and full signal access for
+child processes running under the container. Since these operations have the potential to
+introduce vulnerabilities from outside sources, we mark them as tainting the corresponding
+process. Leveraging taintedness, the \bpfbox{} policy eliminates the need to specify
+access to shared library dependencies and other artifacts of the C runtime.
+
+For more complex container deployments that include more than a single binary, the
+\bpfbox{} policy may need to specify access to alternative executables under the
+container.  We do so using an individual file rule for each executable, optionally
+specifying that the process should untaint itself and/or transition to a new profile.
+Notably, the version of \bpfbox{} presented in this thesis does \textit{not} include
+capability-level policy, and so it is not included here\footnote{\bpfcontain{} later
+rectified this gap in \bpfbox{}'s policy language.}. However, the default Docker
+confinement policy does not implement capability-level filtering anyway, instead relying
+on dropped capabilities at runtime.
+
+Although the \bpfbox{} policy depicted in \Cref{lst:bpfbox-docker-default} does not fully
+map to the precise Docker default policy, it gets very close in most respects, aside from
+filesystem policy. Under \bpfbox{}, filesystem policy is necessarily finer-grained, as it
+does not support the ability to specify coarse-grained access to all files on the system.
+Despite these challenges, the end-result is a functional (and, in some aspects, more
+secure) alternative to the default Docker policy.
+
+\begin{lstlisting}[language=yaml, gobble=4,
+  caption={[Implementing the default Docker policy in \bpfcontain{}]
+    Implementing the default Docker policy in \bpfcontain{}. A few coarse-grained
+    allow-rules can be used to capture permissive Docker defaults that are not covered
+    under \bpfcontain{}'s default policy. Other aspects of the Docker defaults are already
+    covered under \bpfcontain{} defaults, such as the inability to mount filesystems,
+    perform a number of privileged system calls, and interact with non-pid entries in
+    procfs and sysfs. Due to \bpfcontain{}'s default policy for file access and \gls{ipc},
+    it is neither necessary to specify file access rules for files within the container's
+    overlay filesystem not \gls{ipc} rules for processes within the container.
+  },
+  label={lst:bpfcontain-docker-default}]
+    name: default-docker
+    defaultTaint: false
+
+    allow:
+      # Grant access to the entire root filesystem
+      fs: {pathname: /, access: any}
+      # Grant access to the entire networking stack
+      net: any
+      # Enable Docker default capabilities
+      # All other capabilities are denied
+      capability:
+        - chown
+        - dacoverride
+        - fsetid
+        - fowner
+        - mknod
+        - netraw
+        - setgid
+        - setuid
+        - setfcap
+        - setpcap
+        - netbindservice
+        - syschroot
+        - kill
+        - auditwrite
+
+    taint:
+      net: any
+\end{lstlisting}
 
 
-\section{Confining a Webserver and Database}
+\section{Confining a Web Server and Database}
 
 \todo{This section will describe how \bpfbox{} and \bpfcontain{} can be used to confine an
 Apache Webserver and Postgres Database configuration and then compare the resulting policy
@@ -19,3 +245,27 @@ with Snap, AppArmor, and SELinux}
 \section{The Untrusted Container Use Case}
 
 \todo{\bpfbox{} is not the right tool for this job, but \bpfcontain{} is}
+
+\begin{lstlisting}[language=yaml, gobble=4,
+  caption={[Confining an untrusted container with \bpfcontain{}]
+    Confining an untrusted container with \bpfcontain{}. \bpfcontain{}'s default
+    enforcement policy of defining a boundary around the container enables this policy to
+    be quite simple. A default-tainted policy enables container-level confinement without
+    specifying \textit{any} rules whatsoever. This policy can then be adjusted as
+    required, specifying file rules to provision access to volume mounts, network rules to
+    enable networking, and capability rules to enable access to specific POSIX
+    capabilities.
+  },
+  label={lst:bpfcontain-untrusted}, float]
+    name: untrusted-container
+    defaultTaint: true
+
+    allow:
+      # Specify full path and access for volume mounts from the host
+      file: {pathname: /path/to/volume/mount, access: rw}
+      # Uncomment if the container requires networking
+      # net: any
+      # Uncomment if the container requires any capabilities
+      # capability: [capDacOverrride] # etc.
+\end{lstlisting}
+
