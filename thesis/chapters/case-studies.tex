@@ -310,12 +310,6 @@ In order to achieve the same coarse granularity as the Docker policy, we adjust 
 \bpfcontain{} policy by incorporating a few additional allow rules, granting access to
 specific filesystems, the networking stack, and POSIX capabilities.
 
-\section{Confining a Web Server and Database}
-
-\todo{This section will describe how \bpfbox{} and \bpfcontain{} can be used to confine an
-Apache Webserver and Postgres Database configuration and then compare the resulting policy
-with Snap, AppArmor, and SELinux}
-
 \section{Confining an Untrusted Container}
 
 We now examine perhaps the most obvious and practical use case for \bpfcontain{}:
@@ -345,10 +339,13 @@ and demonstrate how it can be customized to match the container's specific needs
     allow:
       # Specify full path and access for volume mounts from the host
       file: {pathname: /path/to/volume/mount, access: rw}
+      # Repeat for other volume mounts as required...
+
       # Uncomment if the container requires networking
       # We could also define finer-grained access by replacing the "any"
       # keyword with specific socket operations
       # net: any
+
       # Uncomment if the container requires any capabilities
       # capability: [dacoverride, dacreadsearch, netbindservice] # etc.
 \end{lstlisting}
@@ -386,3 +383,10 @@ possesses these capabilities at runtime. For example, we may wish to grant the c
 the \texttt{DAC\_OVERRIDE} and \texttt{DAC\_READ\_SEARCH} capabilities to allow it to
 interact with the Docker volume we specified earlier, or the \texttt{NET\_BIND\_SERVICE}
 capability to allow it to bind to privileged ports.
+
+\section{Confining a Web Server and Database}
+
+\todo{This section will describe how \bpfbox{} and \bpfcontain{} can be used to confine an
+Apache Webserver and Postgres Database configuration and then compare the resulting policy
+with Snap, AppArmor, and SELinux}
+
