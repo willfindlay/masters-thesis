@@ -111,6 +111,8 @@ GitHub~\cite{docker_default_apparmor}.
     }
 \end{lstlisting}
 
+\subsubsection{\bpfbox{}}
+
 We begin by examining a mostly equivalent policy in \bpfbox{}, given in
 \Cref{lst:bpfbox-docker-default}.  Re-implementing Docker's default confinement policy in
 \bpfbox{} is surprisingly challenging. \bpfbox{} is not designed to implement
@@ -150,8 +152,10 @@ easily and cleanly in \bpfbox{}'s policy language.
       net(inet, any)
       net(inet6, any)
       net(unix, any)
+
       /* Ptrace child processes */
       ptrace(child, read|write|attach)
+
       /* Send sigchld up to parent processes, any signal to children */
       signal(parent, sigchld)
       signal(child, any)
@@ -193,6 +197,16 @@ does not support the ability to specify coarse-grained access to all files on th
 Despite these challenges, the end-result is a functional (and, in some aspects, more
 secure) alternative to the default Docker policy.
 
+\subsubsection{\bpfcontain{}}
+
+Having examined how \bpfbox{} can be used to implement an approximate version of Docker's
+default confinement policy, we now turn our attention to \bpfcontain{}.
+\Cref{lst:bpfcontain-docker-default} shows the full \bpfcontain{} policy. Note that many
+aspects of Docker's default policy are covered by \bpfcontain{}'s default
+container-boundary enforcement. Using this to its advantage, the \bpfcontain{} policy is
+significantly simpler than both the AppArmor and \bpfbox{} versions while maintaining the
+same level of expressiveness.
+
 \begin{lstlisting}[language=yaml, gobble=4,
   caption={[Implementing the default Docker policy in \bpfcontain{}]
     Implementing the default Docker policy in \bpfcontain{}. A few coarse-grained
@@ -206,13 +220,19 @@ secure) alternative to the default Docker policy.
   },
   label={lst:bpfcontain-docker-default}]
     name: default-docker
-    defaultTaint: false
+    defaultTaint: true
 
     allow:
       # Grant access to the entire root filesystem
       fs: {pathname: /, access: any}
+      # Grant access to tempfs
+      fs: {pathname: /tmp, access: any}
+      # Grant read/write access to /proc/sys/kernel/shm*
+      file: {pathname: /proc/sys/kernel/shm*, access: rw}
+
       # Grant access to the entire networking stack
       net: any
+
       # Enable Docker default capabilities
       # All other capabilities are denied
       capability:
@@ -230,11 +250,65 @@ secure) alternative to the default Docker policy.
         - syschroot
         - kill
         - auditwrite
-
-    taint:
-      net: any
 \end{lstlisting}
 
+Compared with \bpfbox{}, the \bpfcontain{} version of Docker's default policy is
+significantly simpler and fits more cleanly with Docker's AppArmor policy. This
+improvement is a direct result of a number of critical differences between \bpfbox{} and
+\bpfcontain{}. Whereas \bpfbox{} was designed for fine-grained, process-level confinement,
+\bpfcontain{} was directly designed with containers in mind. Since \bpfcontain{} policies
+are designed to be container-specific, they are far more appropriate for a use case
+centered around the confinement of containers. In particular, \bpfcontain{} incorporates
+container semantics into its default policy enforcement, greatly simplifying the resulting
+policy.  Further, changes to \bpfcontain{}'s policy language, including the introduction
+of a coarser-grained filesystem rule and capability rules enables the resulting policy to
+more closely match the original Docker AppArmor policy.
+
+To match Docker's default allow on all filesystem access, the \bpfcontain{} policy
+includes a rule to enable any file operation on files within the root filesystem.  As with
+\bpfbox{}, the point here is to match Docker's default policy, without considering the
+security implications of granting full access to the entire root filesystem. We include
+another rule to enable similar access on the temporary filesystem. Despite the coarse
+granularity of these filesystem rules, \bpfcontain{} maintains a critical advantage over
+\bpfbox{} and the original Docker policy. Due to its container-specific policy defaults,
+we can achieve Docker's fine-grained protection over procfs and sysfs for free. Thus,
+\bpfcontain{} entirely obviates the need to specify such rules in the policy.
+
+As with the procfs and sysfs policy, \bpfcontain{} also includes sensible defaults for
+\gls{ipc} and ptrace access. In particular, processes running within the same container
+are free to perform \gls{ipc} with one another and ptrace one another, so long as the
+basic Unix access rights are satisfied (e.g.~the process possesses CAP\_PTRACE or is the
+direct ancestor of the tracee). In the case of signals and ptrace, these defaults directly
+match the Docker policy (c.f.~\Cref{tab:docker-default}).  In other cases, these defaults
+are more secure than the Docker policy, while permits all other forms of \gls{ipc}
+regardless of container membership.
+
+To prevent a container from escaping confinement or interfering with the host,
+\bpfcontain{} prohibits the container from mounting filesystems, loading kernel modules,
+using \gls{ebpf}, changing the system time, rebooting the system, or performing a number
+of other privileged operations. These defaults also match or exceed Docker's default
+policy, and thus may also be omitted from the \bpfcontain{} policy.
+
+While many aspects of \bpfcontain{}'s default enforcement closely match the default Docker
+policy, \bpfcontain{}'s defaults remain strictly less permissive. For instance, the
+default Docker policy mandates that \texttt{/proc/sys/kernel/shm*} be accessible to
+containers, but \bpfcontain{} denies access to all procfs entries that do not belong to
+a container process. We define an exception to \bpfcontain{}'s default procfs policy by
+adding an explicit allow rule on this pathname. Similarly, \bpfcontain{}'s default policy
+forbids network access by default, and so we must explicitly grant the container
+permission to use the networking stack. Unlike Docker, \bpfcontain{} prohibits the use of
+any POSIX capability that is not directly specified in the policy file. Thus, we include
+an additional allow rule that mirrors the set of capabilities dropped by Docker at
+runtime.
+
+The resulting \bpfcontain{} policy implements a strict superset of Docker's default
+confinement policy, despite being significantly simpler, and more centralized.  Since
+\bpfcontain{} directly models the relationship between containerized processes and their
+resources, we can achieve significant portions of Docker's default policy for free. In
+many cases, this default enforcement is actually finer-grained than the Docker defaults.
+In order to achieve the same coarse granularity as the Docker policy, we adjust the
+\bpfcontain{} policy by incorporating a few additional allow rules, granting access to
+specific filesystems, the networking stack, and POSIX capabilities.
 
 \section{Confining a Web Server and Database}
 
@@ -242,7 +316,7 @@ secure) alternative to the default Docker policy.
 Apache Webserver and Postgres Database configuration and then compare the resulting policy
 with Snap, AppArmor, and SELinux}
 
-\section{The Untrusted Container Use Case}
+\section{Confining an Untrusted Container}
 
 \todo{\bpfbox{} is not the right tool for this job, but \bpfcontain{} is}
 
