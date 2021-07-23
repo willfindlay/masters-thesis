@@ -1,10 +1,10 @@
 In this chapter, we examine specific case studies, applying \bpfbox{} and \bpfcontain{}
-policies to solve realistic problems. In particular, we examine the default Docker policy,
-a more complex example involving a web server and database, and provide an example of how
-\bpfcontain{} can be used to apply basic confinement to an untrusted container. To offer
-a basis for comparison, we contrast presented policies with some available equivalents and
-discuss how the semantics of the policy language and enforcement engine can impact the
-resulting policy file.
+policies to solve realistic problems. In particular, we examine the default Docker policy
+and a more complex example confining a web server and database. We also provide an example
+of how \bpfcontain{} can be used to apply basic confinement to an untrusted container. To
+offer a basis for comparison, we contrast presented policies with some available
+equivalents and discuss how the semantics of the policy language and enforcement engine
+can impact the resulting policy file.
 
 % \section{Methodology}
 
@@ -318,7 +318,15 @@ with Snap, AppArmor, and SELinux}
 
 \section{Confining an Untrusted Container}
 
-\todo{\bpfbox{} is not the right tool for this job, but \bpfcontain{} is}
+We now examine perhaps the most obvious and practical use case for \bpfcontain{}:
+confining and untrusted container. For instance, consider a new container image, freshly
+downloaded from Docker Hub, to be used during application development or testing.  We
+assume that the system administrator does not trust this container images, and wishes to
+confine the resulting containers, preventing them from damaging the rest of the system,
+leaking information, or performing other unwanted actions. For this purpose, we leverage
+an extremely simple \bpfcontain{} policy (essentially the \enquote{Hello World} example)
+and demonstrate how it can be customized to match the container's specific needs.
+\Cref{lst:bpfcontain-untrusted} depicts this policy.
 
 \begin{lstlisting}[language=yaml, gobble=4,
   caption={[Confining an untrusted container with \bpfcontain{}]
@@ -338,8 +346,43 @@ with Snap, AppArmor, and SELinux}
       # Specify full path and access for volume mounts from the host
       file: {pathname: /path/to/volume/mount, access: rw}
       # Uncomment if the container requires networking
+      # We could also define finer-grained access by replacing the "any"
+      # keyword with specific socket operations
       # net: any
       # Uncomment if the container requires any capabilities
-      # capability: [capDacOverrride] # etc.
+      # capability: [dacoverride, dacreadsearch, netbindservice] # etc.
 \end{lstlisting}
 
+Note that \bpfbox{} is not the correct tool for this job. Without \bpfcontain{}'s semantic
+defaults, a \bpfbox{} policy would need to manually specify every single access required
+for the container to function. Thus, it is impossible to design a generically-applicable
+solution using \bpfbox{}. The key advantage of \bpfcontain{} here is that it can use
+container semantics to infer a default protection boundary for the container. This greatly
+simplifies the resulting policy while ensuring that the container is unable to access
+resources outside of its protection boundary, unless otherwise specified. The resulting
+\bpfcontain{} policy is just a few lines long.
+
+We define a default-tainted \bpfcontain{} policy called \enquote{untrusted-container}.
+Just this policy alone should be enough to confine a simple container. \bpfcontain{}'s
+default policy would prohibit network access, the use of any POSIX capabilities, access to
+any files outside of the container's overlay filesystem, and any operations that can
+impact the system as a whole. This default policy prevents entire classes of attacks,
+prohibiting the container from leaking outside information, changing global system
+parameters, loading code into the kernel, or forming unauthorized network connections. The
+reader is encouraged to revisit \Cref{fig:bpfcontain-enforcement} on page
+\pageref{fig:bpfcontain-enforcement} of \Cref{c:bpfcontain} for a depiction of how
+\bpfcontain{}'s default enforcement works.
+
+While the \bpfcontain{} default policy should be sufficient for simple use cases, more
+advanced container images may require some slight modification, introducing a few allow
+rules to define exceptions in \bpfcontain{}'s protection boundary. For instance, suppose
+the container image requires a docker volume to be mounted at runtime. To support this use
+case, we define a file rule, specifying the system path to the volume mount and the
+corresponding access pattern, such as \texttt{rw} for read and write access. All other
+accesses to the host filesystem remain denied. If the container requires access to the
+networking stack, we similarly define a net rule.  Capability rules can be used to allow
+the container to use a selected subset of POSIX capabilities, assuming it already
+possesses these capabilities at runtime. For example, we may wish to grant the container
+the \texttt{DAC\_OVERRIDE} and \texttt{DAC\_READ\_SEARCH} capabilities to allow it to
+interact with the Docker volume we specified earlier, or the \texttt{NET\_BIND\_SERVICE}
+capability to allow it to bind to privileged ports.
