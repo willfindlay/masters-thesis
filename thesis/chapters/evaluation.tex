@@ -20,6 +20,31 @@ overview of the testing methodology and present the benchmark results.
 \subsection{Methodology}%
 \label{ss:eval-methodology}
 
+For the test environment, we utilize a bare-metal system running Arch Linux with a stock
+5.12.14-arch-1-1 kernel. The choice of a bare-metal system reduces the risk of introducing
+additional sources of variance into the benchmarks. \Cref{tab:system-config} provides
+a detailed account of system configuration for the test system.
+
+\begin{table}[htpb]
+  \centering
+  \caption[System configuration for benchmarking tests]{System configuration for benchmarking tests.}%
+  \label{tab:system-config}
+  \begin{tabular}{ll}
+  \toprule
+  Item & Description / Configuration \\
+  \midrule
+  CPU & Intel i7-10875H; 8 cores, 16 threads at 2.3GHz; 16MB cache\\
+  GPU & Nvidia RTX 2060 with 6GB GDDR6 VRAM \\
+  RAM & 2$\times$16GB DDR4 at 3.2GHz \\
+  Disk & 1TiB Samsung NVME M.2 SSD \\
+  \midrule
+  \gls{os} & Arch Linux (Rolling) \\
+  Kernel & Linux 5.12.14-arch-1-1 \\
+  Libc & glibc v2.33-5 \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
 \begin{inprogress}
   \begin{itemize}
     \item Test environment
@@ -50,6 +75,44 @@ overview of the testing methodology and present the benchmark results.
 \label{ss:eval-results}
 
 \todo{Present each test, table of results, perhaps a graph of results. Accompany each test with some text explaining the result}
+
+\subsubsection{OSBench Results}
+
+\subsubsection{Kernel Compilation Results}
+
+\subsubsection{Apache Webserver Results}
+
+\subsection{Discussion of Results}%
+\label{ss:eval-performance-discussion}
+
+\begin{table}[htbp]
+  \centering
+  \caption[Geometric means of Phoronix benchmarking results]{
+    Geometric means of Phoronix benchmarking results.  These are indicative of over all
+    performance across all tests.  For each configuration, percent change from the base
+    result is also given.  Higher values are better.
+  }%
+  \label{tab:phoronix-geometric}
+  \begin{tabular}{llrr}
+  \toprule
+  System                        & Configuration & Geom. Mean & Percent Change (Base)\\
+  \midrule
+  Base                          & ---           & 6.238          & --- \\
+  \midrule
+  \multirow{3}{*}{AppArmor}     & Passive       & 6.158          &  -1.28\% \\
+                                & Allow         & 6.086          &  -2.35\% \\
+                                & Complain      & 4.962          & -20.46\% \\
+  \midrule
+  \multirow{3}{*}{BPFBox}       & Passive       & 6.007          & -3.70\% \\
+                                & Allow         & 5.944          & -4.71\% \\
+                                & Complain      & 5.823          & -6.65\% \\
+  \midrule
+  \multirow{3}{*}{BPFContain}   & Passive       & 5.951          & -4.60\% \\
+                                & Allow         & 5.763          & -7.61\% \\
+                                & Complain      & 5.693          & -8.74\% \\
+  \bottomrule
+  \end{tabular}
+\end{table}
 
 \begin{inprogress}
   \todo{Discuss a comparison with SELinux at the end, perhaps citing Zhang et al?}

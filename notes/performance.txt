@@ -1,0 +1,5 @@
+To get geometric mean of all results:
+    pts result-file-stats results
+
+To get statistical confidences for results:
+    pts executive-summary results
