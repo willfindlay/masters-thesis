@@ -387,6 +387,118 @@ capability to allow it to bind to privileged ports.
 \section{Confining a Web Server and Database}
 
 \todo{This section will describe how \bpfbox{} and \bpfcontain{} can be used to confine an
-Apache Webserver and Postgres Database configuration and then compare the resulting policy
+Apache Webserver and MySQL Database configuration and then compare the resulting policy
 with Snap, AppArmor, and SELinux}
 
+\subsubsection{\bpfbox{}}
+
+\begin{lstlisting}[language=bpfbox, gobble=4, float=false, caption={[A \bpfbox{} policy for Apache httpd]
+  A \bpfbox{} policy for Apache httpd.
+  \todo{Describe this}
+}, label={lst:bpfbox-apache}]
+    #![profile "/bin/httpd"]
+
+    /* Allow IP and Unix socket operations, and taint when they occur */
+    #[allow]
+    #[taint] {
+      net(inet, any)
+      net(inet6, any)
+      net(unix, any)
+    }
+
+    #[allow] {
+      /* Allows kill(2) to check for process existence
+       * and to send fatal signals */
+      signal("/bin/httpd", check|fatal)
+
+      /* Write to logs */
+      fs("/var/log/httpd/*log", getattr|read|append)
+      fs("/var/log/httpd", getattr|read|write)
+
+      /* Create PID file */
+      fs("/run/httpd/", write)
+      /* Delete or modify an existing PID file if necessary */
+      fs("/run/httpd/httpd.pid", getattr|rm|write)
+
+      /* Serve files from /srv/html/ and all subdirectories */
+      fs("/srv/html/**", read|getattr)
+
+      /* Access to mysqld socket */
+      fs("/run/mysqld", getattr|read)
+      fs("/run/mysqld/mysqld.sock", getattr|read|write)
+
+      /* Read configuration */
+      fs("/usr/share/httpd/**", read|getattr)
+      fs("/etc/httpd/", getattr)
+      fs("/etc/httpd/conf/**", read|getattr)
+      fs("/usr/share/zoneinfo/**", read|getattr)
+
+      /* Read hostname information */
+      fs("/etc/resolv.conf", read|getattr)
+      fs("/etc/hosts", read|getattr)
+
+      /* Read-only access to required kernel info */
+      fs("/proc/sys/kernel/random/boot_id", read)
+      fs("/proc/sys/kernel/ngroups_max", read)
+
+      /* Shared libraries loaded at runtime */
+      fs("/usr/lib/httpd/modules/*.so", getattr|read|exec)
+      fs("/usr/lib/libnss*.so.*", getattr|read|exec)
+      fs("/usr/lib/libgcc_s.so.*", getattr|read|exec)
+    }
+
+    /* Transition to a separate suexec policy */
+    #[transition] {
+      fs("/usr/bin/suexec", getattr|read|exec)
+    }
+\end{lstlisting}
+
+\begin{lstlisting}[language=bpfbox, gobble=4, float=false, caption={[A \bpfbox{} policy for MySQL]
+  A \bpfbox{} policy for MySQL.
+  \todo{Describe this}
+}, label={lst:bpfbox-mysql}]
+    #![profile "/bin/mysqld"]
+
+    /* Allow Unix socket operations, and taint when they occur */
+    #[allow]
+    #[taint] {
+      net(unix, any)
+    }
+
+    #[allow] {
+      /* Allows kill(2) to check for process existence
+       * and to send fatal signals */
+      signal("/bin/mysqld", check|fatal)
+
+      /* Write to logs */
+      fs("/var/log/mysqld/*log", getattr|read|append)
+      fs("/var/log/mysqld", getattr|read|write)
+
+      /* Access to /var/lib/mysqld */
+      fs("/var/lib/mysqld", read|write|getattr)
+      fs("/var/lib/mysqld/**", read|write|getattr|rm)
+
+      /* Create PID file and socket */
+      fs("/run/mysqld", getattr|read|write)
+      fs("/run/mysqld/**", getattr|read|write|rm)
+
+      /* Read configuration */
+      fs("/etc/mysqld/**", read|getattr)
+      fs("/usr/share/zoneinfo/**", read|getattr)
+
+      /* Read hostname information */
+      fs("/etc/resolv.conf", read|getattr)
+      fs("/etc/hosts*", read|getattr)
+
+      /* Shared libraries loaded at runtime */
+      fs("/var/lib/mysql/plugin/*.so", getattr|read|exec)
+    }
+\end{lstlisting}
+
+\subsubsection{\bpfcontain{} Without Container}
+
+\todo{\bpfcontain{} policy here}
+
+\subsubsection{\bpfcontain{} With Container}
+
+\todo{\bpfcontain{} policy here}
