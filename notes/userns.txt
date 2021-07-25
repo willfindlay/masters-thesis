@@ -1,0 +1,6 @@
+- current claim about userns is flawed
+- but we can easily change it
+- userns UID remapping secures files by changing the semantics of Unix DAC
+- BPFContain can detect when a file is mapped under a different user namespace
+- Then it can implicitly grant access to that file, knowing that the user namespace will
+  correctly handle the permissions

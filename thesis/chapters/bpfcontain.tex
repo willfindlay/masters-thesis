@@ -512,6 +512,13 @@ events subsystem, among others. Using a capability that has not been expressly m
 an \texttt{allow} rule is considered default-deny. Any other access is considered
 default-deny, if the container has been tainted.
 
+\subsubsection{Improving Default Policy}%
+\label{sss:bpfcontain-improving-default}
+
+\todo{Talk about our desire to enforce overlayfs policy, if the implementation ends up
+taking too long. Also: Need to go over the rest of this chapter and remove references to
+namespace file policy.}
+
 \subsection{Managing Container State}%
 \label{ss:bpfcontain-state}
 
@@ -608,9 +615,11 @@ in~\Cref{c:discussion}). \Cref{lst:bpfcontain-policy-example} depicts an example
   caption={[An example \bpfcontain{} policy  written in YAML]
     An example \bpfcontain{} policy for a simple remote login program, written in YAML.
     This example offers a fairly complete idea of the \bpfcontain{} policy language's
-    various features. Note that, in the context of a Docker container, all of the
-    \enquote{file rules} under this policy would be unnecessary; they would be implicitly
-    covered by the container's namespace membership. The reader is encouraged to compare
+    various features.
+    % Note that, in the context of a Docker container, all of the
+    % \enquote{file rules} under this policy would be unnecessary; they would be implicitly
+    % covered by the container's namespace membership.
+    The reader is encouraged to compare
     this policy with the policy depicted in \Cref{lst:bpfbox-policy-example} on page
     \pageref{lst:bpfbox-policy-example}.
   },
@@ -665,14 +674,15 @@ several access flags for fine-grained control over file access.
   \toprule
   Pattern & Access \\
   \midrule
-  \texttt{r} & Read (\texttt{read(2)}, etc.) \\
-  \texttt{w} & Write (\texttt{write(2)}, etc.)\\
+  \texttt{r} & Read (\texttt{read(2)}, \texttt{getattr(2)}, etc.) \\
+  \texttt{w} & Write (\texttt{write(2)}, \texttt{setattr(2)}, etc.)\\
   \texttt{a} & Append (\texttt{write(2)} with append-only flag set) \\
   \texttt{x} & Execute (\texttt{execve(2)})\\
   \texttt{m} & Map executable memory (\texttt{mmap(2)}) \\
   \texttt{c} & Modify Unix \gls{dac} (\texttt{chmod(2)}/\texttt{chown(2)}) \\
-  \texttt{d} & Unlink/Delete \\
-  \texttt{l} & Create hard link \\
+  \texttt{d} & Unlink/delete a file \\
+  \texttt{l} & Create a hard link to a file \\
+  \texttt{i} & Make an \texttt{ioctl(2)} call on a device \\
   \bottomrule
   \end{tabular}
 \end{table}

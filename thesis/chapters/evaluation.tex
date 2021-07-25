@@ -21,9 +21,10 @@ overview of the testing methodology and present the benchmark results.
 \label{ss:eval-methodology}
 
 For the test environment, we utilize a bare-metal system running Arch Linux with a stock
-5.12.14-arch-1-1 kernel. The choice of a bare-metal system reduces the risk of introducing
-additional sources of variance into the benchmarks. \Cref{tab:system-config} provides
-a detailed account of system configuration for the test system.
+5.12.14-arch-1-1 kernel. The choice of a bare-metal system (rather than a virtual machine,
+for instance) reduces the risk of introducing additional sources of variance into the
+benchmarks. \Cref{tab:system-config} provides a detailed account of the test system
+configuration.
 
 \begin{table}[htpb]
   \centering
@@ -39,37 +40,105 @@ a detailed account of system configuration for the test system.
   Disk & 1TiB Samsung NVME M.2 SSD \\
   \midrule
   \gls{os} & Arch Linux (Rolling) \\
-  Kernel & Linux 5.12.14-arch-1-1 \\
+  Kernel & Linux v5.12.14-arch-1-1 \\
   Libc & glibc v2.33-5 \\
+  Phoronix & v10.4.0-1 \\
   \bottomrule
   \end{tabular}
 \end{table}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item Test environment
-    \begin{itemize}
-      \item Describe system specs
-      \item To improve benchmark accuracy, we disable ...
-      \item We run tests in a privileged Docker container
-      \item Arch Linux Kernel 5.12.15-arch-1
-    \end{itemize}
+To simulate the Docker container use case, we run all tests in a privileged Docker
+container, using Docker volumes to mount the host filesystem in the benchmarking
+directory. To improve benchmarking accuracy, we also perform the following setup before
+each test. (1) We disable SMT hyperthreading by turning off each logical CPU core pair,
+leaving only the physical cores active; (2) We disable turbo boost, capping the CPU at its
+stock speed of 2.3GHz; (3) We set the CPU frequency scaling governor to
+\enquote{performance} to limit the impact of thermal throttling and power saving features;
+and (4) We globally disable \gls{aslr} by setting the appropriate kernel parameter. These
+settings, consistent with best practices, improve benchmark accuracy by making the
+environment more consistent and eliminating as many external factors as possible.
 
-    \item Phoronix Test Suite tests
-    \begin{itemize}
-      \item \todo{Describe each test in detail and explain what LSM hooks it exercises}
-    \end{itemize}
+To measure the performance overhead of \bpfbox{} and \bpfcontain{} (compared with the base
+system and with AppArmor) we leverage the Phoronix Test Suite~\cite{phoronix}, a popular
+cross-platform benchmarking framework that has seen wide use for measuring system
+performance. The Phoronix framework comprises a number of open source test suites, each
+targeting a different aspect of system behaviour. For the purposes of this thesis, we
+select three separate test suites, measuring a variety of \gls{os}-level functionality and
+exercising multiple \gls{lsm} hooks. In particular, we select the OSBench suite, the
+Kernel Compilation suite, the Apache suite, and the \gls{ipc} suite. \Cref{tab:suites}
+describes each suite and what it measures.
 
-    \item \todo{Other tests if we have time}
+\begin{table}[htpb]
+  \centering
+  \caption[List of benchmarking suites and what they measure]{
+    A list of the benchmarking suites used to test performance overhead and what each
+    measures.
+  }%
+  \label{tab:suites}
+  \begin{tabular}{llp{3in}}
+  \toprule
+  Test Suite & Test & Measures \\
+  \midrule
+  \multirow{5}{*}{OSBench}   & Create Files       & Time to create and delete files \\
+                             & Create Threads     & Time to create new threads \\
+                             & Launch Programs    & Time to fork + execve \\
+                             & Create Processes   & Time to create new processes \\
+                             & Memory Allocations & Memory allocation throughput \\
+  Kernel Compilation         & ---                & Time to compile Linux Kernel \\
+  Apache                     & ---                & Apache HTTP request throughput \\
+  \multirow{4}{*}{\gls{ipc}} & Unix Socket        & Unix socket throughput \\
+                             & TCP Socket         & TCP socket throughput  \\
+                             & Named Pipe         & Named pipe throughput  \\
+                             & Unnamed Pipe       & Unnamed pipe throughput \\
+  \bottomrule
+  \end{tabular}
+\end{table}
 
-    \item Explain each test case (base, \{bpfbox, bpfcontain, apparmor\}, \{passive, allow, complaining\})
-    \item Run reach test for at least 11 trials, until we achieve an acceptable standard deviation ($<2\%$)
-    \item Discard first run of each trial, to control for initial I/O transients and caching
-    \item Reproducibility, give \bpfbox{} and \bpfcontain{} version, with tags on GitHub
-    \item Link to the benchmarking repo
+We consider ten system configurations in total. The \textbf{Base} configuration is the
+base system without any \glspl{lsm} or other confinement primitives active or loaded in
+the kernel. The \textbf{\bpfbox}, \textbf{\bpfcontain}, and \textbf{AppArmor}
+configurations measure the performance overhead of \bpfbox{}, \bpfcontain{}, and AppArmor,
+respectively. We then divide each of these three configurations into three distinct
+test cases each. The \textbf{Passive} case measures global system overhead
+without any active enforcement. The \textbf{Allow} case measures active
+enforcement, allowing all security-sensitive operations. Finally, the \textbf{Complain}
+case measures the worst-case overhead for each system, exercising the full code
+path of each \gls{lsm} hook and logging every attempted access.
 
-  \end{itemize}
-\end{inprogress}
+To ensure statistically valid results, we run each test at least eleven times, until
+a standard deviation of at most $2\%$ is achieved. We also discard the first run of each
+test to control for initial I/O transients. In total, the result is at least ten trials
+for each test suite and system configuration. For reproducibility, we include
+a link\footnote{Benchmarking tests are available:
+\url{https://github.com/willfindlay/bpfcontain-benchmarks}} to the benchmarking
+repository, including results and all related scripts.
+
+
+% \begin{inprogress}
+%   \begin{itemize}
+%     \item Test environment
+%     \begin{itemize}
+%       \item Describe system specs
+%       \item To improve benchmark accuracy, we disable ...
+%       \item We run tests in a privileged Docker container
+%       \item Arch Linux Kernel 5.12.15-arch-1
+%     \end{itemize}
+
+%     \item Phoronix Test Suite tests
+%     \begin{itemize}
+%       \item \todo{Describe each test in detail and explain what LSM hooks it exercises}
+%     \end{itemize}
+
+%     \item \todo{Other tests if we have time}
+
+%     \item Explain each test case (base, \{bpfbox, bpfcontain, apparmor\}, \{passive, allow, complaining\})
+%     \item Run reach test for at least 11 trials, until we achieve an acceptable standard deviation ($<2\%$)
+%     \item Discard first run of each trial, to control for initial I/O transients and caching
+%     \item Reproducibility, give \bpfbox{} and \bpfcontain{} version, with tags on GitHub
+%     \item Link to the benchmarking repo
+
+%   \end{itemize}
+% \end{inprogress}
 
 \subsection{Results}%
 \label{ss:eval-results}
@@ -82,34 +151,41 @@ a detailed account of system configuration for the test system.
 
 \subsubsection{Apache Webserver Results}
 
+\subsubsection{\glsentryshort{ipc} Results}
+
 \subsection{Discussion of Results}%
 \label{ss:eval-performance-discussion}
+
+The results show that both \bpfbox{} and \bpfcontain{} exert acceptable performance
+overhead in practice. In many cases, overhead is competitive with AppArmor, a standard
+\gls{lsm} that ships with the stock Linux kernel. \todo{Continue here, then ref to
+geometric means to discuss average overhead.}
 
 \begin{table}[htbp]
   \centering
   \caption[Geometric means of Phoronix benchmarking results]{
-    Geometric means of Phoronix benchmarking results.  These are indicative of over all
-    performance across all tests.  For each configuration, percent change from the base
-    result is also given.  Higher values are better.
+    Geometric means of Phoronix benchmarking results. These are indicative of over all
+    performance across all tests. For test case, percent change from the base results are
+    also given. Higher values are better.
   }%
   \label{tab:phoronix-geometric}
   \begin{tabular}{llrr}
   \toprule
-  System                        & Configuration & Geom. Mean & Percent Change (Base)\\
+  Configuration                 & Test Case & Geom. Mean & Percent Change (Base)\\
   \midrule
-  Base                          & ---           & 6.238          & --- \\
+  Base                          & ---       & 6.238          & --- \\
   \midrule
-  \multirow{3}{*}{AppArmor}     & Passive       & 6.158          &  -1.28\% \\
-                                & Allow         & 6.086          &  -2.35\% \\
-                                & Complain      & 4.962          & -20.46\% \\
+  \multirow{3}{*}{AppArmor}     & Passive   & 6.158          &  -1.28\% \\
+                                & Allow     & 6.086          &  -2.35\% \\
+                                & Complain  & 4.962          & -20.46\% \\
   \midrule
-  \multirow{3}{*}{BPFBox}       & Passive       & 6.007          & -3.70\% \\
-                                & Allow         & 5.944          & -4.71\% \\
-                                & Complain      & 5.823          & -6.65\% \\
+  \multirow{3}{*}{\bpfbox}      & Passive   & 6.007          & -3.70\% \\
+                                & Allow     & 5.944          & -4.71\% \\
+                                & Complain  & 5.823          & -6.65\% \\
   \midrule
-  \multirow{3}{*}{BPFContain}   & Passive       & 5.951          & -4.60\% \\
-                                & Allow         & 5.763          & -7.61\% \\
-                                & Complain      & 5.693          & -8.74\% \\
+  \multirow{3}{*}{\bpfcontain}  & Passive   & 5.951          & -4.60\% \\
+                                & Allow     & 5.763          & -7.61\% \\
+                                & Complain  & 5.693          & -8.74\% \\
   \bottomrule
   \end{tabular}
 \end{table}
@@ -125,6 +201,23 @@ a detailed account of system configuration for the test system.
 
 \section{Security Analysis}%
 \label{s:eval-security}
+
+\todo{The plan for this section is to first revisit the threat model, then go through each
+policy \enquote{category} supported by \bpfbox{} and \bpfcontain{}. In a few categories
+(IPC, capabilities, kernel interfaces) \bpfcontain{} is just better... The \bpfbox{}
+prototype left some of this stuff out, and some of it is much weaker. In the networking
+category, both \bpfbox{} and \bpfcontain{} have room for improvement. We can do a forward
+ref to limitations / future work for this.}
+
+\subsection{Threat Model Revisited}
+
+\subsection{Files and Filesystems}
+
+\subsection{Capabilities and Kernel Interfaces}
+
+\subsection{Networking}
+
+\subsection{\glsentryshort{ipc}}
 
 
 

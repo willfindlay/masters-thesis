@@ -127,7 +127,7 @@ easily and cleanly in \bpfbox{}'s policy language.
 \begin{lstlisting}[language=bpfbox, gobble=4,
   caption={[Implementing the default Docker policy in \bpfbox{}]
     Implementing the default Docker policy in \bpfbox{}.
-    \todo{High-level overview of the policy}
+    %\todo{High-level overview of the policy}
   },
   label={lst:bpfbox-docker-default}]
     #![profile "/path/to/init/program"]
@@ -173,7 +173,7 @@ easily and cleanly in \bpfbox{}'s policy language.
 
 Like Docker's AppArmor policy, our \bpfbox{} policy enables access to per-pid entries in
 procfs and uses \bpfbox{}'s default-deny enforcement to restrict all others. Similar logic
-applies to the \texttt{/proc/sys/kernel/shm**} entries under procfs. We also grant full
+applies to the \texttt{/proc/sys/kernel/shm*} entries under procfs. We also grant full
 networking stack access, ptrace access for child processes, and full signal access for
 child processes running under the container. Since these operations have the potential to
 introduce vulnerabilities from outside sources, we mark them as tainting the corresponding
@@ -209,14 +209,15 @@ same level of expressiveness.
 
 \begin{lstlisting}[language=yaml, gobble=4,
   caption={[Implementing the default Docker policy in \bpfcontain{}]
-    Implementing the default Docker policy in \bpfcontain{}. A few coarse-grained
-    allow-rules can be used to capture permissive Docker defaults that are not covered
-    under \bpfcontain{}'s default policy. Other aspects of the Docker defaults are already
-    covered under \bpfcontain{} defaults, such as the inability to mount filesystems,
-    perform a number of privileged system calls, and interact with non-pid entries in
-    procfs and sysfs. Due to \bpfcontain{}'s default policy for file access and \gls{ipc},
-    it is neither necessary to specify file access rules for files within the container's
-    overlay filesystem not \gls{ipc} rules for processes within the container.
+    Implementing the default Docker policy in \bpfcontain{}.
+    %A few coarse-grained
+    %allow-rules can be used to capture permissive Docker defaults that are not covered
+    %under \bpfcontain{}'s default policy. Other aspects of the Docker defaults are already
+    %covered under \bpfcontain{} defaults, such as the inability to mount filesystems,
+    %perform a number of privileged system calls, and interact with non-pid entries in
+    %procfs and sysfs. Due to \bpfcontain{}'s default policy for file access and \gls{ipc},
+    %it is neither necessary to specify file access rules for files within the container's
+    %overlay filesystem not \gls{ipc} rules for processes within the container.
   },
   label={lst:bpfcontain-docker-default}]
     name: default-docker
@@ -229,6 +230,11 @@ same level of expressiveness.
       fs: {pathname: /tmp, access: any}
       # Grant read/write access to /proc/sys/kernel/shm*
       file: {pathname: /proc/sys/kernel/shm*, access: rw}
+
+      # Grant access to the terminal, /dev/null, /dev/random, and /dev/urandom
+      device: terminal
+      device: null
+      device: random
 
       # Grant access to the entire networking stack
       net: any
@@ -264,15 +270,16 @@ policy.  Further, changes to \bpfcontain{}'s policy language, including the intr
 of a coarser-grained filesystem rule and capability rules enables the resulting policy to
 more closely match the original Docker AppArmor policy.
 
-To match Docker's default allow on all filesystem access, the \bpfcontain{} policy
-includes a rule to enable any file operation on files within the root filesystem.  As with
-\bpfbox{}, the point here is to match Docker's default policy, without considering the
-security implications of granting full access to the entire root filesystem. We include
-another rule to enable similar access on the temporary filesystem. Despite the coarse
-granularity of these filesystem rules, \bpfcontain{} maintains a critical advantage over
-\bpfbox{} and the original Docker policy. Due to its container-specific policy defaults,
-we can achieve Docker's fine-grained protection over procfs and sysfs for free. Thus,
-\bpfcontain{} entirely obviates the need to specify such rules in the policy.
+To match Docker's default allow policy on filesystem access, the \bpfcontain{} policy
+includes a rule to enable any file operation on files within the root filesystem and
+tempfs.  As with \bpfbox{}, the point here is to match Docker's default policy, without
+considering the security implications of granting full access to the entire root
+filesystem. We include another rule to enable similar access on the temporary filesystem.
+Despite the coarse granularity of these filesystem rules, \bpfcontain{} maintains
+a critical advantage over \bpfbox{} and the original Docker policy. Due to its
+container-specific policy defaults, we can achieve Docker's fine-grained protection over
+procfs and sysfs for free. Thus, \bpfcontain{} entirely obviates the need to specify such
+rules in the policy.
 
 As with the procfs and sysfs policy, \bpfcontain{} also includes sensible defaults for
 \gls{ipc} and ptrace access. In particular, processes running within the same container
@@ -324,13 +331,14 @@ and demonstrate how it can be customized to match the container's specific needs
 
 \begin{lstlisting}[language=yaml, gobble=4,
   caption={[Confining an untrusted container with \bpfcontain{}]
-    Confining an untrusted container with \bpfcontain{}. \bpfcontain{}'s default
-    enforcement policy of defining a boundary around the container enables this policy to
-    be quite simple. A default-tainted policy enables container-level confinement without
-    specifying \textit{any} rules whatsoever. This policy can then be adjusted as
-    required, specifying file rules to provision access to volume mounts, network rules to
-    enable networking, and capability rules to enable access to specific POSIX
-    capabilities.
+    Confining an untrusted container with \bpfcontain{}.
+    %\bpfcontain{}'s default
+    %enforcement policy of defining a boundary around the container enables this policy to
+    %be quite simple. A default-tainted policy enables container-level confinement without
+    %specifying \textit{any} rules whatsoever. This policy can then be adjusted as
+    %required, specifying file rules to provision access to volume mounts, network rules to
+    %enable networking, and capability rules to enable access to specific POSIX
+    %capabilities.
   },
   label={lst:bpfcontain-untrusted}, float]
     name: untrusted-container
@@ -386,15 +394,42 @@ capability to allow it to bind to privileged ports.
 
 \section{Confining a Web Server and Database}
 
-\todo{This section will describe how \bpfbox{} and \bpfcontain{} can be used to confine an
-Apache Webserver and MySQL Database configuration and then compare the resulting policy
-with Snap, AppArmor, and SELinux}
+We now turn our attentions to a more nuanced and practical use case: confining a simple
+web server and database deployment. In particular, we focus on the Apache httpd web server
+and the MySQL data base management system. These two pieces of software are often used
+together (e.g.~as part of the LAMP stack~\todo{CITE}) and provide a good example of how we
+can define specific policy exceptions to allow two processes or containers to communicate
+with each other, and with the outside world. In this example, we assume that httpd and
+mysqld communicate with each other using a shared Unix domain socket, created by mysqld.
 
 \subsubsection{\bpfbox{}}
 
+In \bpfbox{}, we define two profiles: one for httpd, and one for mysqld.
+\Cref{lst:bpfbox-apache} depicts the httpd policy, while \Cref{lst:bpfbox-mysql} depicts
+the mysqld policy. These policies are simplified examples, but provide a representative
+idea of what it's like to confine a complex application down to its basest functionality.
+
+The httpd policy (\Cref{lst:bpfbox-apache}) defines allow and taint rules for three
+categories of socket access: \texttt{inet}, \texttt{inet6}, and \texttt{unix}. These
+categories cover IPv4 and IPv6 network access, as well as \gls{ipc} over a Unix domain
+socket. This Unix domain socket is what httpd will use to communicate with the database.
+By defining these network rules as both allow and taint, we indicate that default-deny
+enforcement should begin only \textit{after} the Apache daemon has begun interacting with
+the outside world. Using this technique, the \bpfbox{} policy may be greatly simplified by
+eliminating the need to define any policy corresponding to the setup phase of httpd.
+
+The bulk of the \bpfbox{} policy is made up of filesystem rules, enabling access to
+a variety of configuration files that httpd needs to read at runtime, a few informational
+files exposed by the kernel under procfs, shared libraries that may be loaded at runtime,
+the mysqld Unix socket, and the directory that httpd will use to serve web content. We
+also define a rule allowing httpd to run suexec, a helper application used to launch
+\gls{cgi} scripts.  We indicate that launching suexec should untaint the process and
+transition to a suexec profile.  This profile would then define the access control policy
+for suexec (e.g.~which scripts it is allowed to run).
+
 \begin{lstlisting}[language=bpfbox, gobble=4, float=false, caption={[A \bpfbox{} policy for Apache httpd]
   A \bpfbox{} policy for Apache httpd.
-  \todo{Describe this}
+  %\todo{Describe this}
 }, label={lst:bpfbox-apache}]
     #![profile "/bin/httpd"]
 
@@ -435,7 +470,7 @@ with Snap, AppArmor, and SELinux}
 
       /* Read hostname information */
       fs("/etc/resolv.conf", read|getattr)
-      fs("/etc/hosts", read|getattr)
+      fs("/etc/host*", read|getattr)
 
       /* Read-only access to required kernel info */
       fs("/proc/sys/kernel/random/boot_id", read)
@@ -453,9 +488,18 @@ with Snap, AppArmor, and SELinux}
     }
 \end{lstlisting}
 
+The \bpfbox{} policy for mysqld works in much the same way as the policy for httpd. Major
+differences include disabling all socket access except to Unix domain sockets. This
+ensures that the database is not exposed to the outside world, but still enables is to
+communicate with httpd over its Unix socket. Like with httpd, we define specific rules
+enabling mysqld to read important configuration files, log events, create and modify its
+\gls{pid} file and Unix socket, and load some shared libraries at runtime. The entire
+setup phase for mysqld occurs while the process is untainted, thus allowing us to
+eliminate rules for any shared libraries loaded before the process becomes tainted.
+
 \begin{lstlisting}[language=bpfbox, gobble=4, float=false, caption={[A \bpfbox{} policy for MySQL]
   A \bpfbox{} policy for MySQL.
-  \todo{Describe this}
+  %\todo{Describe this}
 }, label={lst:bpfbox-mysql}]
     #![profile "/bin/mysqld"]
 
@@ -483,22 +527,162 @@ with Snap, AppArmor, and SELinux}
       fs("/run/mysqld/**", getattr|read|write|rm)
 
       /* Read configuration */
+      fs("/etc/mysqld", read|getattr)
       fs("/etc/mysqld/**", read|getattr)
+      fs("/usr/share/zoneinfo", read|getattr)
       fs("/usr/share/zoneinfo/**", read|getattr)
 
       /* Read hostname information */
       fs("/etc/resolv.conf", read|getattr)
-      fs("/etc/hosts*", read|getattr)
+      fs("/etc/host*", read|getattr)
 
       /* Shared libraries loaded at runtime */
       fs("/var/lib/mysql/plugin/*.so", getattr|read|exec)
     }
 \end{lstlisting}
 
-\subsubsection{\bpfcontain{} Without Container}
+\subsubsection{\bpfcontain{}}
 
-\todo{\bpfcontain{} policy here}
+In \bpfcontain{}, we once again define a policy for httpd and a policy for mysqld.  These
+policies are depicted in \Cref{lst:bpfcontain-apache} and \Cref{lst:bpfcontain-mysql}
+respectively. These policies are largely similar to the \bpfbox{} policies, with a few
+minor differences that can be attributed to \bpfcontain{}'s nuanced policy defaults and
+its updated policy language.
 
-\subsubsection{\bpfcontain{} With Container}
+Like \bpfbox{}, the majority of the \bpfcontain{} httpd policy
+(\Cref{lst:bpfcontain-apache}) focuses on specifying filesystem access for httpd. Since
+\bpfcontain{} also supports tainting semantics, we leverage these to eliminate the need to
+define rules for operations preceding the taint. Specifically, we taint container once it
+has performed any networking operations or any \gls{ipc} with mysqld. Unlike \bpfbox{},
+however, \bpfcontain{} does not currently support untainting a process\footnote{This is
+because \bpfcontain{} taints at the container-level rather than the process-level. Future
+iterations of \bpfcontain{} may change this behaviour, for example by tainting at the
+container-level and untainting at the process-level.}. This means that we must still
+specify access to shared libraries that will be loaded by suexec (along with whatever
+applications suexec will run, such as Python).
 
-\todo{\bpfcontain{} policy here}
+Aside from the aforementioned differences, the per-file policy is more or less the same as
+\bpfbox{}.  To enable \gls{ipc} between the httpd and mysql, we define an \gls{ipc} allow
+rule that lists the mysqld policy. We also enable socket networking using a network allow
+rule and enable signalling of existing instances of httpd with a signal rule. Finally,
+we use a capability rule to grant access to the \texttt{CAP\_NET\_BIND\_SERVICE} capability,
+allowing httpd to bind to privileged ports. Since \bpfbox{} does not support capability rules,
+there is no equivalent to this rule in the \bpfbox{} policy.
+
+\begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A \bpfcontain{} policy for Apache httpd]
+  A \bpfcontain{} policy for Apache httpd.
+  %\todo{Describe this}
+}, label={lst:bpfcontain-apache}]
+    name: httpd
+    defaultTaint: false
+
+    allow:
+      # Access to log files
+      file: {pathname: /var/log/httpd, access: rw}
+      file: {pathname: /var/log/httpd/*log, access: ra}
+
+      # Create pidfile, delete or modify an existing pid file if necessary
+      file: {pathname: /run/httpd, access: rw}
+      file: {pathname: /run/httpd/**, access: rwd}
+
+      # Read configuration
+      file: {pathname: /usr/share/httpd/**, access: r}
+      file: {pathname: /etc/httpd, access: r}
+      file: {pathname: /etc/httpd/conf/**, access: r}
+      file: {pathname: /usr/share/zoneinfo/**, access: r}
+
+      # Read hostname information
+      file: {pathname: /etc/resolv.conf, access: r}
+      file: {pathname: /etc/host*, access: r}
+
+      # Shared libraries loaded at runtime
+      file: {pathname: /usr/lib/httpd/modules/*.so, access: mr}
+      file: {pathname: /usr/lib/libnss*.so.*, access: mr}
+      file: {pathname: /usr/lib/libgcc_s.so.*, access: mr}
+
+      # Execute suexec and python
+      file: {pathname: /usr/bin/suexec, access: rx}
+      file: {pathname: /usr/bin/python, access: rx}
+
+      # Shared libraries required for suexec and python
+      # This is unfortunately required since BPFContain currently
+      # has no notion of untainting like BPFBox
+      file: {pathname: /usr/lib/libpython*.so.*, access: mr}
+      file: {pathname: /usr/lib/libc.so.*, access: mr}
+      file: {pathname: /usr/lib/libpthread.so.*, access: mr}
+      file: {pathname: /usr/lib/libdl.so.*, access: mr}
+      file: {pathname: /usr/lib/libutil.so.*, access: mr}
+      file: {pathname: /usr/lib/libm.so.*, access: mr}
+      file: {pathname: /usr/lib64/ld-linux-x86-64.so.*, access: mr}
+
+      # Allow ipc with mysql
+      ipc: mysqld
+
+      # Allow sending signals to existing httpd instances
+      signal: httpd
+
+      # Bind to privileged ports
+      capability: ['netbindservice']
+
+      # Use networking
+      net: any
+
+    taint:
+      # Taint when performing any ipc or networking
+      net: any
+      ipc: mysqld
+\end{lstlisting}
+
+The mysqld policy for \bpfcontain{} also shares many similarities with the \bpfbox{}
+version.  In particular, we define equivalent file access rules to enable the mysqld to
+access all of the files it requires for normal operation. We define an \gls{ipc} rule,
+granting mutual \gls{ipc} access to the httpd policy, and enabling the two to communicate
+with each other. We taint the container once it has performed any \gls{ipc} with httpd.
+
+\begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A \bpfcontain{} policy for MySQL]
+  A \bpfcontain{} policy for MySQL.
+  %\todo{Describe this}
+}, label={lst:bpfcontain-mysql}]
+    name: mysqld
+    defaultTaint: false
+
+    allow:
+      # Access to log files
+      file: {pathname: /var/log/mysqld, access: rw}
+      file: {pathname: /var/log/mysqld/*log, access: ra}
+
+      # Access to /var/lib/mysql
+      file: {pathname: /var/lib/mysqld, access: rw}
+      file: {pathname: /var/lib/mysqld/**, access: rwd}
+
+      # Create pidfile and socket
+      file: {pathname: /run/mysqld, access: rw}
+      file: {pathname: /run/mysqld/**, access: rwd}
+
+      # Read configuration
+      file: {pathname: /etc/mysqld, access: r}
+      file: {pathname: /etc/mysqld/**, access: r}
+      file: {pathname: /usr/share/zoneinfo, access: r}
+      file: {pathname: /usr/share/zoneinfo/**, access: r}
+
+      # Read hostname information
+      file: {pathname: /etc/resolv.conf, access: r}
+      file: {pathname: /etc/host*, access: r}
+
+      # Shared libraries loaded at runtime
+      file: {pathname: /var/lib/mysql/plugin/*.so, access: mr}
+
+      # Allow ipc with httpd
+      ipc: httpd
+
+      # Allow sending signals to existing mysqld instances
+      signal: mysqld
+
+    taint:
+      # Taint when performing any ipc
+      ipc: httpd
+\end{lstlisting}
+
+\subsubsection{Simplifying the \bpfcontain{} Example}
+
+% \todo{\bpfcontain{} policy here}
