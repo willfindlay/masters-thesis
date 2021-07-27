@@ -13,9 +13,9 @@ This section presents a performance evaluation of \bpfbox{} and \bpfcontain{}, m
 their performance overhead using a variety of benchmarking tests. In particular, we
 leverage the Phoronix Test Suite~\cite{phoronix} to measure overhead across a variety of
 computational tasks, workloads, and kernel interfaces. Each of these benchmarks exercises
-a different subset of \bpfbox{} and \bpfcontain{}'s enforcement engine, providing a good
-approximation of their impact on the overall system. The subsections that follow provide an
-overview of the testing methodology and present the benchmark results.
+a different subset of \bpfbox{} and \bpfcontain{}'s enforcement engine, providing an
+approximation of their impact on the overall system. The subsections that follow provide
+an overview of the testing methodology and present the benchmark results.
 
 \subsection{Methodology}%
 \label{ss:eval-methodology}
@@ -79,14 +79,14 @@ describes each suite and what it measures.
   \toprule
   Test Suite & Test & Measures \\
   \midrule
-  \multirow{5}{*}{OSBench}   & Create Files       & Time to create and delete files \\
+  OSBench                    & Create Files       & Time to create and delete files \\
                              & Create Threads     & Time to create new threads \\
                              & Launch Programs    & Time to fork + execve \\
                              & Create Processes   & Time to create new processes \\
                              & Memory Allocations & Memory allocation throughput \\
   Kernel Compilation         & ---                & Time to compile Linux Kernel \\
   Apache                     & ---                & Apache HTTP request throughput \\
-  \multirow{4}{*}{\gls{ipc}} & Unix Socket        & Unix socket throughput \\
+  \gls{ipc}                  & Unix Socket        & Unix socket throughput \\
                              & TCP Socket         & TCP socket throughput  \\
                              & Named Pipe         & Named pipe throughput  \\
                              & Unnamed Pipe       & Unnamed pipe throughput \\

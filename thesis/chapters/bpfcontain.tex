@@ -369,14 +369,14 @@ Policy enforcement under \bpfcontain{} can be thought of as a combination of
 \textit{default policy} (the set of sensible defaults that \bpfcontain{} enforces to
 define a boundary around the container). In particular, default access to resources is
 determined based on whether that resource exists within the context of a container.
-Resources within the container, such as files mapped into the container's mount namespace
-via an overlay filesystem are considered default-allow. Conversely, resources outside of
-the container, such as external files or processes, are considered default-deny.
-Similarly, access is also denied to any operating system interfaces that could affect
-global system state, such as character devices, kernel modules, \gls{ebpf}, special
-filesystems, and the like. Exceptions to these defaults may be explicitly defined in the
-policy file as required. \Cref{ss:bpfcontain-default} examines the implementation of
-\bpfcontain{}'s default policy in more detail.
+Resources within the container, such as \gls{ipc} handles into container processes or
+filesystems belonging to the container's user namespace mount are considered
+default-allow. Conversely, resources outside of the container, such as external files or
+processes, are considered default-deny. Similarly, access is also denied to any operating
+system interfaces that could affect global system state, such as character devices, kernel
+modules, \gls{ebpf}, special filesystems, and the like. Exceptions to these defaults may
+be explicitly defined in the policy file as required. \Cref{ss:bpfcontain-default}
+examines the implementation of \bpfcontain{}'s default policy in more detail.
 
 Like \bpfbox{}, \bpfcontain{} maintains its policy files in a root-controlled directory
 (\texttt{/var/lib/bpfcontain/policy} by default). These policy files may be written in any
@@ -464,15 +464,14 @@ path to achieving strong protection defaults. \Cref{fig:bpfcontain-enforcement} 
 \bpfcontain{}'s default policy depends largely on the type of access that a container is
 requesting. If the requested access is to a regular file, \bpfcontain{} checks to see if
 this file exists under the container's user namespace, provided that this namespace is
-non-global. This accommodates the use case where a container is attempting to access
-a file that has been mapped into its mount namespace using an overlay filesystem.
-Similarly, default \gls{ipc} access is gated by whether or not the processes on either end
-of the \gls{ipc} handle belong to the same container. If they do, access is granted;
-otherwise, access is denied. Ptrace is similarly restricted; a process may only ptrace
-another if both processes exist in the same container. In this way, we preserve the
-semantics of the container; resources that exist \textit{within} a container should be
-accessible by processes within the same container, but resources that exist
-\textit{without} should not be accessible by default.
+non-global. This covers, for example, a temporary or overlay filesystem mounted within
+a non-global user namespace.  Similarly, default \gls{ipc} access is gated by whether or
+not the processes on either end of the \gls{ipc} handle belong to the same container. If
+they do, access is granted; otherwise, access is denied. Ptrace is similarly restricted;
+a process may only ptrace another if both processes exist in the same container. In this
+way, we preserve the semantics of the container; resources that exist \textit{within}
+a container should be accessible by processes within the same container, but resources
+that exist \textit{without} should not be accessible by default.
 
 Special files such as character or block devices are treated separately from regular
 files. Since these provide direct interfaces into the kernel, it does not make sense to
@@ -512,12 +511,38 @@ events subsystem, among others. Using a capability that has not been expressly m
 an \texttt{allow} rule is considered default-deny. Any other access is considered
 default-deny, if the container has been tainted.
 
-\subsubsection{Improving Default Policy}%
+\subsubsection{Future Improvements to Default Policy}%
 \label{sss:bpfcontain-improving-default}
 
-\todo{Talk about our desire to enforce overlayfs policy, if the implementation ends up
-taking too long. Also: Need to go over the rest of this chapter and remove references to
-namespace file policy.}
+Presently, a major limitation of \bpfcontain{}'s approach to default filesystem policy is
+that it relies on a container being in its own user namespace in order for default-allow
+access to be considered. If a filesystem exists in the container's mount namespace but
+does not belong to its user namespace, \bpfcontain{} must assume default-deny. However,
+most container management systems, including Docker~\cite{docker_security}, do not run
+containers under a new user namespace by default, meaning that \bpfcontain{} would be left
+unable to use its default filesystem policy to grant access. While it is possible to force
+Docker to run a container in a new user namespace via the Docker settings, it would be
+beneficial if \bpfcontain{}'s default policy would work regardless of user namespace
+membership.
+
+There are a few technical challenges surrounding this idea, but it should be possible to
+achieve in the future, once \bpfcontain{} has been more integrated with Docker
+(c.f.~\Cref{ss:disc-docker-integration} in \Cref{c:discussion}). In particular, we can use
+\gls{ebpf} uprobes and kfunc probes to trace Docker's containerd shim as it switches
+namespaces and mounts the appropriate filesystems. We could then incorporate these
+filesystems directly into \bpfcontain{}'s default policy, without relying on user
+namespace information provided by the kernel. Exploring this option is left as a topic
+for future work.
+
+Another major technical issue underlying \bpfcontain{}'s default filesystem policy is that
+the Linux overlay filesystem currently performs permission checks on the underlying inode
+(from the original filesystem), rather than the overlayfs inode. This currently makes it
+impossible to enforce \bpfcontain{}'s default filesystem policy on overlay filesystems,
+which are generally used to implement the majority of a container's filesystem layout.  To
+rectify this, we can leverage more \gls{ebpf} programs to trace the underlying overlay
+filesystem operations and temporarily manipulate \bpfcontain{}'s state model to account
+for this. This may add some overhead to overlayfs operations, but should be acceptable in
+practice. Like Docker integration, we leave this as a topic for future work.
 
 \subsection{Managing Container State}%
 \label{ss:bpfcontain-state}
