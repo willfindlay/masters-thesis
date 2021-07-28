@@ -65,8 +65,9 @@ performance. The Phoronix framework comprises a number of open source test suite
 targeting a different aspect of system behaviour. For the purposes of this thesis, we
 select three separate test suites, measuring a variety of \gls{os}-level functionality and
 exercising multiple \gls{lsm} hooks. In particular, we select the OSBench suite, the
-Kernel Compilation suite, the Apache suite, and the \gls{ipc} suite. \Cref{tab:suites}
-describes each suite and what it measures.
+Kernel Compilation suite, and the Apache suite .\Cref{tab:suites} describes each test suite and
+what it measures.
+%, and the \gls{ipc} suite.
 
 \begin{table}[htpb]
   \centering
@@ -86,10 +87,10 @@ describes each suite and what it measures.
                              & Memory Allocations & Memory allocation throughput \\
   Kernel Compilation         & ---                & Time to compile Linux Kernel \\
   Apache                     & ---                & Apache HTTP request throughput \\
-  \gls{ipc}                  & Unix Socket        & Unix socket throughput \\
-                             & TCP Socket         & TCP socket throughput  \\
-                             & Named Pipe         & Named pipe throughput  \\
-                             & Unnamed Pipe       & Unnamed pipe throughput \\
+  % \gls{ipc}                  & Unix Socket        & Unix socket throughput \\
+  %                            & TCP Socket         & TCP socket throughput  \\
+  %                            & Named Pipe         & Named pipe throughput  \\
+  %                            & Unnamed Pipe       & Unnamed pipe throughput \\
   \bottomrule
   \end{tabular}
 \end{table}
@@ -112,7 +113,6 @@ for each test suite and system configuration. For reproducibility, we include
 a link\footnote{Benchmarking tests are available:
 \url{https://github.com/willfindlay/bpfcontain-benchmarks}} to the benchmarking
 repository, including results and all related scripts.
-
 
 % \begin{inprogress}
 %   \begin{itemize}
@@ -147,19 +147,307 @@ repository, including results and all related scripts.
 
 \subsubsection{OSBench Results}
 
+The file creation benchmark (\Cref{tab:phoronix-files}) indicates that \bpfbox{} and
+\bpfcontain{} each have higher overhead than AppArmor for file creation and deletion
+operations in the \textbf{Passive} and \textbf{Allow} cases. In the \textbf{Complain}
+case, \bpfbox{} and \bpfcontain{} significantly outperform AppArmor. We discuss each
+result in turn.
+
+\begingroup\small
+\begin{longtable}[c]{llrrr}
+  \caption[Results of the file creation benchmark]{
+    Results of the file creation benchmark. Units are $\mu$s per event; lower is
+    better. Percent overhead is compared to the baseline result.
+  }%
+  \label{tab:phoronix-files}\\
+  \toprule
+   Test Case & System         &  Mean  & Std & Overhead (\%)\\
+   \midrule
+   Base      & ---            &  42.21 & 1.22 &  ---     \\
+   \midrule
+   Passive   & \bpfbox{}      &  49.09 & 0.40 &  16.31\% \\
+             & \bpfcontain{}  &  48.16 & 0.36 &  14.11\% \\
+             & AppArmor       &  43.87 & 0.95 &   3.93\% \\
+   \midrule
+   Allow     & \bpfbox{}      &  49.41 & 0.39 &  17.08\% \\
+             & \bpfcontain{}  &  53.43 & 1.01 &  26.60\% \\
+             & AppArmor       &  47.07 & 1.15 &  11.52\% \\
+   \midrule
+   Complain  & \bpfbox{}      &  50.34 & 0.54 &  19.27\% \\
+             & \bpfcontain{}  &  55.67 & 0.75 &  31.89\% \\
+             & AppArmor       & 111.66 & 0.75 & 164.55\% \\
+  \bottomrule
+\end{longtable}
+\endgroup
+
+In the \textbf{Passive} case, \bpfbox{} and \bpfcontain{}'s high performance overhead can
+be attributed to the fact that they each invoke multiple \gls{bpf} programs over multiple
+\gls{lsm} hooks on the \texttt{open(2)}, \texttt{write(2)}, and \texttt{unlink(2)} code
+paths. Unlike AppArmor, \bpfbox{} and \bpfcontain{} invoke a new \gls{ebpf} program on
+every \gls{lsm} hook along this code path, then perform a map lookup to determine whether
+the process is being actively traced. The overhead associated with this many \gls{bpf}
+program invocations is non-trivial compared with the overhead of simply calling into an
+\gls{lsm} hook.  However, in all cases the observed overhead is roughly 10$\mu$s or less,
+which should be acceptable in practice. Future improvements to the \gls{krsi} framework
+may also be able to reduce the performance overhead of \gls{bpf} \gls{lsm} programs.
+
+In the \textbf{Allow} case, \bpfbox{} is more in line with AppArmor, while \bpfcontain{}
+is shown to exhibit a slightly higher overhead. However, as with the \textbf{Passive}
+case, this overhead should be acceptable in practice. We can attribute the additional
+overhead shown by \bpfcontain{} to the nuances associated with its code path for file and
+filesystem policies. For each file operation, \bpfcontain{} performs multiple map queries
+and reads information from multiple kernel data structures to enforce its default policy.
+Future iterations of \bpfcontain{} may improve this overhead by caching policy decisions
+for filesystem objects and/or resolving inefficiencies in how \bpfcontain{} reads
+information from kernel data structures.
+
+In the \textbf{Complaining} case, \bpfbox{} and \bpfcontain{} significantly outperform
+AppArmor, a fact which can be attributed to inefficiencies in AppArmor's logging
+mechanism, which relies on the kernel's audit framework. The ring buffer maps used by
+\bpfbox{} and \bpfcontain{} are known to exhibit comparatively less overhead~\todo{CITE}.
+Additional overhead may also arise due to differences in how AppArmor translates files and
+access patterns to log messages.
+
+The results of the process creation benchmark (\Cref{tab:phoronix-processes}) indicate
+that \bpfbox{} and \bpfcontain{} introduce modest overhead on top of the \texttt{fork(2)}
+system call.  Comparatively, AppArmor introduces very little overhead, well within the
+margin of error for measurements. The additional overhead introduced by \bpfbox{} and
+\bpfcontain{} can be explained by the additional per-process and per-thread accounting
+performed by each system. \bpfcontain{}, in particular, handles a significant amount of
+per-process and per-thread metadata, which must be populated each time a \texttt{fork(2)}
+or \texttt{clone(2)} occurs, and cleaned up each time a process exits. However, it should
+be noted that both \bpfbox{} and \bpfcontain{} introduce less than $10\%$ overhead along
+this code path (within 1--2$\mu$s), which should be imperceptible in practice.
+
+\begingroup\small
+\begin{longtable}[c]{llrrr}
+  \caption[Results of the process creation benchmark]{
+    Results of the process creation benchmark. Units are $\mu$s per event; lower is
+    better. Percent overhead is compared to the baseline result.
+  }%
+  \label{tab:phoronix-processes}\\
+  \toprule
+   Test Case & System         &  Mean & Std & Overhead (\%)\\
+   \midrule
+   Base      & ---            & 38.65 & 0.36 &  ---    \\
+   \midrule
+   Passive   & \bpfbox{}      & 38.81 & 0.44 &  0.40\% \\
+             & \bpfcontain{}  & 40.17 & 0.39 &  3.93\% \\
+             & AppArmor       & 39.04 & 0.74 &  1.01\% \\
+   \midrule
+   Allow     & \bpfbox{}      & 39.28 & 0.41 &  1.63\% \\
+             & \bpfcontain{}  & 41.27 & 0.63 &  6.77\% \\
+             & AppArmor       & 38.94 & 0.34 &  0.74\% \\
+   \midrule
+   Complain  & \bpfbox{}      & 39.51 & 0.33 &  2.22\% \\
+             & \bpfcontain{}  & 41.49 & 0.76 &  7.33\% \\
+             & AppArmor       & 38.68 & 0.56 &  0.07\% \\
+  \bottomrule
+\end{longtable}
+\endgroup
+
+The thread creation results (\Cref{tab:phoronix-threads}) are directly related to the
+process creation results discussed above, insofar as both operations exercise the same
+\gls{bpf} programs in \bpfbox{} and \bpfcontain{}. Since thread creation is faster then
+process creation, the percentage overhead of \bpfbox{} and \bpfcontain{} appear
+comparatively higher, but the underlying delta is the same, at roughly 1--2$\mu$s per
+event. Despite these differences in thread and process creation speeds, the resulting
+percentage overhead of \bpfbox{} and \bpfcontain{} is still under 10\%.
+
+\begingroup\small
+\begin{longtable}[c]{llrrr}
+  \caption[Results of the thread creation benchmark]{
+    Results of the thread creation benchmark. Units are $\mu$s per event; lower is
+    better. Percent overhead is compared to the baseline result.
+  }%
+  \label{tab:phoronix-threads}\\
+  \toprule
+   Test Case & System         &  Mean & Std  & Overhead (\%)\\
+   \midrule
+   Base      & ---            & 20.18 & 0.19 & ---     \\
+   \midrule
+   Passive   & \bpfbox{}      & 21.06 & 0.25 & 4.37\% \\
+             & \bpfcontain{}  & 21.21 & 0.30 & 5.08\% \\
+             & AppArmor       & 20.32 & 0.25 & 0.71\% \\
+   \midrule
+   Allow     & \bpfbox{}      & 21.56 & 0.37 & 6.84\% \\
+             & \bpfcontain{}  & 22.11 & 0.22 & 9.53\% \\
+             & AppArmor       & 20.29 & 0.18 & 0.54\% \\
+   \midrule
+   Complain  & \bpfbox{}      & 21.57 & 0.25 & 6.90\% \\
+             & \bpfcontain{}  & 21.96 & 0.24 & 8.80\% \\
+             & AppArmor       & 20.32 & 0.16 & 0.70\% \\
+  \bottomrule
+\end{longtable}
+\endgroup
+
+The launch programs benchmark (\Cref{tab:phoronix-launch-programs}) is essentially the
+same as the process creation benchmark (c.f.~\Cref{tab:phoronix-processes}), with one
+major difference: the addition of an \texttt{execve(2)} call after the \texttt{clone(2)}
+system call. This \texttt{execve(2)} call adds a constant overhead of about 20$\mu$s on
+top of the original process creation results, as well as additional \gls{lsm} hook
+invocations along the \texttt{execve(2)} code path.
+
+The additional \gls{lsm} hook invocations caused by the \texttt{execve(2)} severely impact
+AppArmor's performance in the \textbf{Complaining} case, for the same reasons as discussed
+in the file creation results (c.f.~\Cref{tab:phoronix-files}). \bpfbox{} and \bpfcontain{}
+exhibit comparatively little overhead, despite the \texttt{execve(2)} call. This result
+can be explained by the fact that \texttt{execve(2)}'s code path invokes significantly
+fewer \gls{lsm} hooks than the file creation and deletion code paths we examined earlier.
+In all test cases, \bpfbox{} and \bpfcontain{} are able to achieve under $7\%$ overhead in
+the worst case, and under $3\%$ in many cases.
+
+\begingroup\small
+\begin{longtable}[c]{llrrr}
+  \caption[Results of the program launching benchmark]{
+    Results of the program launching benchmark. Units are $\mu$s per event; lower is
+    better. Percent overhead is compared to the baseline result.
+  }%
+  \label{tab:phoronix-launch-programs}\\
+  \toprule
+   Test Case & System         &  Mean & Std  & Overhead (\%)\\
+   \midrule
+   Base      & ---            & 61.67 & 0.20 & ---     \\
+   \midrule
+   Passive   & \bpfbox{}      & 63.30 & 0.28 & 2.64 \% \\
+             & \bpfcontain{}  & 63.12 & 0.28 & 2.34 \% \\
+             & AppArmor       & 62.84 & 0.25 & 1.89 \% \\
+   \midrule
+   Allow     & \bpfbox{}      & 63.44 & 0.40 & 2.86 \% \\
+             & \bpfcontain{}  & 65.05 & 0.38 & 5.47 \% \\
+             & AppArmor       & 63.17 & 0.21 & 2.43 \% \\
+   \midrule
+   Complain  & \bpfbox{}      & 65.22 & 0.48 & 5.75 \% \\
+             & \bpfcontain{}  & 65.66 & 0.30 & 6.47 \% \\
+             & AppArmor       & 90.56 & 1.97 & 46.83\% \\
+  \bottomrule
+\end{longtable}
+\endgroup
+
+The memory allocation benchmark (\Cref{tab:phoronix-memory}) indicates that none of the
+systems had any significant affect on memory allocation. In some cases, percent overhead
+falsely appears to indicate a performance \textit{improvement}, which we attribute to
+measurement error rather than any indication of increased performance. This result is
+consistent with expectations, since memory allocation does not directly interact with any
+\gls{lsm} hooks in the kernel, and neither \bpfbox{} nor \bpfcontain{} instruments any
+\gls{bpf} programs on the heap allocation code path.
+
+\begingroup\small
+\begin{longtable}[c]{llrrr}
+  \caption[Results of the memory allocation benchmark]{
+    Results of the memory allocation benchmark. Units are Ns per event; lower is
+    better. Percent overhead is compared to the baseline result.
+  }%
+  \label{tab:phoronix-memory}\\
+  \toprule
+   Test Case & System         &  Mean  & Std  & Overhead (\%)\\
+   \midrule
+   Base      & ---            & 117.17 & 0.67 & ---     \\
+   \midrule
+   Passive   & \bpfbox{}      & 116.87 & 0.18 & -0.26\% \\
+             & \bpfcontain{}  & 120.05 & 1.27 &  2.46\% \\
+             & AppArmor       & 117.24 & 0.97 &  0.06\% \\
+   \midrule
+   Allow     & \bpfbox{}      & 117.41 & 0.71 &  0.21\% \\
+             & \bpfcontain{}  & 116.42 & 0.62 & -0.64\% \\
+             & AppArmor       & 117.49 & 0.81 &  0.28\% \\
+   \midrule
+   Complain  & \bpfbox{}      & 117.62 & 0.75 &  0.38\% \\
+             & \bpfcontain{}  & 115.73 & 1.04 & -1.22\% \\
+             & AppArmor       & 116.81 & 0.80 & -0.31\% \\
+  \bottomrule
+\end{longtable}
+\endgroup
+
+
 \subsubsection{Kernel Compilation Results}
 
-\subsubsection{Apache Webserver Results}
+The kernel compilation benchmark (\Cref{tab:phoronix-kernel}) provides a representative
+depiction of overhead for a computationally-heavy task that involves multiple processes
+and significant amounts of file I/O. The results of this benchmark indicate that \bpfbox{}
+and \bpfcontain{} exhibit performance overhead that is roughly consistent with AppArmor in
+the average case. The \textbf{Passive} and \textbf{Allow} results indicate that all three
+systems exhibit an acceptable performance overhead of under about $3\%$. The
+\textbf{Complain} results indicate that \bpfcontain{} performs significantly better than
+both \bpfbox{} and AppArmor under a large event logging volume. This result can be
+attributed to minor implementation details, including improvements in how \bpfcontain{}
+handles event logging from multiple distinct sources.
+%This result can likely be
+%attributed to \bpfcontain{}'s more efficient userspace implementation in Rust, which
+%significantly outperforms the \bpfbox{} Python implementation.
 
-\subsubsection{\glsentryshort{ipc} Results}
+\begingroup\small
+\begin{longtable}[c]{llrrr}
+  \caption[Results of the kernel compilation benchmark]{
+    Results of the kernel compilation benchmark. Units are seconds to compile; lower is
+    better. Percent overhead is compared to the baseline result.
+  }%
+  \label{tab:phoronix-kernel}\\
+  \toprule
+   Test Case & System         &  Mean  & Std  & Overhead (\%)\\
+   \midrule
+   Base      & ---            & 235.32 & 1.96 & ---     \\
+   \midrule
+   Passive   & \bpfbox{}      & 237.95 & 1.88 &  1.12\% \\
+             & \bpfcontain{}  & 237.63 & 2.08 &  0.98\% \\
+             & AppArmor       & 236.45 & 1.92 &  0.48\% \\
+   \midrule
+   Allow     & \bpfbox{}      & 238.23 & 2.19 &  1.24\% \\
+             & \bpfcontain{}  & 243.09 & 2.19 &  3.30\% \\
+             & AppArmor       & 237.59 & 2.04 &  0.97\% \\
+   \midrule
+   Complain  & \bpfbox{}      & 269.64 & 1.98 & 14.59\% \\
+             & \bpfcontain{}  & 244.81 & 2.04 &  4.03\% \\
+             & AppArmor       & 288.54 & 2.11 & 22.62\% \\
+  \bottomrule
+\end{longtable}
+\endgroup
+
+
+\subsubsection{Apache Web Server Results}
+
+The Apache web server benchmark (\Cref{tab:phoronix-apache}) indicates that, while
+\bpfbox{} and \bpfcontain{} do exhibit a higher performance overhead than AppArmor, this
+overhead is still within an acceptable range at around $11\%$ in the worst case for
+\bpfcontain{}. The results from the \textbf{Complain} case appear to indicate that
+\bpfbox{} perf
+
+\begingroup\small
+\begin{longtable}[c]{llrrr}
+  \caption[TODO]{
+    Results of the Apache web server benchmark. Units are requests per second; higher is
+    better. Percent overhead is compared to the baseline result.
+  }%
+  \label{tab:phoronix-apache}\\
+  \toprule
+   Test Case & System         &  Mean   & Std   & Overhead (\%)\\
+   \midrule
+   Base      & ---            & 20576.49 & 281.94 & ---     \\
+   \midrule
+   Passive   & \bpfbox{}      & 19946.04 & 233.62 &  3.06\% \\
+             & \bpfcontain{}  & 19530.92 & 317.95 &  5.08\% \\
+             & AppArmor       & 20363.42 & 331.64 &  1.04\% \\
+   \midrule
+   Allow     & \bpfbox{}      & 19465.86 & 253.81 &  5.40\% \\
+             & \bpfcontain{}  & 18934.55 & 299.23 &  7.98\% \\
+             & AppArmor       & 20276.95 &  64.30 &  1.46\% \\
+   \midrule
+   Complain  & \bpfbox{}      & 20139.10 & 101.59 &  2.13\% \\
+             & \bpfcontain{}  & 18293.09 & 160.00 & 11.10\% \\
+             & AppArmor       & 19827.05 & 298.27 &  3.64\% \\
+  \bottomrule
+\end{longtable}
+\endgroup
+
+% \subsubsection{\glsentryshort{ipc} Results}
 
 \subsection{Discussion of Results}%
 \label{ss:eval-performance-discussion}
 
-The results show that both \bpfbox{} and \bpfcontain{} exert acceptable performance
-overhead in practice. In many cases, overhead is competitive with AppArmor, a standard
-\gls{lsm} that ships with the stock Linux kernel. \todo{Continue here, then ref to
-geometric means to discuss average overhead.}
+The results of the benchmarking tests show that both \bpfbox{} and \bpfcontain{} incur
+acceptable performance overhead in practice. In many cases, overhead is competitive with
+AppArmor, a standard \gls{lsm} that ships with the stock Linux kernel. \todo{Continue
+here, then ref to geometric means to discuss average overhead.}
 
 \begin{table}[htbp]
   \centering
@@ -171,21 +459,21 @@ geometric means to discuss average overhead.}
   \label{tab:phoronix-geometric}
   \begin{tabular}{llrr}
   \toprule
-  Configuration                 & Test Case & Geom. Mean & Percent Change (Base)\\
-  \midrule
-  Base                          & ---       & 6.238          & --- \\
-  \midrule
-  \multirow{3}{*}{AppArmor}     & Passive   & 6.158          &  -1.28\% \\
-                                & Allow     & 6.086          &  -2.35\% \\
-                                & Complain  & 4.962          & -20.46\% \\
-  \midrule
-  \multirow{3}{*}{\bpfbox}      & Passive   & 6.007          & -3.70\% \\
-                                & Allow     & 5.944          & -4.71\% \\
-                                & Complain  & 5.823          & -6.65\% \\
-  \midrule
-  \multirow{3}{*}{\bpfcontain}  & Passive   & 5.951          & -4.60\% \\
-                                & Allow     & 5.763          & -7.61\% \\
-                                & Complain  & 5.693          & -8.74\% \\
+   Test Case & System        & Geom. Mean & Overhead (\%)\\
+   \midrule
+   Base      &               & 6.238          & --- \\
+   \midrule
+   Passive   & \bpfbox{}     & 6.007          & 3.70\% \\
+             & \bpfcontain{} & 5.951          & 4.60\% \\
+             & AppArmor      & 6.158          & 1.28\% \\
+   \midrule
+   Allow     & \bpfbox{}     & 5.944          & 4.71\% \\
+             & \bpfcontain{} & 5.763          & 7.61\% \\
+             & AppArmor      & 6.086          & 2.35\% \\
+   \midrule
+   Complain  & \bpfbox{}     & 5.823          & 6.65\% \\
+             & \bpfcontain{} & 5.693          & 8.74\% \\
+             & AppArmor      & 4.962          & 20.46\% \\
   \bottomrule
   \end{tabular}
 \end{table}

@@ -1,0 +1,15 @@
+,,"Apache","Apache","Apache","Apache",,"Kernel Compilation","Kernel Compilation","Kernel Compilation","Kernel Compilation",,"Create Files","Create Files","Create Files","Create Files",,"Create Processes","Create Processes","Create Processes","Create Processes",,"Create Threads","Create Threads","Create Threads","Create Threads",,"Launch Programs","Launch Programs","Launch Programs","Launch Programs",,"Memory Allocations","Memory Allocations","Memory Allocations","Memory Allocations"
+,,"mean","pct_diff","pct_std","std",,"mean","pct_diff","pct_std","std",,"mean","pct_diff","pct_std","std",,"mean","pct_diff","pct_std","std",,"mean","pct_diff","pct_std","std",,"mean","pct_diff","pct_std","std",,"mean","pct_diff","pct_std","std"
+"base",,20576.49,0,1.37,281.94,,235.32,0,0.83,1.96,,42.21,0,2.90,1.22,,38.65,0,0.92,0.36,,20.18,0,0.96,0.19,,61.67,0,0.32,0.20,,117.17,0,0.57,0.67
+"bpfbox-passive",,19946.04,-3.06,1.17,233.62,,237.95,1.12,0.79,1.88,,49.09,16.31,0.82,0.40,,38.81,0.40,1.13,0.44,,21.06,4.37,1.18,0.25,,63.30,2.64,0.44,0.28,,116.87,-0.26,0.16,0.18
+"bpfcontain-passive",,19530.92,-5.08,1.63,317.95,,237.63,0.98,0.87,2.08,,48.16,14.11,0.74,0.36,,40.17,3.93,0.96,0.39,,21.21,5.08,1.43,0.30,,63.12,2.34,0.45,0.28,,120.05,2.46,1.06,1.27
+"apparmor-passive",,20363.42,-1.04,1.63,331.64,,236.45,0.48,0.81,1.92,,43.87,3.93,2.17,0.95,,39.04,1.01,1.89,0.74,,20.32,0.71,1.25,0.25,,62.84,1.89,0.40,0.25,,117.24,0.06,0.83,0.97
+"bpfbox-allow",,19465.86,-5.40,1.30,253.81,,238.23,1.24,0.92,2.19,,49.41,17.08,0.79,0.39,,39.28,1.63,1.05,0.41,,21.56,6.84,1.71,0.37,,63.44,2.86,0.63,0.40,,117.41,0.21,0.61,0.71
+"bpfcontain-allow",,18934.55,-7.98,1.58,299.23,,243.09,3.30,0.90,2.19,,53.43,26.60,1.89,1.01,,41.27,6.77,1.52,0.63,,22.11,9.53,1.02,0.22,,65.05,5.47,0.58,0.38,,116.42,-0.64,0.53,0.62
+"apparmor-allow",,20276.95,-1.46,0.32,64.30,,237.59,0.97,0.86,2.04,,47.07,11.52,2.44,1.15,,38.94,0.74,0.87,0.34,,20.29,0.54,0.89,0.18,,63.17,2.43,0.33,0.21,,117.49,0.28,0.69,0.81
+"bpfbox-complaining",,20139.10,-2.13,0.50,101.59,,269.64,14.59,0.73,1.98,,50.34,19.27,1.07,0.54,,39.51,2.22,0.83,0.33,,21.57,6.90,1.15,0.25,,65.22,5.75,0.74,0.48,,117.62,0.38,0.64,0.75
+"bpfcontain-complaining",,18293.09,-11.10,0.87,160.00,,244.81,4.03,0.83,2.04,,55.67,31.89,1.35,0.75,,41.49,7.33,1.82,0.76,,21.96,8.80,1.07,0.24,,65.66,6.47,0.46,0.30,,115.73,-1.22,0.90,1.04
+"apparmor-complaining",,19827.05,-3.64,1.50,298.27,,288.54,22.62,0.73,2.11,,111.66,164.55,0.67,0.75,,38.68,0.07,1.45,0.56,,20.32,0.70,0.81,0.16,,90.56,46.83,2.17,1.97,,116.81,-0.31,0.68,0.80
+"suite","Apache",,,,,"Kernel Compilation",,,,,"OSBench",,,,,"OSBench",,,,,"OSBench",,,,,"OSBench",,,,,"OSBench",,,,
+"test","Static Web Page Serving",,,,,"Time To Compile",,,,,"Test: Create Files",,,,,"Test: Create Processes",,,,,"Test: Create Threads",,,,,"Test: Launch Programs",,,,,"Test: Memory Allocations",,,,
+"units","Requests Per Second",,,,,"Seconds",,,,,"μs Per Event",,,,,"μs Per Event",,,,,"μs Per Event",,,,,"μs Per Event",,,,,"Ns Per Event",,,,
