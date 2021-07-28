@@ -1,0 +1,31 @@
+28th:
+    Finish chapter 6
+        - Add a results overview before full explanation
+        - Security analysis
+        - Summary
+
+29th:
+    Fixup comments about chapter 7:
+        - reorder things
+        - explain how I came up with Apache/MySQL policies
+
+30th:
+    Fixup intro
+        - redo the beginning part
+        - research questions
+        - contributions
+
+31st:
+    Finish chapter 8
+        - contributions
+
+        - semantic limitations (file/filesystem inode resolution, this can mostly stay the same)
+        - performance limitations (why it's not that bad and how it can be improved)
+        - security limitations (we didn't do a formal security analysis or evaluation,
+          what we can do better, security issues that arise from file/filesystem semantic gap)
+
+        -
+
+
+Try to have things done by: August 1st
+Final read-through: On August 2nd

@@ -340,20 +340,21 @@ so we omit the details of such a policy here. For a similar reason, we omit the
 corresponding \bpfbox{} policy as well, since \bpfbox{} does not deal in container-level
 semantics as \bpfcontain{} does.
 
+%\bpfcontain{}'s default
+%enforcement policy of defining a boundary around the container enables this policy to
+%be quite simple. A default-tainted policy enables container-level confinement without
+%specifying \textit{any} rules whatsoever. This policy can then be adjusted as
+%required, specifying file rules to provision access to volume mounts, network rules to
+%enable networking, and capability rules to enable access to specific POSIX
+%capabilities.
+
 \begin{lstlisting}[language=yaml, gobble=4,
   caption={[Confining an untrusted container with \bpfcontain{}]
     Confining an untrusted container with \bpfcontain{}.
     Note that this policy requires some extensions on top of the existing \bpfcontain{}
     model, such as instrumenting the Docker container runtime.
-    %\bpfcontain{}'s default
-    %enforcement policy of defining a boundary around the container enables this policy to
-    %be quite simple. A default-tainted policy enables container-level confinement without
-    %specifying \textit{any} rules whatsoever. This policy can then be adjusted as
-    %required, specifying file rules to provision access to volume mounts, network rules to
-    %enable networking, and capability rules to enable access to specific POSIX
-    %capabilities.
   },
-  label={lst:bpfcontain-untrusted}, float=true]
+  label={lst:bpfcontain-untrusted}, float=false]
     name: untrusted-container
     defaultTaint: true
 
@@ -572,12 +573,15 @@ Like \bpfbox{}, the majority of the \bpfcontain{} httpd policy
 \bpfcontain{} also supports tainting semantics, we leverage these to eliminate the need to
 define rules for operations preceding the taint. Specifically, we taint container once it
 has performed any networking operations or any \gls{ipc} with mysqld. Unlike \bpfbox{},
-however, \bpfcontain{} does not currently support untainting a process\footnote{This is
-because \bpfcontain{} taints at the container-level rather than the process-level. Future
+however, \bpfcontain{} does not support untainting a process\footnote{This is because
+\bpfcontain{} taints at the container-level rather than the process-level. Future
 iterations of \bpfcontain{} may change this behaviour, for example by tainting at the
-container-level and untainting at the process-level.}. This means that we must still
-specify access to shared libraries that will be loaded by suexec (along with whatever
-applications suexec will run, such as Python).
+container-level and untainting at the process-level.}. \todo{Remove the footnote, talk
+about how \bpfcontain{} deals in a different policy abstraction, and therefore tainting
+and switching policies doesn't make sense. We have no notion of transitioning from one
+policy to another.} This means that we must still specify access to shared libraries that
+will be loaded by suexec (along with whatever applications suexec will run, such as
+Python).
 
 Aside from the aforementioned differences, the per-file policy is more or less the same as
 \bpfbox{}.  To enable \gls{ipc} between the httpd and mysql, we define an \gls{ipc} allow

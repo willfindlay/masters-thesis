@@ -10,17 +10,19 @@ outlined in \Cref{s:cp-threat-model} of \Cref{c:confinement-problem}.
 \label{s:eval-performance}
 
 This section presents a performance evaluation of \bpfbox{} and \bpfcontain{}, measuring
-their performance overhead using a variety of benchmarking tests. In particular, we
-leverage the Phoronix Test Suite~\cite{phoronix} to measure overhead across a variety of
-computational tasks, workloads, and kernel interfaces. Each of these benchmarks exercises
-a different subset of \bpfbox{} and \bpfcontain{}'s enforcement engine, providing an
-approximation of their impact on the overall system. The subsections that follow provide
-an overview of the testing methodology and present the benchmark results.
+their performance overhead using a variety of micro- and macro-benchmarking tests. In
+particular, we leverage the Phoronix Test Suite~\cite{phoronix} to measure overhead across
+a variety of computational tasks, workloads, and kernel interfaces. Each of these
+benchmarks exercises a different subset of \bpfbox{} and \bpfcontain{}'s enforcement
+engine, providing an approximation of their impact on the overall system. We also measure
+the performance of the base system as a control, and the performance overhead of AppArmor
+as a basis for direct comparison. The subsections that follow provide an overview of the
+testing methodology and present the benchmark results.
 
 \subsection{Methodology}%
 \label{ss:eval-methodology}
 
-For the test environment, we utilize a bare-metal system running Arch Linux with a stock
+As a test environment, we utilize a bare-metal system running Arch Linux with a stock
 5.12.14-arch-1-1 kernel. The choice of a bare-metal system (rather than a virtual machine,
 for instance) reduces the risk of introducing additional sources of variance into the
 benchmarks. \Cref{tab:system-config} provides a detailed account of the test system
@@ -65,9 +67,8 @@ performance. The Phoronix framework comprises a number of open source test suite
 targeting a different aspect of system behaviour. For the purposes of this thesis, we
 select three separate test suites, measuring a variety of \gls{os}-level functionality and
 exercising multiple \gls{lsm} hooks. In particular, we select the OSBench suite, the
-Kernel Compilation suite, and the Apache suite .\Cref{tab:suites} describes each test suite and
-what it measures.
-%, and the \gls{ipc} suite.
+Kernel Compilation suite, and the Apache suite. \Cref{tab:suites} describes each test
+suite and what it measures.
 
 \begin{table}[htpb]
   \centering
@@ -86,7 +87,7 @@ what it measures.
                              & Create Processes   & Time to create new processes \\
                              & Memory Allocations & Memory allocation throughput \\
   Kernel Compilation         & ---                & Time to compile Linux Kernel \\
-  Apache                     & ---                & Apache HTTP request throughput \\
+  Apache Web Server          & ---                & Apache HTTP request throughput \\
   % \gls{ipc}                  & Unix Socket        & Unix socket throughput \\
   %                            & TCP Socket         & TCP socket throughput  \\
   %                            & Named Pipe         & Named pipe throughput  \\
@@ -95,24 +96,33 @@ what it measures.
   \end{tabular}
 \end{table}
 
-We consider ten system configurations in total. The \textbf{Base} configuration is the
-base system without any \glspl{lsm} or other confinement primitives active or loaded in
-the kernel. The \textbf{\bpfbox}, \textbf{\bpfcontain}, and \textbf{AppArmor}
-configurations measure the performance overhead of \bpfbox{}, \bpfcontain{}, and AppArmor,
-respectively. We then divide each of these three configurations into three distinct
-test cases each. The \textbf{Passive} case measures global system overhead
-without any active enforcement. The \textbf{Allow} case measures active
-enforcement, allowing all security-sensitive operations. Finally, the \textbf{Complain}
-case measures the worst-case overhead for each system, exercising the full code
-path of each \gls{lsm} hook and logging every attempted access.
+We consider ten system configurations in total (\Cref{fig:configuration}). The
+\textbf{Base} configuration is the base system without any \glspl{lsm} or other
+confinement primitives active or loaded in the kernel. The \textbf{\bpfbox},
+\textbf{\bpfcontain}, and \textbf{AppArmor} configurations measure the performance
+overhead of \bpfbox{}, \bpfcontain{}, and AppArmor, respectively. We then divide each of
+these three configurations into three distinct test cases each. The \textbf{Passive} case
+measures global system overhead without any active enforcement. The \textbf{Allow} case
+measures active enforcement, allowing all security-sensitive operations. Finally, the
+\textbf{Complain} case measures the worst-case overhead for each system, exercising the
+full code path of each \gls{lsm} hook and logging every attempted access.
+
+\begin{figure}[htp]
+  \centering
+  \includegraphics[width=0.6\linewidth]{figs/eval/configuration.pdf}
+  \caption[Benchmarking system configurations]{
+    The various system configurations used in the benchmarking tests.
+  }%
+  \label{fig:configuration}
+\end{figure}
 
 To ensure statistically valid results, we run each test at least eleven times, until
 a standard deviation of at most $2\%$ is achieved. We also discard the first run of each
 test to control for initial I/O transients. In total, the result is at least ten trials
-for each test suite and system configuration. For reproducibility, we include
-a link\footnote{Benchmarking tests are available:
-\url{https://github.com/willfindlay/bpfcontain-benchmarks}} to the benchmarking
-repository, including results and all related scripts.
+for each test suite and system configuration. For reproducibility, we make the
+benchmarking repository publicly available\footnote{Benchmarking tests are available:
+\url{https://github.com/willfindlay/bpfcontain-benchmarks}}, including all results and
+related scripts.
 
 % \begin{inprogress}
 %   \begin{itemize}
@@ -143,15 +153,57 @@ repository, including results and all related scripts.
 \subsection{Results}%
 \label{ss:eval-results}
 
-\todo{Present each test, table of results, perhaps a graph of results. Accompany each test with some text explaining the result}
+This section presents the results of the OSBench micro-benchmarks
+(\Cref{fig:osbench-results} and \Crefrange{tab:phoronix-files}{tab:phoronix-memory}) and
+the kernel compilation (\Cref{fig:phoronix-kernel} and \Cref{tab:phoronix-kernel}) and
+Apache web server (\Cref{fig:phoronix-apache} and \Cref{tab:phoronix-apache})
+macro-benchmarks. We find that \bpfbox{} and \bpfcontain{} perform competitively with
+AppArmor in most cases, with \bpfcontain{} experiencing minor performance degradations in
+some cases, which can be attributed to \bpfcontain{}'s status as a research prototype.  In
+light of these results, we discuss how future optimizations to \bpfcontain{} and the
+\gls{krsi} framework can greatly improve its performance overhead in practice.
 
-\subsubsection{OSBench Results}
+\begin{figure}[htp]
+  \centering
+  \subfloat{
+    \includegraphics[width=0.45\linewidth]{results/graphs/Create-Files.pdf}%
+  }\qquad
+  \subfloat{
+    \includegraphics[width=0.45\linewidth]{results/graphs/Create-Processes.pdf}%
+  }\\
+  \subfloat{
+    \includegraphics[width=0.45\linewidth]{results/graphs/Create-Threads.pdf}%
+  }\qquad
+  \subfloat{
+    \includegraphics[width=0.45\linewidth]{results/graphs/Launch-Programs.pdf}%
+  }\\
+  \subfloat{
+    \includegraphics[width=0.45\linewidth]{results/graphs/Memory-Allocations.pdf}%
+  }
+  \caption{
+    The results of the OSBench micro-benchmarks. The error bars show standard
+    deviation and the red lines show base measurements for each test. Lower times are
+    better.
+  }%
+  \label{fig:osbench}
+\end{figure}
 
-The file creation benchmark (\Cref{tab:phoronix-files}) indicates that \bpfbox{} and
-\bpfcontain{} each have higher overhead than AppArmor for file creation and deletion
-operations in the \textbf{Passive} and \textbf{Allow} cases. In the \textbf{Complain}
-case, \bpfbox{} and \bpfcontain{} significantly outperform AppArmor. We discuss each
-result in turn.
+\subsubsection{OSBench File Creation}
+
+The file creation benchmark (\Cref{tab:phoronix-files} and \Cref{fig:osbench}) indicates
+that \bpfbox{} and \bpfcontain{} have significantly higher overhead than AppArmor in the
+\textbf{Passive} and \textbf{Allow} cases. \bpfcontain{}, in particular, performs the worst
+out of the three systems in these two cases. This poor performance can be
+explained by the fact that it is an unoptimized research prototype, and that it performs
+complex analysis on filesystem operations to come to a policy decision. Conversely,
+AppArmor is a well-established security mechanism which has undergone significant
+performance optimizations over time. Future optimizations on \bpfcontain{} can
+significantly improve its performance overhead in practice. Despite a seemingly high
+performance overhead in the \textbf{Passive} and \textbf{Allow} cases, \bpfbox{} and
+\bpfcontain{} incur a performance penalty of under 12$\mu$s each, a slowdown which should
+be acceptable in practice.  Moreover, in the \textbf{Complain} case, \bpfbox{} and
+\bpfcontain{} significantly outperform AppArmor. This result can be attributed to
+implementation differences in their event-logging mechanisms.
 
 \begingroup\small
 \begin{longtable}[c]{llrrr}
@@ -187,9 +239,8 @@ paths. Unlike AppArmor, \bpfbox{} and \bpfcontain{} invoke a new \gls{ebpf} prog
 every \gls{lsm} hook along this code path, then perform a map lookup to determine whether
 the process is being actively traced. The overhead associated with this many \gls{bpf}
 program invocations is non-trivial compared with the overhead of simply calling into an
-\gls{lsm} hook.  However, in all cases the observed overhead is roughly 10$\mu$s or less,
-which should be acceptable in practice. Future improvements to the \gls{krsi} framework
-may also be able to reduce the performance overhead of \gls{bpf} \gls{lsm} programs.
+\gls{lsm} hook. Future improvements to the \gls{krsi} framework may also be able to reduce
+the performance overhead of \gls{bpf} \gls{lsm} programs.
 
 In the \textbf{Allow} case, \bpfbox{} is more in line with AppArmor, while \bpfcontain{}
 is shown to exhibit a slightly higher overhead. However, as with the \textbf{Passive}
@@ -204,9 +255,12 @@ information from kernel data structures.
 In the \textbf{Complaining} case, \bpfbox{} and \bpfcontain{} significantly outperform
 AppArmor, a fact which can be attributed to inefficiencies in AppArmor's logging
 mechanism, which relies on the kernel's audit framework. The ring buffer maps used by
-\bpfbox{} and \bpfcontain{} are known to exhibit comparatively less overhead~\todo{CITE}.
+\bpfbox{} and \bpfcontain{} are known to exhibit comparatively less
+overhead~\cite{zeng2015_auditing, zhang2021_lsm_file_overhead, nakryiko2020_ringbuf}.
 Additional overhead may also arise due to differences in how AppArmor translates files and
 access patterns to log messages.
+
+\subsubsection{OSBench Process Creation}
 
 The results of the process creation benchmark (\Cref{tab:phoronix-processes}) indicate
 that \bpfbox{} and \bpfcontain{} introduce modest overhead on top of the \texttt{fork(2)}
@@ -218,6 +272,17 @@ per-process and per-thread metadata, which must be populated each time a \texttt
 or \texttt{clone(2)} occurs, and cleaned up each time a process exits. However, it should
 be noted that both \bpfbox{} and \bpfcontain{} introduce less than $10\%$ overhead along
 this code path (within 1--2$\mu$s), which should be imperceptible in practice.
+
+% \begin{figure}[htp]
+%   \centering
+%   \includegraphics[width=0.8\linewidth]{results/graphs/Create-Processes.pdf}
+%   \caption{
+%     Results of the process creation benchmark.
+%     The error bars show standard deviation and the red line shows the base measurement.
+%     Lower times are better.
+%   }%
+%   \label{fig:phoronix-processes}
+% \end{figure}
 
 \begingroup\small
 \begin{longtable}[c]{llrrr}
@@ -246,6 +311,8 @@ this code path (within 1--2$\mu$s), which should be imperceptible in practice.
 \end{longtable}
 \endgroup
 
+\subsubsection{OSBench Thread Creation}
+
 The thread creation results (\Cref{tab:phoronix-threads}) are directly related to the
 process creation results discussed above, insofar as both operations exercise the same
 \gls{bpf} programs in \bpfbox{} and \bpfcontain{}. Since thread creation is faster then
@@ -253,6 +320,17 @@ process creation, the percentage overhead of \bpfbox{} and \bpfcontain{} appear
 comparatively higher, but the underlying delta is the same, at roughly 1--2$\mu$s per
 event. Despite these differences in thread and process creation speeds, the resulting
 percentage overhead of \bpfbox{} and \bpfcontain{} is still under 10\%.
+
+% \begin{figure}[htp]
+%   \centering
+%   \includegraphics[width=0.8\linewidth]{results/graphs/Create-Threads.pdf}
+%   \caption{
+%     Results of the thread creation benchmark.
+%     The error bars show standard deviation and the red line shows the base measurement.
+%     Lower times are better.
+%   }%
+%   \label{fig:phoronix-threadsa}
+% \end{figure}
 
 \begingroup\small
 \begin{longtable}[c]{llrrr}
@@ -281,12 +359,17 @@ percentage overhead of \bpfbox{} and \bpfcontain{} is still under 10\%.
 \end{longtable}
 \endgroup
 
+\subsubsection{OSBench Program Launching}
+
 The launch programs benchmark (\Cref{tab:phoronix-launch-programs}) is essentially the
 same as the process creation benchmark (c.f.~\Cref{tab:phoronix-processes}), with one
 major difference: the addition of an \texttt{execve(2)} call after the \texttt{clone(2)}
 system call. This \texttt{execve(2)} call adds a constant overhead of about 20$\mu$s on
 top of the original process creation results, as well as additional \gls{lsm} hook
-invocations along the \texttt{execve(2)} code path.
+invocations along the \texttt{execve(2)} code path. These factors contribute to \bpfbox{}
+and \bpfcontain{} performing slightly worse than AppArmor in the \textbf{Passive} and
+\textbf{Allow} cases and significantly better than AppArmor in the \textbf{Complaining}
+case.
 
 The additional \gls{lsm} hook invocations caused by the \texttt{execve(2)} severely impact
 AppArmor's performance in the \textbf{Complaining} case, for the same reasons as discussed
@@ -295,7 +378,18 @@ exhibit comparatively little overhead, despite the \texttt{execve(2)} call. This
 can be explained by the fact that \texttt{execve(2)}'s code path invokes significantly
 fewer \gls{lsm} hooks than the file creation and deletion code paths we examined earlier.
 In all test cases, \bpfbox{} and \bpfcontain{} are able to achieve under $7\%$ overhead in
-the worst case, and under $3\%$ in many cases.
+the worst case, and under $3\%$ in the majority of cases.
+
+% \begin{figure}[htp]
+%   \centering
+%   \includegraphics[width=0.8\linewidth]{results/graphs/Launch-Programs.pdf}
+%   \caption{
+%     Results of the program launching benchmark.
+%     The error bars show standard deviation and the red line shows the base measurement.
+%     Lower times are better.
+%   }%
+%   \label{fig:phoronix-launch-programs}
+% \end{figure}
 
 \begingroup\small
 \begin{longtable}[c]{llrrr}
@@ -324,6 +418,8 @@ the worst case, and under $3\%$ in many cases.
 \end{longtable}
 \endgroup
 
+\subsubsection{OSBench Memory Allocations}
+
 The memory allocation benchmark (\Cref{tab:phoronix-memory}) indicates that none of the
 systems had any significant affect on memory allocation. In some cases, percent overhead
 falsely appears to indicate a performance \textit{improvement}, which we attribute to
@@ -331,6 +427,17 @@ measurement error rather than any indication of increased performance. This resu
 consistent with expectations, since memory allocation does not directly interact with any
 \gls{lsm} hooks in the kernel, and neither \bpfbox{} nor \bpfcontain{} instruments any
 \gls{bpf} programs on the heap allocation code path.
+
+% \begin{figure}[htp]
+%   \centering
+%   \includegraphics[width=0.8\linewidth]{results/graphs/Memory-Allocations.pdf}
+%   \caption{
+%     Results of the memory allocation benchmark.
+%     The error bars show standard deviation and the red line shows the base measurement.
+%     Lower times are better.
+%   }%
+%   \label{fig:phoronix-memory}
+% \end{figure}
 
 \begingroup\small
 \begin{longtable}[c]{llrrr}
@@ -403,18 +510,44 @@ handles event logging from multiple distinct sources.
 \end{longtable}
 \endgroup
 
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=0.6\linewidth]{results/graphs/Kernel-Compilation.pdf}
+  \caption{
+    Results of the kernel compilation benchmark.
+    The error bars show standard deviation and the red line shows the base measurement.
+    Lower times are better.
+  }%
+  \label{fig:phoronix-kernel}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=0.6\linewidth]{results/graphs/Apache.pdf}
+  \caption{
+    Results of the Apache web server benchmark.
+    The error bars show standard deviation and the red line shows the base measurement.
+    Higher requests per second are better.
+  }%
+  \label{fig:phoronix-apache}
+\end{figure}
+
 
 \subsubsection{Apache Web Server Results}
 
 The Apache web server benchmark (\Cref{tab:phoronix-apache}) indicates that, while
 \bpfbox{} and \bpfcontain{} do exhibit a higher performance overhead than AppArmor, this
 overhead is still within an acceptable range at around $11\%$ in the worst case for
-\bpfcontain{}. The results from the \textbf{Complain} case appear to indicate that
-\bpfbox{} perf
+\bpfcontain{}. This overhead should still be quite acceptable in practice, and can be
+improved through further optimizations in \bpfcontain{}'s enforcement engine, which is
+still in the prototype phase. The results from the \textbf{Complain} case appear to
+indicate a slight performance improvement for \bpfbox{} over AppArmor; this is likely due
+to variance in the measurements rather than a true performance improvement, as the
+difference between the two systems falls within the margin of error.
 
 \begingroup\small
 \begin{longtable}[c]{llrrr}
-  \caption[TODO]{
+  \caption[Results of the Apache web server benchmark]{
     Results of the Apache web server benchmark. Units are requests per second; higher is
     better. Percent overhead is compared to the baseline result.
   }%
@@ -446,10 +579,32 @@ overhead is still within an acceptable range at around $11\%$ in the worst case 
 
 The results of the benchmarking tests show that both \bpfbox{} and \bpfcontain{} incur
 acceptable performance overhead in practice. In many cases, overhead is competitive with
-AppArmor, a standard \gls{lsm} that ships with the stock Linux kernel. \todo{Continue
-here, then ref to geometric means to discuss average overhead.}
+AppArmor, a standard \gls{lsm} that ships with the stock Linux kernel. In other cases, the
+performance overhead of \bpfbox{} and \bpfcontain{} is higher than that of AppArmor, but
+still within an acceptable range, such that the slowdown should be either imperceptible or
+acceptable in most practical use cases.  As \bpfbox{} and \bpfcontain{} are both research
+prototypes, they have not yet been optimized to the extent that AppArmor has. This lack of
+optimization is particularly evident in the results for \bpfcontain{}, and may account for
+significant differences in performance in the file I/O and Apache web server tests.
 
-\begin{table}[htbp]
+While \bpfbox{} and \bpfcontain{} are not as efficient as AppArmor in the \textbf{Passive}
+and \textbf{Allow}  test cases, the additional performance overhead should be an
+acceptable price to pay for the increase in flexibility and system observability afforded
+by an \gls{ebpf} implementation as opposed to a traditional Linux Security Module.
+Moreover, \bpfcontain{} extends \bpfbox{}'s original enforcement model, adding new rule categories
+and enforcement defaults. While these enhancements may be the cause of some additional
+performance overhead, we attribute the majority of \bpfcontain{}'s actual performance
+overhead to sub-optimal memory allocations and data structure access patterns, which can
+be optimized in the future.
+
+Despite under-performing in the \textbf{Passive} and \textbf{Allow} cases, both \bpfbox{}
+and \bpfcontain{} significantly outperform AppArmor in the \textbf{Complain} test case,
+due to a more efficient event logging mechanism.  \Cref{tab:phoronix-geometric} shows the
+geometric mean of all tests for each test case, indicating that \bpfbox{} and
+\bpfcontain{} exhibit and average performance penalty of under $9\%$ in practice, while
+AppArmor can exhibit overheads of up to $20\%$ in the worst case.
+
+\begin{table}[htp]
   \centering
   \caption[Geometric means of Phoronix benchmarking results]{
     Geometric means of Phoronix benchmarking results. These are indicative of over all
@@ -478,34 +633,142 @@ here, then ref to geometric means to discuss average overhead.}
   \end{tabular}
 \end{table}
 
-\begin{inprogress}
-  \todo{Discuss a comparison with SELinux at the end, perhaps citing Zhang et al?}
-  \begin{itemize}
-    \item Zhang \etal~\cite{zhang2021_lsm_file_overhead} evaluated the performance
-    overhead of LSMs on file system operations; they mentioned (really damning) performance
-    statistics for SELinux that can be compared with BPFContain and AppArmor
-  \end{itemize}
-\end{inprogress}
+Although the results presented in this section indicate a comparative performance with
+AppArmor, many other widely-adopted \glspl{lsm} can perform significantly worse than
+AppArmor in some cases. For instance, Zhang \etal~\cite{zhang2021_lsm_file_overhead} found
+that SELinux, perhaps the most widely-used Linux \gls{mac} implementation, exhibits
+significant performance overhead, many times worse than AppArmor in some cases. These
+results could indicate that \bpfbox{} and \bpfcontain{} might perform favourably compared
+to alternative \glspl{lsm} like SELinux, although further investigation is needed in order
+to establish a direct comparison.
 
 \section{Security Analysis}%
 \label{s:eval-security}
 
-\todo{The plan for this section is to first revisit the threat model, then go through each
-policy \enquote{category} supported by \bpfbox{} and \bpfcontain{}. In a few categories
-(IPC, capabilities, kernel interfaces) \bpfcontain{} is just better... The \bpfbox{}
-prototype left some of this stuff out, and some of it is much weaker. In the networking
-category, both \bpfbox{} and \bpfcontain{} have room for improvement. We can do a forward
-ref to limitations / future work for this.}
+We now turn our attention to the security of \bpfbox{} and \bpfcontain. Specifically, we
+conduct an informal security analysis on both systems, evaluating how well they are able
+to confine an attacker under the threat model presented in \Cref{s:cp-threat-model} of
+\Cref{c:confinement-problem}. In particular, we examine the various policy rule categories
+provided by both \bpfbox{} and \bpfcontain{} as well as how their respective enforcement
+engines enforce policy at runtime. We characterize an adversary's ability to escape
+confinement based on whether the adversary is able to violate the security assumptions of
+\bpfbox{} and \bpfcontain{} under a policy designed to prevent such violations.
+
+% \todo{The plan for this section is to first revisit the threat model, then go through each
+% policy \enquote{category} supported by \bpfbox{} and \bpfcontain{}. In a few categories
+% (IPC, capabilities, kernel interfaces) \bpfcontain{} is just better... The \bpfbox{}
+% prototype left some of this stuff out, and some of it is much weaker. In the networking
+% category, both \bpfbox{} and \bpfcontain{} have room for improvement. We can do a forward
+% ref to limitations / future work for this.}
 
 \subsection{Threat Model Revisited}
 
+Recall the threat model presented in \Cref{s:cp-threat-model} of
+\Cref{c:confinement-problem}. We assume a remote adversary who is confined by some policy
+$\mathcal{P}$. The adversary's goal is to escape confinement by circumventing
+$\mathcal{P}$, enabling them to access sensitive resources, interfere or tamper with the
+system, or perform other unauthorized actions. Our goal is to confine the adversary,
+limiting the set of all actions they can perform to some subset of allowed actions. We
+express such confinement using the policy $\mathcal{P}$ which defines rules governing the
+set of operations some subject $\mathcal{S}_i$ may perform on system objects
+$\mathcal{O}_1 \mathellipsis \mathcal{O}_n$. To enforce our confinement policy, we rely on
+a \textit{confinement engine} which has been loaded into the kernel's reference monitor.
+
+Under our threat model, we assign significant capabilities to the adversary. Aside from the
+restrictions imposed by our confinement policy, we assume that they have root-level access
+to the system, including the ability to load code into the kernel, bypass discretionary
+access controls, read or modify any persistent resource, and establish persistent access
+to the system. Thus, an attacker that is able to escape or bypass confinement has
+effectively compromised the entire system. Further, our enforcement engine must take steps
+protect itself, preventing the attacker from simply loading or modifying code in the
+kernel, which would result in the ability to tamper with or bypass the enforcement engine.
+
+In the subsections that follow, we consider four broad access categories and describe how
+\bpfbox{} and \bpfcontain{}'s confinement policy and enforcement engine prevent attacks
+related to these access categories. In some cases, the original \bpfbox{} policy
+specification (as presented in this thesis) provided insufficient protection against
+specific access patterns. In these instances, we describe how \bpfcontain{} improves upon
+the original \bpfbox{} design.
+
 \subsection{Files and Filesystems}
 
-\subsection{Capabilities and Kernel Interfaces}
+Correct mediation of file and filesystem accesses is critical to ensure that an adversary
+is confined. Files define the canonical persistent data store in modern \gls{cots}
+operating systems, including Linux. Depending on the nature of the file, the information
+stored within may be confidential, security-sensitive, or otherwise critical to normal
+system operation. Attacker modification of persistent files is often the first step in
+mounting a Confused Deputy attack~\cite{hardy1988_confused_deputy}, along with other
+classes of attack such as \gls{toctou} race conditions, data corruption, and memory safety
+attacks.
+
+Under the Unix model, special files and filesystems define an entrypoint into kernel
+interfaces, many of which are security-sensitive. For example, character devices expose an
+interface into device drivers, while special filesystems like \texttt{sysfs} and
+\texttt{securityfs} expose behavioural parameters and export sensitive information such as
+the system memory map. Limiting access to these files is of paramount importance, since
+unrestricted access could enable an attacker to change the behaviour of the kernel, read
+sensitive information, or modify global system parameters.
+
+\subsubsection{\bpfbox{}}
+
+To confine a process' access to the filesystem, \bpfbox{} supports \enquote{file} rules,
+which take a pathname and corresponding access vector. This access vector encodes the
+specific file operations that a process can perform on the file. Since \bpfbox{} policies
+are default-deny, an adversary running under a \bpfbox{} confinement policy should be
+unable to perform an operation $Op_i$ on any file $F_j$ unless this operation is
+explicitly covered under a file rule. For the purposes of confinement, \bpfbox{} treats
+all files equally, regardless of whether the file is a special file or belongs to
+a special filesystem. Thus, any access to any file on the system is governed by the same
+set of file rules. The only exception to this is a special \enquote{proc} rule which
+enables a policy to define access to per-pid \texttt{procfs} entries belonging to another
+process.
+
+To enforce its file policy, the \bpfbox{} enforcement engine instruments \gls{ebpf}
+programs on several \gls{lsm} hooks, including inode-based, file-based, and path-based
+hooks. Taken together, these hooks provide complete mediation over the set of all file
+operations, by instrumenting access at the \gls{vfs} layer. \bpfbox{} encodes its file
+policy using an \gls{ebpf} map, taking the inode and device numbers associated with a file
+and its filesystem as a key. When a process requests access to a file, \bpfbox{} computes
+a key for that file and makes a query against its policy map. Although this is an
+effective method of uniquely identifying a file, its security is subject to a few inherent
+limitations. An attack against this model would consist of unlinking and re-creating a file after
+a policy has been loaded, causing \bpfbox{} to see it as a different file when enforcing
+access control. In the worst case, this is effectively a denial of service against the
+confined process, since \bpfbox{} enforces a default-deny policy on unrecognized files.
+This attack would also require the adversary to be unconfined, such that they would be
+able to perform the necessary operations on the file.
+
+\subsubsection{\bpfcontain{}}
+
+Like \bpfbox{}, \bpfcontain{} supports file rules that specify a target pathname and
+corresponding access vector. In addition to file rules, \bpfcontain{} also supports
+filesystem rules for defining per-filesystem policy. A filesystem rule can be thought of
+as a coarser-grained version of a file rule, specifying access at the per-filesystem
+rather than the per-file level. In order to ensure mediation over explicit denials,
+\bpfcontain{} always prioritizes fine-grained file rules over coarse-grained filesystem
+rules.  This prevents a policy from inadvertently obviating its own file rules with
+a careless filesystem rule.
+
+Unlike \bpfbox{}, \bpfcontain{} treats regular files differently from special files and
+special filesystems.
+
+\subsection{Capabilities}
+
+\subsubsection{\bpfbox{}}
+
+\subsubsection{\bpfcontain{}}
 
 \subsection{Networking}
 
+\subsubsection{\bpfbox{}}
+
+\subsubsection{\bpfcontain{}}
+
 \subsection{\glsentryshort{ipc}}
+
+\subsubsection{\bpfbox{}}
+
+\subsubsection{\bpfcontain{}}
 
 
 

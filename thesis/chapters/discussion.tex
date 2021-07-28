@@ -5,6 +5,36 @@ propose ways to address current limitations, improve the \gls{ebpf} ecosystem fo
 confinement use cases, add features to \bpfbox{} and \bpfcontain{}, and conduct further
 research on the usability of both systems.
 
+\begin{inprogress}
+  New planned outline:
+  \begin{itemize}
+    \item 8.1 Contributions
+    \begin{itemize}
+      \item A paragraph per chapter (starting with 3), 1--2 sentences per section,
+            outlining the key points of what I did
+    \end{itemize}
+    \item 8.2 Limitations
+    \begin{itemize}
+      \item Leave this mostly unchanged
+      \item But revisit the \enquote{passive overhead} section (possibly remove BPF
+      namespaces part, depending on if we decide to keep it in)
+    \end{itemize}
+    \item 8.3 Future Work and Research Directions
+    \begin{itemize}
+      \item Keep policy language experimentation and user study
+      \item Possibly remove \gls{bpf} namespace and unprivileged \gls{bpf}?
+      \item Keep Docker integration and OCI spec
+      \item Keep fine-grained network policy
+      \item Remove GUI, keep policy generation
+    \end{itemize}
+    \item 8.4 Conclusion
+    \begin{itemize}
+      \item Leave this as-is and maybe fold in some of the pontificating from
+            \enquote{Improving the Status Quo}
+    \end{itemize}
+  \end{itemize}
+\end{inprogress}
+
 \section{Contributions}%
 \label{s:disc-contributions}
 
@@ -230,6 +260,8 @@ the policy enforcement mechanism or future improvements to the \gls{ebpf} ecosys
 
 \subsection{Limited Pathname Support in \glsentryshort{ebpf}}
 
+\todo{Rename this to policy semantic issues in the policy language?}
+
 It is hard to refer to files from \gls{ebpf}. In the kernel, files are generally uniquely
 described by an \textit{inode} structure, which in turn maps to one or more pathnames via
 a \textit{file} structure. Each inode belongs to a distinct filesystem, and is uniquely
@@ -355,56 +387,56 @@ side.
 %   \end{itemize}
 % \end{inprogress}
 
-\subsection{Passive Performance Overhead}
+% \subsection{Passive Performance Overhead}
 
-According to the performance evaluation results in \Cref{s:eval-performance} of
-\Cref{c:evaluation}, both \bpfbox{} and \bpfcontain{} offer competitive performance with
-AppArmor while offering the higher flexibility afforded to an \gls{ebpf}-based
-implementation. While these results are satisfactory, based on the number of additional
-benefits these research systems provide, there is a key opportunity to improve performance
-in one critical area: passive overhead on the system as a whole. \todo{We are in SELinux
-territory, we are playing the same game they are... It's already what everyone uses, so
-overhead being in line is acceptable}
+% According to the performance evaluation results in \Cref{s:eval-performance} of
+% \Cref{c:evaluation}, both \bpfbox{} and \bpfcontain{} offer competitive performance with
+% AppArmor while offering the higher flexibility afforded to an \gls{ebpf}-based
+% implementation. While these results are satisfactory, based on the number of additional
+% benefits these research systems provide, there is a key opportunity to improve performance
+% in one critical area: passive overhead on the system as a whole. \todo{We are in SELinux
+% territory, we are playing the same game they are... It's already what everyone uses, so
+% overhead being in line is acceptable}
 
-The problem is as follows. \bpfbox{} and \bpfcontain{} are designed to be process- and
-container-specific, rather than enforcing policy globally. Thus, they would ideally exert
-no additional performance overhead on unconfined applications. However, \gls{ebpf} and the
-\gls{lsm} hooks themselves are both \textit{global} mechanisms. Whenever a process make
-a system call, it always triggers the corresponding \gls{lsm} hook, which in turn always
-triggers the corresponding \gls{bpf} program. To filter out unconfined processes, we use
-a simple map lookup to query the process state\,---\,if it exists, we assume a confined
-process; if not, we assume an unconfined process and return early. Item \Circled{A} in
-\Cref{fig:disc-hooks} depicts this code path.
+% The problem is as follows. \bpfbox{} and \bpfcontain{} are designed to be process- and
+% container-specific, rather than enforcing policy globally. Thus, they would ideally exert
+% no additional performance overhead on unconfined applications. However, \gls{ebpf} and the
+% \gls{lsm} hooks themselves are both \textit{global} mechanisms. Whenever a process make
+% a system call, it always triggers the corresponding \gls{lsm} hook, which in turn always
+% triggers the corresponding \gls{bpf} program. To filter out unconfined processes, we use
+% a simple map lookup to query the process state\,---\,if it exists, we assume a confined
+% process; if not, we assume an unconfined process and return early. Item \Circled{A} in
+% \Cref{fig:disc-hooks} depicts this code path.
 
-Ideally, we would like to implement a filter that triggers \textit{before} \gls{lsm} hook
-invocation. Item \Circled{B} in \Cref{fig:disc-hooks} depicts this alternative code path.
-By filtering early, we could avoid the overhead of dynamic dispatch into the \gls{lsm}
-hook and \gls{bpf} program invocation entirely in the passive case. Thus, such an
-implementation would significantly outperform traditional \glspl{lsm} such as AppArmor and
-SELinux in global overhead, at a slight fixed cost of invoking filter logic before hook
-invocation.  Intuitively, it makes sense that the current \gls{lsm} hooks implementation does
-not employ this strategy\,---\,classically, \gls{lsm} hooks were \textit{meant to be global}.
-With the advent of the \gls{bpf} \gls{lsm}, this is no longer necessarily the case.
+% Ideally, we would like to implement a filter that triggers \textit{before} \gls{lsm} hook
+% invocation. Item \Circled{B} in \Cref{fig:disc-hooks} depicts this alternative code path.
+% By filtering early, we could avoid the overhead of dynamic dispatch into the \gls{lsm}
+% hook and \gls{bpf} program invocation entirely in the passive case. Thus, such an
+% implementation would significantly outperform traditional \glspl{lsm} such as AppArmor and
+% SELinux in global overhead, at a slight fixed cost of invoking filter logic before hook
+% invocation.  Intuitively, it makes sense that the current \gls{lsm} hooks implementation does
+% not employ this strategy\,---\,classically, \gls{lsm} hooks were \textit{meant to be global}.
+% With the advent of the \gls{bpf} \gls{lsm}, this is no longer necessarily the case.
 
-\begin{figure}[htpb]
-  \centering
-  \includegraphics[width=0.8\linewidth]{figs/discussion/hooks.pdf}
-  \caption[The code path taken by BPF LSM and accompanying overhead]{
-    The code path taken by \gls{bpf} \gls{lsm} and accompanying overhead. \Circled{A} shows the current \gls{bpf}
-    \gls{lsm} implementation. System calls invoke \gls{lsm} stubs which trigger dynamic
-    dispatch into \gls{lsm} hooks. These hooks then invoke a \gls{bpf} program, which
-    implements filtering and security enforcement logic. \Circled{B} shows the ideal
-    implementation that optimizes for overhead in the passive case by filtering
-    \textit{before} \gls{lsm} hook invocation.
-  }%
-  \label{fig:disc-hooks}
-\end{figure}
+% \begin{figure}[htpb]
+%   \centering
+%   \includegraphics[width=0.8\linewidth]{figs/discussion/hooks.pdf}
+%   \caption[The code path taken by BPF LSM and accompanying overhead]{
+%     The code path taken by \gls{bpf} \gls{lsm} and accompanying overhead. \Circled{A} shows the current \gls{bpf}
+%     \gls{lsm} implementation. System calls invoke \gls{lsm} stubs which trigger dynamic
+%     dispatch into \gls{lsm} hooks. These hooks then invoke a \gls{bpf} program, which
+%     implements filtering and security enforcement logic. \Circled{B} shows the ideal
+%     implementation that optimizes for overhead in the passive case by filtering
+%     \textit{before} \gls{lsm} hook invocation.
+%   }%
+%   \label{fig:disc-hooks}
+% \end{figure}
 
-Transitioning from the existing \gls{lsm} execution model to the model proposed above will
-require explicit support from the kernel. Since it likely does not make sense to offer
-such filtration logic in the general case, any implementation will likely need to be
-\gls{bpf}-specific. \Cref{ss:bpf-namespace} proposes a realistic extension to the
-\gls{bpf} ecosystem that could make such a change feasible: the \gls{bpf} namespace.
+% Transitioning from the existing \gls{lsm} execution model to the model proposed above will
+% require explicit support from the kernel. Since it likely does not make sense to offer
+% such filtration logic in the general case, any implementation will likely need to be
+% \gls{bpf}-specific. \Cref{ss:bpf-namespace} proposes a realistic extension to the
+% \gls{bpf} ecosystem that could make such a change feasible: the \gls{bpf} namespace.
 
 % \begin{inprogress}
 %   \begin{itemize}
@@ -428,7 +460,14 @@ such filtration logic in the general case, any implementation will likely need t
 %   \end{itemize}
 % \end{inprogress}
 
+\subsection{Performance Overhead}
+
+\todo{Talk about how we are a bit higher overhead, but we get so much more flexibility}
+\todo{The overhead is not that bad, and it's not an optimized thing. This can be improved with more optimizations.}
+
 \subsection{Network Policy Granularity}
+
+\todo{Move this down to fine-grained network policy}
 
 Currently, \bpfbox{} and \bpfcontain{} both expose a highly coarse-grained network policy
 to the user. In particular, network policy only operates at the socket level, and does not

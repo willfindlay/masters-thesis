@@ -171,6 +171,11 @@ def generate_graphs(df: pd.DataFrame):
             ylim = -3000
         else:
             ylim = None
+
+        # Re-order cases
+        plot_df['case'] = pd.Categorical(plot_df['case'], categories=['Base', 'Passive', 'Allow', 'Complaining'], ordered=True)
+        # print(pd.Categorical(plot_df['case'], categories=['Base', 'Passive', 'Allow', 'Complaining'], ordered=True))
+
         # Make the plot
         plot = (p9.ggplot(plot_df, p9.aes(x='case', y='mean', fill='system'))
                 # TODO: Figure out how to change the order
@@ -183,7 +188,7 @@ def generate_graphs(df: pd.DataFrame):
                 + p9.geom_hline(yintercept=base_val, color=lcolor, linetype='dashed', size=0.4)
                 + p9.lims(y=(ylim, None))
                 + p9.scale_fill_manual(values=COLORS)
-                + p9.labs(y=f'Time ({units})', x='Test Case', title=f'{test} Results')
+                + p9.labs(y=f'{units}', x='Test Case', title=f'{test} Results')
                 + p9.theme(axis_line_x=p9.element_line(color=ccolor),
                     axis_text_x=p9.element_text(color=ccolor),
                     axis_text_y=p9.element_text(color=ccolor))
