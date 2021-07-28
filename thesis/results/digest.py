@@ -100,6 +100,11 @@ def ingest() -> pd.DataFrame:
     df['suite'] = df['suite'].str.replace('pts/apache-1.7.2', 'Apache', regex=False)
     # TODO: handle ipc benchmark here if we include it
 
+    # Fixup test case names
+    df['test'] = df['test'].apply(remove_prefix('Test: '))
+    df['test'] = df['test'].replace('Time To Compile', 'Kernel Compilation')
+    df['test'] = df['test'].replace('Static Web Page Serving', 'Apache')
+
     # Rename units
     df['units'] = df['units'].str.replace('us', 'μs')
 
@@ -131,34 +136,59 @@ def ingest() -> pd.DataFrame:
     df['system'] = df['system'].apply(fixup_name)
     df['case'] = df['case'].apply(fixup_name)
 
-    # Fixup test case names
-    df['test'] = df['test'].apply(remove_prefix('Test: '))
-
     return df
 
 def generate_graphs(df: pd.DataFrame):
     # p9 variables
     dodge_text = p9.position_dodge(width=0.9)
-    units = df['units'].iloc[0]
+    ccolor = '#555555'
+    lcolor = '#a4031f'
 
     # Generate
     for test in set(df['test']):
+        # Get only the values in the current test
         plot_df = df[df['test'] == test]
-        base_val = plot_df[df['case'] == 'Base']['mean'].iloc[0]
+        # Get the units for the test
+        units = plot_df['units'].iloc[0]
+        # Find the value of the base to make the line later
+        base_val = plot_df[plot_df['case'] == 'Base']['mean'].iloc[0]
+        # Strip out base since it's a line
         plot_df = plot_df[plot_df['case'] != 'Base']
+        # Set y lim by test case
+        if test == 'Kernel Compilation':
+            ylim = -45
+        elif test == 'Create Threads':
+            ylim = -3
+        elif test == 'Create Processes':
+            ylim = -6
+        elif test == 'Launch Programs':
+            ylim = -15
+        elif test == 'Create Files':
+            ylim = -15
+        elif test == 'Memory Allocations':
+            ylim = -20
+        elif test == 'Apache':
+            ylim = -3000
+        else:
+            ylim = None
+        # Make the plot
         plot = (p9.ggplot(plot_df, p9.aes(x='case', y='mean', fill='system'))
                 # TODO: Figure out how to change the order
-                + p9.geom_col(stat='identity', position='dodge')
-                + p9.geom_errorbar(p9.aes(ymin='mean-std', ymax='mean+std'), position=dodge_text, color='black', size=0.4)
+                + p9.geom_col(stat='identity', position='dodge', show_legend=False)
+                + p9.geom_errorbar(p9.aes(ymin='mean-std', ymax='mean+std'), position=dodge_text, color=ccolor, size=0.2)
                 # TODO: Figure out how to shift this over to the left a bit
                 + p9.geom_text(p9.aes(y=-.5, label='system'),
-                      position=dodge_text,
-                      color='gray', size=8, angle=45, va='top')
-                + p9.geom_hline(yintercept=base_val, color='#f1595f', linetype='dashed')
-                + p9.lims(y=(-5, None))
+                    position=dodge_text,
+                    color=ccolor, size=8, angle=45, va='top')
+                + p9.geom_hline(yintercept=base_val, color=lcolor, linetype='dashed', size=0.4)
+                + p9.lims(y=(ylim, None))
                 + p9.scale_fill_manual(values=COLORS)
                 + p9.labs(y=f'Time ({units})', x='Test Case', title=f'{test} Results')
+                + p9.theme(axis_line_x=p9.element_line(color=ccolor),
+                    axis_text_x=p9.element_text(color=ccolor),
+                    axis_text_y=p9.element_text(color=ccolor))
                 )
+        # Save the plot
         plot.save(f'graphs/{test.replace(" ", "-")}.pdf')
 
 
