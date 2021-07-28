@@ -136,34 +136,36 @@ def ingest() -> pd.DataFrame:
 
     return df
 
-def generate_obsench(df: pd.DataFrame):
-    # Select OSBench suite
-    df = df[df['suite'] == 'OSBench']
-    units = df['units'].iloc[0]
-
+def generate_graphs(df: pd.DataFrame):
     # p9 variables
     dodge_text = p9.position_dodge(width=0.9)
+    units = df['units'].iloc[0]
 
-    # Graphs
+    # Generate
     for test in set(df['test']):
-        plot = (p9.ggplot(df[df['test'] == test], p9.aes(x='case', y='mean', fill='system'))
+        plot_df = df[df['test'] == test]
+        base_val = plot_df[df['case'] == 'Base']['mean'].iloc[0]
+        plot_df = plot_df[plot_df['case'] != 'Base']
+        plot = (p9.ggplot(plot_df, p9.aes(x='case', y='mean', fill='system'))
                 # TODO: Figure out how to change the order
                 + p9.geom_col(stat='identity', position='dodge')
+                + p9.geom_errorbar(p9.aes(ymin='mean-std', ymax='mean+std'), position=dodge_text, color='black', size=0.4)
                 # TODO: Figure out how to shift this over to the left a bit
                 + p9.geom_text(p9.aes(y=-.5, label='system'),
                       position=dodge_text,
                       color='gray', size=8, angle=45, va='top')
-                + p9.lims(y=(-15, None))
+                + p9.geom_hline(yintercept=base_val, color='#f1595f', linetype='dashed')
+                + p9.lims(y=(-5, None))
                 + p9.scale_fill_manual(values=COLORS)
                 + p9.labs(y=f'Time ({units})', x='Test Case', title=f'{test} Results')
                 )
-        plot.save(f'graphs/osbench-{test.replace(" ", "-")}.pdf')
+        plot.save(f'graphs/{test.replace(" ", "-")}.pdf')
 
 
 
 def main():
     df = ingest()
-    generate_obsench(df)
+    generate_graphs(df)
 
     #kernel = df[df['suite'] == 'Kernel Compilation']
     #digest(kernel, 'kernel-compilation')
