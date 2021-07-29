@@ -244,33 +244,73 @@ effective.
 \section{Contributions}%
 \label{s:contributions}
 
-This thesis offers three principle contributions to the field of computer science.
-They are summarized as follows:
+This thesis offers several contributions to the fields of computer science, computer security, and
+confinement. These contributions are as follows.
 \begin{itemize}
-  \item \todo{Enumerate contributions}
-  \item \todo{Enumerate contributions}
-  \item \todo{Enumerate contributions}
+  \item We present a novel framing of the confinement problem
+  (\Cref{c:confinement-problem}) in the context of Linux, arguing that inherent complexity
+  and misuse of existing primitives has led to semantic gaps in confinement. We argue that
+  these gaps, in turn, impact security by encouraging the adoption of overly-generic
+  polices that impact each other in unforeseen ways.
+
+  \item We present the design and implementation of two \gls{ebpf}-based confinement
+  engines, \bpfbox{} (\Cref{c:bpfbox}) and \bpfcontain{} (\Cref{c:bpfcontain}). The former
+  is a prototype for \gls{ebpf}-based confinement and the latter extends \bpfbox{},
+  improving its security and introducing a model for container-specific confinement.
+  \bpfbox{} and \bpfcontain{} are the first high-level, \gls{ebpf}-based confinement
+  frameworks of their kind.
+
+  \item We evaluate (\Cref{c:evaluation}) \bpfbox{} and \bpfcontain{} in the context of
+  their performance overhead and security. Specifically, we present results from
+  benchmarks along with an informal security analysis.
+
+  \item We discuss how \bpfbox{} and \bpfcontain{} can be used to implement several types
+  of confinement policy (\Cref{c:case-studies}), providing policy examples along with
+  detailed comparisons therein.
+
+  \item We examine (\Cref{c:discussion}) how future iterations on \bpfcontain{} can
+  further improve its confinement guarantees, performance overhead, and general utility.
+  We also discuss how both \bpfbox{} and \bpfcontain{} are useful as proofs of concept,
+  and how \gls{ebpf} might be used to implement other security mechanisms in the future.
 \end{itemize}
 
 \section{Outline}%
 \label{s:outline}
 
-\todo{All of the following needs to be redone}
+The rest of this thesis proceeds as follows. \Cref{c:background} presents detailed
+background information on virtualization, confinement, operating system security, and
+\gls{ebpf}.  \Cref{c:confinement-problem} presents a novel framing of the confinement
+problem, outlining the motivation and design goals for \bpfbox{} and \bpfcontain{}, and
+presenting a threat model for confinement.  \Cref{c:bpfbox} describes the design and
+implementation of the initial \bpfbox{} prototype and documents its original policy
+language. \Cref{c:bpfcontain} describes the design and implementation of \bpfcontain{},
+discusses how it has evolved from \bpfbox{}, and highlights opportunities for future
+extensions that can make \bpfcontain{} more useful for confining containers.
 
-\begin{inprogress}
-The rest of this thesis proceeds as follows. \Cref{c:background} presents background on
-virtualization and process confinement, historical confinement techniques that have been
-employed in Linux and other Unix-like operating systems, and \gls{ebpf} and its applications to
-performance and security monitoring. \Cref{c:bpfbox} describes the design and
-implementation of \bpfbox, presents an initial performance evaluation, and~\todo{What
-else?  Need to figure out how much I want to say about \bpfbox}. \Cref{c:bpfcontain}
-presents \bpfcontain, an iteration on the original \bpfbox{} system designed
-specifically for container security. We present its design and implementation, evaluate
-its performance and effectiveness as a security mechanism in greater detail, and describe
-how it can be applied to secure practical container deployments. \Cref{c:discussion}
-presents a discussion on \bpfbox{} and \bpfcontain{} and discusses opportunities for
-future work both in the context of container security and other potential security
-applications of \gls{ebpf} beyond the scope of confinement. \Cref{c:related} surveys existing
-literature in the confinement space and compares \bpfbox{} and \bpfcontain{} to extant
-approaches. \Cref{c:conclusion} concludes.
-\end{inprogress}
+\Cref{c:evaluation} presents an evaluation of the \bpfbox{} and \bpfcontain{} prototypes
+from the perspective of performance and security. We present benchmarking data comparing
+both systems with AppArmor, a popular \glsentryfull{lsm} implementation of mandatory
+access control. We also present a security analysis of \bpfbox{} and \bpfcontain{},
+highlighting areas of weakness and specific aspects of \bpfbox{} upon which \bpfcontain{}
+improves. \Cref{c:case-studies}  presents policy examples for \bpfbox{} and \bpfcontain{}
+and provides a detailed comparison, highlighting the strengths and weaknesses of each.
+\Cref{c:discussion} concludes with a high-level discussion on \bpfbox{} and \bpfcontain{},
+including limitations and opportunities for future work.
+
+% \begin{inprogress}
+% The rest of this thesis proceeds as follows. \Cref{c:background} presents background on
+% virtualization and process confinement, historical confinement techniques that have been
+% employed in Linux and other Unix-like operating systems, and \gls{ebpf} and its applications to
+% performance and security monitoring. \Cref{c:bpfbox} describes the design and
+% implementation of \bpfbox, presents an initial performance evaluation, and~\todo{What
+% else?  Need to figure out how much I want to say about \bpfbox}. \Cref{c:bpfcontain}
+% presents \bpfcontain, an iteration on the original \bpfbox{} system designed
+% specifically for container security. We present its design and implementation, evaluate
+% its performance and effectiveness as a security mechanism in greater detail, and describe
+% how it can be applied to secure practical container deployments. \Cref{c:discussion}
+% presents a discussion on \bpfbox{} and \bpfcontain{} and discusses opportunities for
+% future work both in the context of container security and other potential security
+% applications of \gls{ebpf} beyond the scope of confinement. \Cref{c:related} surveys existing
+% literature in the confinement space and compares \bpfbox{} and \bpfcontain{} to extant
+% approaches. \Cref{c:conclusion} concludes.
+% \end{inprogress}
