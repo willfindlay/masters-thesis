@@ -69,7 +69,7 @@ environment more consistent and eliminating as many external factors as possible
     measures.
   }%
   \label{tab:suites}
-  \begin{tabular}{llp{3in}}
+  \begin{tabular}{lll}
   \toprule
   Test Suite & Test & Measures \\
   \midrule
@@ -115,17 +115,18 @@ overhead of \bpfbox{}, \bpfcontain{}, and AppArmor, respectively. We then divide
 these three configurations into three distinct test cases each. The \textbf{Passive} case
 measures global system overhead without any active enforcement. The \textbf{Allow} case
 measures active enforcement, allowing all security-sensitive operations. Finally, the
-\textbf{Complain} case measures the worst-case overhead for each system, exercising the
+\textbf{Complaining} case measures the worst-case overhead for each system, exercising the
 full code path of each \gls{lsm} hook and logging every attempted access.
 
 To ensure statistically valid results, we run each test at least eleven times, until
-a standard deviation of at most $2\%$ of the mean is achieved. This is a sensible default
-enforced by the Phoronix Test Suite to ensure statistically valid results. We also discard
-the first run of each test to control for initial I/O transients. In total, the result is
-at least ten trials for each test suite and system configuration. For reproducibility, we
-make the benchmarking repository publicly available\footnote{Benchmarking tests are
-available: \url{https://github.com/willfindlay/bpfcontain-benchmarks}}, including all
-results and related scripts.
+a standard deviation of at most $2\%$ of the mean is achieved. The standard deviation
+bound is a sensible default enforced by the Phoronix Test Suite to ensure statistically
+valid results. We also discard the first run of each test to control for initial I/O
+transients. In the end, no additional trials were necessary, as we were able to achieve
+under $2\%$ standard deviation for all test configurations. For reproducibility, we make
+the benchmarking repository publicly available\footnote{Benchmarking tests are available:
+\url{https://github.com/willfindlay/bpfcontain-benchmarks}}, including all results and
+related scripts.
 
 % \begin{inprogress}
 %   \begin{itemize}
@@ -194,20 +195,21 @@ practice.
 
 \subsubsection{OSBench File Creation}
 
-The file creation benchmark (\Cref{tab:phoronix-create-files} and \Cref{fig:osbench}) indicates
-that \bpfbox{} and \bpfcontain{} have significantly higher overhead than AppArmor in the
-\textbf{Passive} and \textbf{Allow} cases. \bpfcontain{}, in particular, performs the worst
-out of the three systems in these two cases. This poor performance can be
-explained by the fact that it is an unoptimized research prototype, and that it performs
-complex analysis on filesystem operations to come to a policy decision. Conversely,
-AppArmor is a well-established security mechanism which has undergone significant
-performance optimizations over time. Future optimizations on \bpfcontain{} can
-significantly improve its performance overhead in practice. Despite a seemingly high
-performance overhead in the \textbf{Passive} and \textbf{Allow} cases, \bpfbox{} and
-\bpfcontain{} incur a performance penalty of under 12$\mu$s each, a slowdown which should
-be acceptable in practice.  Moreover, in the \textbf{Complain} case, \bpfbox{} and
-\bpfcontain{} significantly outperform AppArmor. This result can be attributed to
-implementation differences in their event-logging mechanisms.
+The file creation benchmark (\Cref{tab:phoronix-create-files} and \Cref{fig:osbench})
+indicates that \bpfbox{} and \bpfcontain{} have significantly higher overhead than
+AppArmor in the \textbf{Passive} and \textbf{Allow} cases. \bpfcontain{}, in particular,
+performs the worst out of the three systems in these two cases. It is perhaps unsurprising
+that \bpfcontain{} performed worse on this test, since it performs complex analysis on
+filesystem operations to come to a policy decision. We made no deliberate optimization
+attempts in this research prototype, but expect that future performance improvements are
+possible.  Conversely, AppArmor is a well-established security mechanism which has
+undergone significant performance optimizations over time. Future optimizations on
+\bpfcontain{} can significantly improve its performance overhead in practice. Despite
+a seemingly high performance overhead in the \textbf{Passive} and \textbf{Allow} cases,
+\bpfbox{} and \bpfcontain{} incur a performance penalty of under 12$\mu$s each, a slowdown
+which should be acceptable in practice.  Moreover, in the \textbf{Complaining} case,
+\bpfbox{} and \bpfcontain{} significantly outperform AppArmor. This result can be
+attributed to implementation differences in their event-logging mechanisms.
 
 \input{results/tables/create-files}
 % \begingroup\small
@@ -230,7 +232,7 @@ implementation differences in their event-logging mechanisms.
 %              & \bpfcontain{}  &  53.43 & 1.01 &  26.60\% \\
 %              & AppArmor       &  47.07 & 1.15 &  11.52\% \\
 %    \midrule
-%    Complain  & \bpfbox{}      &  50.34 & 0.54 &  19.27\% \\
+%    Complaining  & \bpfbox{}      &  50.34 & 0.54 &  19.27\% \\
 %              & \bpfcontain{}  &  55.67 & 0.75 &  31.89\% \\
 %              & AppArmor       & 111.66 & 0.75 & 164.55\% \\
 %   \bottomrule
@@ -278,6 +280,10 @@ or \texttt{clone(2)} occurs, and cleaned up each time a process exits. However, 
 be noted that both \bpfbox{} and \bpfcontain{} introduce less than $10\%$ overhead along
 this code path (within 1--2$\mu$s), which should be imperceptible in practice.
 
+\input{results/tables/create-processes}
+
+\FloatBarrier
+
 % \begin{figure}[htp]
 %   \centering
 %   \includegraphics[width=0.8\linewidth]{results/graphs/Create-Processes.pdf}
@@ -288,8 +294,6 @@ this code path (within 1--2$\mu$s), which should be imperceptible in practice.
 %   }%
 %   \label{fig:phoronix-processes}
 % \end{figure}
-
-\input{results/tables/create-processes}
 % \begingroup\small
 % \begin{longtable}[c]{llrrr}
 %   \caption[Results of the process creation benchmark]{
@@ -310,7 +314,7 @@ this code path (within 1--2$\mu$s), which should be imperceptible in practice.
 %              & \bpfcontain{}  & 41.27 & 0.63 &  6.77\% \\
 %              & AppArmor       & 38.94 & 0.34 &  0.74\% \\
 %    \midrule
-%    Complain  & \bpfbox{}      & 39.51 & 0.33 &  2.22\% \\
+%    Complaining  & \bpfbox{}      & 39.51 & 0.33 &  2.22\% \\
 %              & \bpfcontain{}  & 41.49 & 0.76 &  7.33\% \\
 %              & AppArmor       & 38.68 & 0.56 &  0.07\% \\
 %   \bottomrule
@@ -359,7 +363,7 @@ percentage overhead of \bpfbox{} and \bpfcontain{} is still under 10\%.
 %              & \bpfcontain{}  & 22.11 & 0.22 & 9.53\% \\
 %              & AppArmor       & 20.29 & 0.18 & 0.54\% \\
 %    \midrule
-%    Complain  & \bpfbox{}      & 21.57 & 0.25 & 6.90\% \\
+%    Complaining  & \bpfbox{}      & 21.57 & 0.25 & 6.90\% \\
 %              & \bpfcontain{}  & 21.96 & 0.24 & 8.80\% \\
 %              & AppArmor       & 20.32 & 0.16 & 0.70\% \\
 %   \bottomrule
@@ -419,7 +423,7 @@ the worst case, and under $3\%$ in the majority of cases.
 %              & \bpfcontain{}  & 65.05 & 0.38 & 5.47 \% \\
 %              & AppArmor       & 63.17 & 0.21 & 2.43 \% \\
 %    \midrule
-%    Complain  & \bpfbox{}      & 65.22 & 0.48 & 5.75 \% \\
+%    Complaining  & \bpfbox{}      & 65.22 & 0.48 & 5.75 \% \\
 %              & \bpfcontain{}  & 65.66 & 0.30 & 6.47 \% \\
 %              & AppArmor       & 90.56 & 1.97 & 46.83\% \\
 %   \bottomrule
@@ -432,10 +436,10 @@ The memory allocation benchmark (\Cref{tab:phoronix-memory-allocations} and
 \Cref{fig:osbench}) indicates that none of the systems had any significant affect on
 memory allocation. In some cases, percent overhead falsely appears to indicate
 a performance \textit{improvement}, which we attribute to measurement error rather than
-any indication of increased performance. This result is consistent with expectations,
-since memory allocation does not directly interact with any \gls{lsm} hooks in the kernel,
-and neither \bpfbox{} nor \bpfcontain{} instruments any \gls{bpf} programs on the heap
-allocation code path.
+any indication of increased performance; all results from this trial were well within the
+margin of error. This result is consistent with expectations, since memory allocation does
+not directly interact with any \gls{lsm} hooks in the kernel, and neither \bpfbox{} nor
+\bpfcontain{} instruments any \gls{bpf} programs on the heap allocation code path.
 
 \input{results/tables/memory-allocations}
 
@@ -469,7 +473,7 @@ allocation code path.
 %              & \bpfcontain{}  & 116.42 & 0.62 & -0.64\% \\
 %              & AppArmor       & 117.49 & 0.81 &  0.28\% \\
 %    \midrule
-%    Complain  & \bpfbox{}      & 117.62 & 0.75 &  0.38\% \\
+%    Complaining  & \bpfbox{}      & 117.62 & 0.75 &  0.38\% \\
 %              & \bpfcontain{}  & 115.73 & 1.04 & -1.22\% \\
 %              & AppArmor       & 116.81 & 0.80 & -0.31\% \\
 %   \bottomrule
@@ -485,7 +489,7 @@ a computationally-heavy task that involves multiple processes and significant am
 file I/O. The results of this benchmark indicate that \bpfbox{} and \bpfcontain{} exhibit
 performance overhead that is roughly consistent with AppArmor in the average case. The
 \textbf{Passive} and \textbf{Allow} results indicate that all three systems exhibit an
-acceptable performance overhead of under about $3\%$. The \textbf{Complain} results
+acceptable performance overhead of under about $3\%$. The \textbf{Complaining} results
 indicate that \bpfcontain{} performs significantly better than both \bpfbox{} and AppArmor
 under a large event logging volume. This result can be attributed to minor implementation
 details, including improvements in how \bpfcontain{} handles event logging from multiple
@@ -517,7 +521,7 @@ distinct sources.
 %              & \bpfcontain{}  & 243.09 & 2.19 &  3.30\% \\
 %              & AppArmor       & 237.59 & 2.04 &  0.97\% \\
 %    \midrule
-%    Complain  & \bpfbox{}      & 269.64 & 1.98 & 14.59\% \\
+%    Complaining  & \bpfbox{}      & 269.64 & 1.98 & 14.59\% \\
 %              & \bpfcontain{}  & 244.81 & 2.04 &  4.03\% \\
 %              & AppArmor       & 288.54 & 2.11 & 22.62\% \\
 %   \bottomrule
@@ -554,7 +558,7 @@ The Apache web server benchmark (\Cref{tab:phoronix-apache} and \Cref{fig:phoron
 overhead is still within an acceptable range at around $11\%$ in the worst case for
 \bpfcontain{}. This overhead should still be quite acceptable in practice, and can be
 improved through further optimizations in \bpfcontain{}'s enforcement engine, which is
-still in the prototype phase. The results from the \textbf{Complain} case appear to
+still in the prototype phase. The results from the \textbf{Complaining} case appear to
 indicate a slight performance improvement for \bpfbox{} over AppArmor; this is likely due
 to variance in the measurements rather than a true performance improvement, as the
 difference between the two systems falls within the margin of error.
@@ -579,7 +583,7 @@ difference between the two systems falls within the margin of error.
 %              & \bpfcontain{}  & 18934.55 & 299.23 &  7.98\% \\
 %              & AppArmor       & 20276.95 &  64.30 &  1.46\% \\
 %    \midrule
-%    Complain  & \bpfbox{}      & 20139.10 & 101.59 &  2.13\% \\
+%    Complaining  & \bpfbox{}      & 20139.10 & 101.59 &  2.13\% \\
 %              & \bpfcontain{}  & 18293.09 & 160.00 & 11.10\% \\
 %              & AppArmor       & 19827.05 & 298.27 &  3.64\% \\
 %   \bottomrule
@@ -593,13 +597,13 @@ difference between the two systems falls within the margin of error.
 
 The results of the benchmarking tests show that both \bpfbox{} and \bpfcontain{} incur
 acceptable performance overhead in practice. In many cases, overhead is competitive with
-AppArmor, a standard \gls{lsm} that ships with the stock Linux kernel. In other cases, the
-performance overhead of \bpfbox{} and \bpfcontain{} is higher than that of AppArmor, but
-still within an acceptable range, such that the slowdown should be either imperceptible or
-acceptable in most practical use cases.  As \bpfbox{} and \bpfcontain{} are both research
-prototypes, they have not yet been optimized to the extent that AppArmor has. This lack of
-optimization is particularly evident in the results for \bpfcontain{}, and may account for
-significant differences in performance in the file I/O and Apache web server tests.
+AppArmor. In other cases, the performance overhead of \bpfbox{} and \bpfcontain{} is
+higher than that of AppArmor, but still within an acceptable range, such that the slowdown
+should be either imperceptible or acceptable in most practical use cases.  As \bpfbox{}
+and \bpfcontain{} are both research prototypes, they have not yet been optimized to the
+extent that AppArmor has. This lack of optimization is particularly evident in the results
+for \bpfcontain{}, and may account for significant differences in performance in the file
+I/O and Apache web server tests.
 
 \begin{table}[ht]
   \centering
@@ -625,7 +629,7 @@ significant differences in performance in the file I/O and Apache web server tes
              & \bpfcontain{} & 5.763          & 7.61\% \\
              & AppArmor      & 6.086          & 2.35\% \\
    \cline{1-4}
-   Complain  & \bpfbox{}     & 5.823          & 6.65\% \\
+   Complaining  & \bpfbox{}     & 5.823          & 6.65\% \\
              & \bpfcontain{} & 5.693          & 8.74\% \\
              & AppArmor      & 4.962          & 20.46\% \\
   \bottomrule
@@ -643,8 +647,8 @@ overhead to sub-optimal memory allocations and data structure access patterns, w
 be optimized in the future.
 
 Despite under-performing in the \textbf{Passive} and \textbf{Allow} cases, both \bpfbox{}
-and \bpfcontain{} significantly outperform AppArmor in the \textbf{Complain} test case,
-due to a more efficient event logging mechanism.  \Cref{tab:phoronix-geometric} shows the
+and \bpfcontain{} significantly outperform AppArmor in the \textbf{Complaining} test case,
+due to a more efficient event logging mechanism. \Cref{tab:phoronix-geometric} shows the
 geometric mean of all tests for each test case, indicating that \bpfbox{} and
 \bpfcontain{} exhibit and average performance penalty of under $9\%$ in practice, while
 AppArmor can exhibit overheads of up to $20\%$ in the worst case.

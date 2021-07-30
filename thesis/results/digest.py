@@ -3,6 +3,7 @@
 import pandas as pd
 import plotnine as p9
 import numpy as np
+from scipy import stats
 import json
 from sys import exit
 
@@ -127,7 +128,7 @@ def generate_tables(df: pd.DataFrame):
     for test in set(df['test']):
         # Get only the values in the current test
         tab_df = df[df['test'] == test]
-        units = tab_df['units'].iloc[0].replace('μs', '$\mu$s')
+        units = tab_df['units'].iloc[0].replace('μs', r'$\mu$s')
         # Fixup column names
         tab_df = tab_df.rename(columns={'case': 'Test Case', 'system': 'System', 'mean': 'Mean', 'std': 'Std', 'pct_diff': 'Overhead'})
         # Select and order columns
@@ -147,13 +148,25 @@ def generate_tables(df: pd.DataFrame):
         tab_df.loc[tab_df['Test Case'] == 'Base', 'Overhead'] = '---'
         # Convert test case and system to index
         tab_df.set_index(['Test Case', 'System'], inplace=True)
+
         # Make table
         tab_df = tab_df.round(2)
-        caption = (f'Results of the {test.lower()} benchmark. Units are {units}. {hib}. Percent overhead is compared to the baseline result.', f'Results of the {test.lower()} benchmark')
+        caption = (f'Results of the {test.title()} benchmark. Units are {units.lower()}. {hib}. Percent overhead is compared to the baseline result.', f'Results of the {test.title()} benchmark')
         test_name = test.lower().replace(" ", "-")
         label = f'tab:phoronix-{test_name}'
-        tab_df.to_latex(f'tables/{test_name}.tex', multirow=True, caption=caption, label=label, column_format='llrrr', position='htp!', escape=False)
-
+        filename = f'tables/{test_name}.tex'
+        table = tab_df.to_latex(None, multirow=True, caption=caption, label=label, column_format='llrrr', position='ht!', escape=False)
+        # Add \small
+        table = table.split('\n')
+        i = next(i + 1 for i, s in enumerate(table) if 'centering' in s)
+        table.insert(i, '\\footnotesize')
+        # Add cline
+        i = next(i + 1 for i, s in enumerate(table) if 'Base' in s)
+        table.insert(i, '\\cline{1-5}')
+        # Save table
+        table = '\n'.join(table)
+        with open(filename, 'w') as f:
+            f.write(table)
 
 def generate_graphs(df: pd.DataFrame):
     # p9 variables
