@@ -1,86 +1,161 @@
-Virtualization is not confinement. To security experts, this may be an obvious statement,
-but these two concepts are often conflated, leading to dangerous assumptions about
-security in practice. To see why virtualization and confinement are disparate concepts,
-consider the goals of each. \textit{Virtualization} describes the goal of providing
-a unique, private mapping of shared system resources to a particular subject~\todo{CITE}
-(be it a process, a virtualized \gls{os}, or something else).
-\textit{Confinement}, on the other hand, describes the goal of restricting a subject's
-access to system resources or other subjects~\todo{CITE}. In other words, virtualization
-is about \textit{what we can see}, whereas confinement is about \textit{what we can do}.
-It should now be abundantly clear not only that virtualization and confinement are two
-entirely different concepts, but that virtualization must be combined with confinement to
-offer any practical security guarantees.
+% Virtualization is not confinement. To security experts, this may be an obvious statement,
+% but these two concepts are often conflated, leading to dangerous assumptions about
+% security in practice. To see why virtualization and confinement are disparate concepts,
+% consider the goals of each. \textit{Virtualization} describes the goal of providing
+% a unique, private mapping of shared system resources to a particular subject~\todo{CITE}
+% (be it a process, a virtualized \gls{os}, or something else).
+% \textit{Confinement}, on the other hand, describes the goal of restricting a subject's
+% access to system resources or other subjects~\todo{CITE}. In other words, virtualization
+% is about \textit{what we can see}, whereas confinement is about \textit{what we can do}.
+% It should now be abundantly clear not only that virtualization and confinement are two
+% entirely different concepts, but that virtualization must be combined with confinement to
+% offer any practical security guarantees.
 
-Container technologies on Linux offer a motivating example of the difference between
-virtualization and confinement and how conflating the two can result in problematic
-misunderstandings about the security of a system. From first principles, a container is
-nothing more than a group of associated processes (and system resources) managed by some
-container management engine (e.g.~Docker or \textit{lxc}). While often used for dependency
-management, containers also offer lightweight virtualization and confinement using
-a series primitives exposed by the \gls{os} kernel. Namespaces and cgroups virtualize
-system resources while confinement layers such as \texttt{seccomp(2)} provide some degree
-of isolation from the rest of the system~\cite{sultan2019_container_security}.
-Unfortunately, while virtualization primitives are widely used in container deployments,
-the use of confinement primitives is often overlooked, oversimplified, or overly
-permissive (i.e.~misconfigured) in practice~\cite{sultan2019_container_security}.
+% Container technologies on Linux offer a motivating example of the difference between
+% virtualization and confinement and how conflating the two can result in problematic
+% misunderstandings about the security of a system. From first principles, a container is
+% nothing more than a group of associated processes (and system resources) managed by some
+% container management engine (e.g.~Docker or \textit{lxc}). While often used for dependency
+% management, containers also offer lightweight virtualization and confinement using
+% a series primitives exposed by the \gls{os} kernel. Namespaces and cgroups virtualize
+% system resources while confinement layers such as \texttt{seccomp(2)} provide some degree
+% of isolation from the rest of the system~\cite{sultan2019_container_security}.
+% Unfortunately, while virtualization primitives are widely used in container deployments,
+% the use of confinement primitives is often overlooked, oversimplified, or overly
+% permissive (i.e.~misconfigured) in practice~\cite{sultan2019_container_security}.
 
-Despite their name, containers do a very poor job of actually \textit{containing}
-a running process.  The Linux kernel already supports a set of strong virtualization
-primitives, namespaces and cgroups, that can be used to provide a process with a fairly
-compartmentalized view of its environment. But these virtualization primitives do little
-to improve the \textit{security} of the applications that use them. Rather, such
-virtualization serves much the same purpose as virtualization in other areas of computer
-science\,---\,to allow two pieces of code to use the same name for different things and to
-abstract away the complex details of the underlying system.
+% Despite their name, containers do a very poor job of actually \textit{containing}
+% a running process.  The Linux kernel already supports a set of strong virtualization
+% primitives, namespaces and cgroups, that can be used to provide a process with a fairly
+% compartmentalized view of its environment. But these virtualization primitives do little
+% to improve the \textit{security} of the applications that use them. Rather, such
+% virtualization serves much the same purpose as virtualization in other areas of computer
+% science\,---\,to allow two pieces of code to use the same name for different things and to
+% abstract away the complex details of the underlying system.
 
-This thesis argues that the key to truly isolating containers from the rest of the system
-lies in improving our confinement frameworks to work well in containerized applications.
-The status quo of process confinement on Linux is a motley collection of unrelated
-technologies, each designed for a specific purpose, often beyond the scope of simple
-process confinement. Container management solutions cobble these technologies together,
-applying over-permissive, coarse-grained defaults or compiling simple policies into
-a complex entanglement. To rectify the status quo, we must rethink confinement from the
-ground up, and build a confinement framework designed to be aware of the container model
-of computation.
+% This thesis argues that the key to truly isolating containers from the rest of the system
+% lies in improving our confinement frameworks to work well in containerized applications.
+% The status quo of process confinement on Linux is a motley collection of unrelated
+% technologies, each designed for a specific purpose, often beyond the scope of simple
+% process confinement. Container management solutions cobble these technologies together,
+% applying over-permissive, coarse-grained defaults or compiling simple policies into
+% a complex entanglement. To rectify the status quo, we must rethink confinement from the
+% ground up, and build a confinement framework designed to be aware of the container model
+% of computation.
 
-In particular, we posit that the root of the confinement problem in container security
-lies in a semantic gap between the containers themselves and the confinement primitives
-that are used to secure them. Many academics have recognized this semantic gap. Some have
-attempted to rectify it by introducing mechanisms for automatic policy derivation based on
-container images (e.g.~the Docker image manifest) or observed behaviours at
-runtime~\todo{CITE ALL EXAMPLES}. Others have attempted to introduce new layers of
-abstraction to security policies~\todo{CITE Snap et al} or into the kernel
-itself~\todo{CITE security namespaces}. \todo{WHY ARE THESE BAD IN ONE SENTENCE?} This
-thesis proposes that the heart of the problem lies in the fact that the Linux kernel
-itself has no single representation of \textit{what exactly a container is} from
-a security standpoint.
+% In particular, we posit that the root of the confinement problem in container security
+% lies in a semantic gap between the containers themselves and the confinement primitives
+% that are used to secure them. Many academics have recognized this semantic gap. Some have
+% attempted to rectify it by introducing mechanisms for automatic policy derivation based on
+% container images (e.g.~the Docker image manifest) or observed behaviours at
+% runtime~\todo{CITE ALL EXAMPLES}. Others have attempted to introduce new layers of
+% abstraction to security policies~\todo{CITE Snap et al} or into the kernel
+% itself~\todo{CITE security namespaces}. \todo{WHY ARE THESE BAD IN ONE SENTENCE?} This
+% thesis proposes that the heart of the problem lies in the fact that the Linux kernel
+% itself has no single representation of \textit{what exactly a container is} from
+% a security standpoint.
 
-One approach would be to extend the container with a container-aware \gls{lsm}, but
-maintaining out-of-tree kernel modules is challenging, as such a module would need to be
-continually updated as the kernel evolves. Further, end-users may be reluctant to adopt
-and out-of-tree solution, particularly in production environments with low risk-tolerance.
-Even worse, a static security mechanism is unlikely to work well for all use
-cases\,---\,some users (e.g.~operators of multi-tenant container clouds) would like to
-totally isolate containers from each other, while use cases (e.g.~microservices
-deployments) may require individual containers to communicate and cooperate with each
-other. Thus, our solution should be practical, light-weight, and flexible such that we can
-define a container-level policy enforcement mechanism that can be readily adopted in
-production use cases. A relatively new Linux technology,
-\gls{ebpf}~\cite{starovoitov2014_ebpf, gregg2019_bpf}, offers the opportunity to design
-such a system.
+% One approach would be to extend the container with a container-aware \gls{lsm}, but
+% maintaining out-of-tree kernel modules is challenging, as such a module would need to be
+% continually updated as the kernel evolves. Further, end-users may be reluctant to adopt
+% and out-of-tree solution, particularly in production environments with low risk-tolerance.
+% Even worse, a static security mechanism is unlikely to work well for all use
+% cases\,---\,some users (e.g.~operators of multi-tenant container clouds) would like to
+% totally isolate containers from each other, while use cases (e.g.~microservices
+% deployments) may require individual containers to communicate and cooperate with each
+% other. Thus, our solution should be practical, light-weight, and flexible such that we can
+% define a container-level policy enforcement mechanism that can be readily adopted in
+% production use cases. A relatively new Linux technology,
+% \gls{ebpf}~\cite{starovoitov2014_ebpf, gregg2019_bpf}, offers the opportunity to design
+% such a system.
+
+Virtualization is not confinement. Put simply, that which we can \textit{see} is not the
+same thing as that which we can \textit{do}. To security experts, this may be an obvious
+statement; however, not every user of an information technology system is a security
+expert, nor should they be. Unfortunately, these two disparate yet related concepts are
+often conflated, leading to dangerous security assumptions in practice. In particular, we
+tend to assume that a virtualized system is the same thing as a secure system, which may
+not necessarily be the case. Confinement is critically important to maintaining the
+\textit{principle of least-privilege}~\cite{schneider03_least_privilege}, a quintessential
+property of a truly secure system~\cite{van_oorschot2020_tools_jewels}. Despite playing
+a critical role in systems security, the state of confinement on Linux is ill-suited to
+meet the practical needs of end-users on many \gls{cots} operating systems.
+
+Existing Linux confinement mechanisms are complex, and often target specific use cases
+beyond simple confinement. This results in a motley collection of isolation primitives
+being used to lock down basic application functionality. Namespaces and cgroups virtualize
+system resources while Linux security modules, \texttt{seccomp(2)}, discretionary access
+controls, and more are used to restrict access. The need to combine these mechanisms
+begets unintuitive inter-dependence relationships that lead to additional complexity and
+security policies that are both painful to write and difficult to audit. In turn, these
+difficulties weaken the ultimate authority of the system administrator, shifting the
+burden of confinement onto distribution vendors or application authors.
+
+Linux containers~\cite{docker_security, lxc_security, lin2018_container_security,
+sultan2019_container_security} are a motivating example of this phenomenon. Intuitively,
+a user might be motivated to use a container to \textit{contain things}. The reality of
+container confinement does not match this intuition. Containers are nothing more than
+a group of related processes (or even a single process) united by a shared view of system
+resources (based on Linux virtualization primitives). Despite their name, containers in
+general do a very poor job of actually containing anything. In particular, security
+defaults in container management engines like Docker~\cite{docker_security} or
+\gls{lxc}~\cite{lxc_security} rely on a myriad of unrelated confinement primitives, many
+of which were designed to holistically lock down entire systems. Misuse of these
+primitives results in a complex entanglement of related policies that ultimately must be
+simplified down to their basest elements. The result is containers that \enquote{just
+work}, albeit operating under highly coarse-grained policies that provide little
+protection in practice~\cite{sultan2019_container_security, lin2018_container_security}.
+
+This thesis argues that the key to implementing light-weight confinement policies that
+work well in the context of containers lies in simplifying and unifying the underlying
+confinement framework, and bridging the semantic gap between confinement policies and the
+applications or containers they are designed to protect. In the past, this may have been
+a difficult problem to solve. After all, existing confinement mechanisms are designed for
+general-purpose use cases, and the precise definition of what constitutes
+\enquote{container semantics} varies depending on the needs of the container deployment
+and the design of the container management engine. We posit that the key to designing
+a confinement mechanism that meets these goals is the ability to dynamically modify and
+extend the kernel's security monitor, building a security framework that is easy to deploy
+and simple to extend and modify. A new Linux technology, \gls{ebpf}, now enables us to
+fill this technological gap.
+
+Specifically, \gls{ebpf}~\cite{gregg2019_bpf, starovoitov2014_ebpf} enables a privileged
+userspace process to safely and dynamically add simple hooking and filtering logic to key
+components of the kernel. By designing and deploying a specific set of \gls{ebpf}
+programs, we can adjust the kernel's security semantics, without necessarily tying it down
+to a specific \enquote{one-size-fits-all} confinement solution. This enables us to build
+application- or container-specific policies that scale well and meet the needs of
+end-users.
 
 To improve the status quo of confinement on Linux, we present two research prototypes,
 \bpfbox{} and its successor, \bpfcontain{}. The former is a novel application sandboxing
 framework, and the latter extends that framework to work well in the context of container
-security. Both research systems are implemented using \gls{ebpf}, a new Linux kernel mechanism
-for dynamically attaching simple filter programs to various system events and aggregating
-data from these events in kernelspace~\cite{gregg2019_bpf, starovoitov2014_ebpf}.
-Specifically, we use the new \gls{lsm} program type~\cite{singh2019_krsi}, introduced in Linux
-5.7, to attach \gls{ebpf} programs to Linux Security Module hooks. Using \gls{ebpf}, we can safely
-extend the kernel at runtime, building a new confinement model that suits the container
-use case without detracting from existing confinement implementations or tying the kernel
-down to one particular model.
+security. Both research systems are implemented using \gls{ebpf}, the first such systems
+of their kind. In this thesis, we present a motivating re-framing of the confinement
+problem, examine the design and implementation of \bpfbox{} and \bpfcontain{}, and show
+that they improve application and container security without a significant impact on
+system performance.
 
+% Specifically, we use the new \gls{lsm} program type~\cite{singh2019_krsi},
+% introduced in Linux 5.7, to attach \gls{ebpf} programs to Linux Security Module hooks.
+% Using \gls{ebpf}, we can safely extend the kernel at runtime, building a new confinement
+% model that suits the container use case without detracting from existing confinement
+% implementations or tying the kernel down to one particular model.
+
+\section{Research Questions}%
+\label{s:intro-rqs}
+
+\begin{inprogress}
+  \begin{itemize}
+    \item What difficulties in the current state of Linux confinement lead to the semantic
+          gap between confinement policies and the entities they are designed to lock down? How
+          can a novel confinement mechanism rectify these difficulties?
+    \item Can \gls{ebpf} be used to implement a full-featured confinement framework, capable of
+          sandboxing processes and securing container deployments?
+    \item What levels of security and performance can we expect from a confinement mechanism designed
+          around \gls{ebpf}?
+  \end{itemize}
+\end{inprogress}
 
 \section{Motivation}%
 \label{s:motivation}
@@ -89,40 +164,46 @@ down to one particular model.
 \label{ss:contextualizing-the-problem}
 
 Containers are \textit{everywhere}. In the cloud, containers form the backbone of
-cloud-native computation. Kubernetes~\todo{CITE} clusters drive the microservices that
-power scalable web applications. In devops, Docker~\todo{CITE} containers often form the
-backbone of continuous integration workflows, providing reproducible environments for
-development, testing, and debugging. On the desktop, containerized package managers like
-Snap~\todo{CITE}, FlatPak~\todo{CITE}, and AppImage~\todo{CITE} offer self-contained,
+cloud-native computation. Kubernetes~\cite{kubernetes} clusters drive the microservices
+that power scalable web applications. In devops, Docker~\cite{docker_security} containers
+often form the backbone of continuous integration workflows, providing reproducible
+environments for development, testing, and debugging. On the desktop, containerized
+package managers like Snap~\cite{snap} and FlatPak~\cite{flatpak} offer self-contained,
 isolated software bundles, facilitating a smooth software installation process (mostly)
 free of dependency management concerns.
 
 Despite a steadily increasing prevalence, containers face major adoptability challenges in
-deployments where they are expected to outright replace virtual machines. Unlike virtual
-machines, which are abstracted away from the host and interact with a hypervisor,
-containers interact directly with the host operating system kernel. This means that, while
-much lighter-weight than hypervisor-based virtualization, containers are inherently less
-isolated from each other and from the host system in
-general~\cite{sultan2019_container_security, lin2018_container_security,
-mullinix2020_security_measures, bui2015_docker_analysis}.  In order to have truly secure
-containers, we must take great care to ensure that a container is properly
-\textit{confined}. In practice, this means restricting the processes that run within the
-container from performing certain actions that can negatively impact or damage the system.
-As we have already discussed, virtualization primitives alone are not enough to achieve
-proper isolation. These primitives \textit{must} be combined with confinement mechanisms
-and these confinement mechanisms \textit{must} be applied properly. Otherwise, we risk
-overprivilege, resulting in potential violations of our security model.
+deployments\footnote{E.g., Cloud-Native deployments~\cite{brady2020_docker_cloud}.} where
+they are expected to outright replace virtual machines. Unlike virtual machines, which are
+abstracted away from the host and interact with a hypervisor, containers interact directly
+with the host operating system kernel. This means that, while much lighter-weight than
+hypervisor-based virtualization, containers are inherently less isolated from each other
+and from the host system in general~\cite{sultan2019_container_security,
+lin2018_container_security, mullinix2020_security_measures, bui2015_docker_analysis}.  In
+order to have truly secure containers, we must take great care to ensure that a container
+is properly \textit{confined}. In practice, this means restricting the processes that run
+within the container from performing certain actions that can negatively impact or damage
+the system.  As we have already discussed, virtualization primitives alone are not enough
+to achieve proper isolation. These primitives \textit{must} be combined with confinement
+mechanisms and these confinement mechanisms \textit{must} be applied properly. Otherwise,
+we risk overprivilege, resulting in potential violations of our security model.
 
-\todo{Redo this paragraph to match what I said in Chapter 3}
 Container security issues are widely studied in the
 literature~\cite{sultan2019_container_security, lin2018_container_security,
-mp2016_hardening, mullinix2020_security_measures, bui2015_docker_analysis}.  Given that
-containers offer weaker isolation guarantees than alternatives like hardware virtual
-machines (HVMs)~\todo{CITE} or even paravirtualization~\todo{CITE}, one might be inclined
-to assume that container security would be of paramount importance. Contrary to this
-assumption, container management frameworks take a lax attitude towards the enforcement of
-least-privilege, provisioning overly-permissive blanket default policies and relying on
-a complex suite of ill-suited security mechanisms provided by the host system.
+mp2016_hardening, mullinix2020_security_measures, bui2015_docker_analysis}.  Despite the
+fact that containers run directly on the host operating system and share a single kernel
+with other native processes, security is generally treated as an afterthought in the
+design of container management engines. If we truly want containers to be as secure as
+virtual machines, we must rethink the way we secure container deployments. Security must
+be prioritized from the ground-up, but must not get in the way of functionality. Existing
+container frameworks accomplish the second goal, but not the first.
+% Given that
+% containers offer weaker isolation guarantees than alternatives like hardware virtual
+% machines (HVMs)~\todo{CITE} or even paravirtualization~\todo{CITE}, one might be inclined
+% to assume that container security would be of paramount importance. Contrary to this
+% assumption, container management frameworks take a lax attitude towards the enforcement of
+% least-privilege, provisioning overly-permissive blanket default policies and relying on
+% a complex suite of ill-suited security mechanisms provided by the host system.
 
 Docker, for instance, applies a default AppArmor policy revoking access to only the most
 sensitive kernel interfaces like procfs and sysfs and disabling the ability to mount new
@@ -130,7 +211,7 @@ filesystem.  Beyond these basic controls, the container has full permission to a
 filesystem and resources, has access to several POSIX capabilities, and may unmount any
 filesystem~\cite{docker_apparmor, docker_default_apparmor}. Even worse, a kernel that does
 not support AppArmor or that is not properly configured is left totally bereft of this
-protection to begin with.  Docker complements its default AppArmor profile with a set of
+protection to begin with. Docker complements its default AppArmor profile with a set of
 sensible seccomp rules, revoking access to many privileged system calls. While such
 a policy \textit{does} help to harden the container, it remains
 overly-generalized~\cite{sultan2019_container_security} and does not uniquely capture the
@@ -220,7 +301,7 @@ abstractions provided by the kernel.
 through a verification process before they are loaded into the kernel. The \gls{ebpf} verifier
 analyzes the program, asserting that it conforms to a number of safety requirements, such
 as program termination\footnote{This property is enforceable due to the fact that \gls{ebpf}
-programs are not Turing complete~\cite{gregg2019_bpf}.}, memory safety, and read-only
+programs are not Turing-complete~\cite{gregg2019_bpf}.}, memory safety, and read-only
 access to kernel data structures. While itself not formally verified, the \gls{ebpf} verifier
 facilitates the adoption of new \gls{ebpf} programs into production use cases, since an \gls{ebpf}
 program is far less likely to adversely impact a production system than other methods of
