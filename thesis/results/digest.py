@@ -226,7 +226,7 @@ def generate_graphs(df: pd.DataFrame):
 
 def main():
     df = ingest()
-    #generate_graphs(df)
+    generate_graphs(df)
     generate_tables(df)
 
     #kernel = df[df['suite'] == 'Kernel Compilation']
