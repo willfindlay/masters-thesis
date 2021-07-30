@@ -1,0 +1,26 @@
+\begin{table}[htp!]
+\centering
+\footnotesize
+\caption[Results of the launch programs benchmark]{Results of the launch programs benchmark. Units are $\mu$s Per Event. Lower is better. Percent overhead is compared to the baseline result.}
+\label{tab:phoronix-launch-programs}
+\begin{tabular}{llrrr}
+\toprule
+            &          &   Mean &   Std & Overhead \\
+Test Case & System &        &       &          \\
+\midrule
+Base & --- &  61.67 &  0.20 &      --- \\
+\cline{1-5}
+\multirow{3}{*}{Passive} & BPFBox &  63.30 &  0.28 &   2.64\% \\
+            & BPFContain &  63.12 &  0.28 &   2.34\% \\
+            & AppArmor &  62.84 &  0.25 &   1.89\% \\
+\cline{1-5}
+\multirow{3}{*}{Allow} & BPFBox &  63.44 &  0.40 &   2.86\% \\
+            & BPFContain &  65.05 &  0.38 &   5.47\% \\
+            & AppArmor &  63.17 &  0.21 &   2.43\% \\
+\cline{1-5}
+\multirow{3}{*}{Complaining} & BPFBox &  65.22 &  0.48 &   5.75\% \\
+            & BPFContain &  65.66 &  0.30 &   6.47\% \\
+            & AppArmor &  90.56 &  1.97 &  46.83\% \\
+\bottomrule
+\end{tabular}
+\end{table}

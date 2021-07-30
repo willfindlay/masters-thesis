@@ -1,0 +1,26 @@
+\begin{table}[htp!]
+\centering
+\footnotesize
+\caption[Results of the create processes benchmark]{Results of the create processes benchmark. Units are $\mu$s Per Event. Lower is better. Percent overhead is compared to the baseline result.}
+\label{tab:phoronix-create-processes}
+\begin{tabular}{llrrr}
+\toprule
+            &          &   Mean &   Std & Overhead \\
+Test Case & System &        &       &          \\
+\midrule
+Base & --- &  38.65 &  0.36 &      --- \\
+\cline{1-5}
+\multirow{3}{*}{Passive} & BPFBox &  38.81 &  0.44 &   0.40\% \\
+            & BPFContain &  40.17 &  0.39 &   3.93\% \\
+            & AppArmor &  39.04 &  0.74 &   1.01\% \\
+\cline{1-5}
+\multirow{3}{*}{Allow} & BPFBox &  39.28 &  0.41 &   1.63\% \\
+            & BPFContain &  41.27 &  0.63 &   6.77\% \\
+            & AppArmor &  38.94 &  0.34 &   0.74\% \\
+\cline{1-5}
+\multirow{3}{*}{Complaining} & BPFBox &  39.51 &  0.33 &   2.22\% \\
+            & BPFContain &  41.49 &  0.76 &   7.33\% \\
+            & AppArmor &  38.68 &  0.56 &   0.07\% \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,26 @@
+\begin{table}[htp!]
+\centering
+\footnotesize
+\caption[Results of the kernel compilation benchmark]{Results of the kernel compilation benchmark. Units are Seconds. Lower is better. Percent overhead is compared to the baseline result.}
+\label{tab:phoronix-kernel-compilation}
+\begin{tabular}{llrrr}
+\toprule
+            &          &    Mean &   Std & Overhead \\
+Test Case & System &         &       &          \\
+\midrule
+Base & --- &  235.32 &  1.96 &      --- \\
+\cline{1-5}
+\multirow{3}{*}{Passive} & BPFBox &  237.95 &  1.88 &   1.12\% \\
+            & BPFContain &  237.63 &  2.08 &   0.98\% \\
+            & AppArmor &  236.45 &  1.92 &   0.48\% \\
+\cline{1-5}
+\multirow{3}{*}{Allow} & BPFBox &  238.23 &  2.19 &   1.24\% \\
+            & BPFContain &  243.09 &  2.19 &   3.30\% \\
+            & AppArmor &  237.59 &  2.04 &   0.97\% \\
+\cline{1-5}
+\multirow{3}{*}{Complaining} & BPFBox &  269.64 &  1.98 &  14.59\% \\
+            & BPFContain &  244.80 &  2.04 &   4.03\% \\
+            & AppArmor &  288.54 &  2.11 &  22.62\% \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,26 @@
+\begin{table}[htp!]
+\centering
+\footnotesize
+\caption[Results of the memory allocations benchmark]{Results of the memory allocations benchmark. Units are Ns Per Event. Lower is better. Percent overhead is compared to the baseline result.}
+\label{tab:phoronix-memory-allocations}
+\begin{tabular}{llrrr}
+\toprule
+            &          &    Mean &   Std & Overhead \\
+Test Case & System &         &       &          \\
+\midrule
+Base & --- &  117.17 &  0.67 &      --- \\
+\cline{1-5}
+\multirow{3}{*}{Passive} & BPFBox &  116.87 &  0.18 &  -0.26\% \\
+            & BPFContain &  120.05 &  1.27 &   2.46\% \\
+            & AppArmor &  117.24 &  0.97 &   0.06\% \\
+\cline{1-5}
+\multirow{3}{*}{Allow} & BPFBox &  117.41 &  0.71 &   0.21\% \\
+            & BPFContain &  116.42 &  0.62 &  -0.64\% \\
+            & AppArmor &  117.49 &  0.81 &   0.28\% \\
+\cline{1-5}
+\multirow{3}{*}{Complaining} & BPFBox &  117.62 &  0.75 &   0.38\% \\
+            & BPFContain &  115.73 &  1.04 &  -1.22\% \\
+            & AppArmor &  116.81 &  0.80 &  -0.31\% \\
+\bottomrule
+\end{tabular}
+\end{table}

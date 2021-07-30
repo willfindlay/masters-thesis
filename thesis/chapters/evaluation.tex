@@ -28,8 +28,9 @@ for instance) reduces the risk of introducing additional sources of variance int
 benchmarks. \Cref{tab:system-config} provides a detailed account of the test system
 configuration.
 
-\begin{table}[htpb]
+\begin{table}[htp]
   \centering
+  \footnotesize
   \caption[System configuration for benchmarking tests]{System configuration for benchmarking tests.}%
   \label{tab:system-config}
   \begin{tabular}{ll}
@@ -60,20 +61,11 @@ and (4) We globally disable \gls{aslr} by setting the appropriate kernel paramet
 settings, consistent with best practices, improve benchmark accuracy by making the
 environment more consistent and eliminating as many external factors as possible.
 
-To measure the performance overhead of \bpfbox{} and \bpfcontain{} (compared with the base
-system and with AppArmor) we leverage the Phoronix Test Suite~\cite{phoronix}, a popular
-cross-platform benchmarking framework that has seen wide use for measuring system
-performance. The Phoronix framework comprises a number of open source test suites, each
-targeting a different aspect of system behaviour. For the purposes of this thesis, we
-select three separate test suites, measuring a variety of \gls{os}-level functionality and
-exercising multiple \gls{lsm} hooks. In particular, we select the OSBench suite, the
-Kernel Compilation suite, and the Apache suite. \Cref{tab:suites} describes each test
-suite and what it measures.
-
-\begin{table}[htpb]
+\begin{table}[htp]
   \centering
+  \footnotesize
   \caption[List of benchmarking suites and what they measure]{
-    A list of the benchmarking suites used to test performance overhead and what each
+    A list of the benchmarking suites used to test performance overhead, and what each
     measures.
   }%
   \label{tab:suites}
@@ -96,6 +88,25 @@ suite and what it measures.
   \end{tabular}
 \end{table}
 
+To measure the performance overhead of \bpfbox{} and \bpfcontain{} (compared with the base
+system and with AppArmor) we leverage the Phoronix Test Suite~\cite{phoronix}, a popular
+cross-platform benchmarking framework that has seen wide use for measuring system
+performance. The Phoronix framework comprises a number of open source test suites, each
+targeting a different aspect of system behaviour. For the purposes of this thesis, we
+select three separate test suites, measuring a variety of \gls{os}-level functionality and
+exercising multiple \gls{lsm} hooks. In particular, we select the OSBench suite, the
+Kernel Compilation suite, and the Apache suite. \Cref{tab:suites} describes each test
+suite and what it measures.
+
+\begin{figure}[htp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/eval/configuration.pdf}
+  \caption[Benchmarking system configurations]{
+    The various system configurations used in the benchmarking tests.
+  }%
+  \label{fig:configuration}
+\end{figure}
+
 We consider ten system configurations in total (\Cref{fig:configuration}). The
 \textbf{Base} configuration is the base system without any \glspl{lsm} or other
 confinement primitives active or loaded in the kernel. The \textbf{\bpfbox},
@@ -106,15 +117,6 @@ measures global system overhead without any active enforcement. The \textbf{Allo
 measures active enforcement, allowing all security-sensitive operations. Finally, the
 \textbf{Complain} case measures the worst-case overhead for each system, exercising the
 full code path of each \gls{lsm} hook and logging every attempted access.
-
-\begin{figure}[htp]
-  \centering
-  \includegraphics[width=0.6\linewidth]{figs/eval/configuration.pdf}
-  \caption[Benchmarking system configurations]{
-    The various system configurations used in the benchmarking tests.
-  }%
-  \label{fig:configuration}
-\end{figure}
 
 To ensure statistically valid results, we run each test at least eleven times, until
 a standard deviation of at most $2\%$ of the mean is achieved. This is a sensible default
@@ -154,15 +156,16 @@ results and related scripts.
 \subsection{Results}%
 \label{ss:eval-results}
 
-This section presents the results of the OSBench micro-benchmarks
-(\Cref{fig:osbench-results} and \Crefrange{tab:phoronix-files}{tab:phoronix-memory}) and
-the kernel compilation (\Cref{fig:phoronix-kernel} and \Cref{tab:phoronix-kernel}) and
+This section presents the results of the OSBench micro-benchmarks (\Cref{fig:osbench} and
+\Crefrange{tab:phoronix-create-files}{tab:phoronix-memory-allocations}) and the kernel
+compilation (\Cref{fig:phoronix-kernel} and \Cref{tab:phoronix-kernel-compilation}) and
 Apache web server (\Cref{fig:phoronix-apache} and \Cref{tab:phoronix-apache})
 macro-benchmarks. We find that \bpfbox{} and \bpfcontain{} perform competitively with
-AppArmor in most cases, with \bpfcontain{} experiencing minor performance degradations in
-some cases, which can be attributed to \bpfcontain{}'s status as a research prototype.  In
-light of these results, we discuss how future optimizations to \bpfcontain{} and the
-\gls{krsi} framework can greatly improve its performance overhead in practice.
+AppArmor in many common use cases cases, with \bpfcontain{} experiencing performance
+degradations in some cases, which can be attributed to \bpfcontain{}'s status as
+a research prototype. In light of these results, we discuss how future optimizations to
+\bpfcontain{} and the \gls{krsi} framework can greatly improve its performance overhead in
+practice.
 
 \begin{figure}[htp]
   \centering
@@ -181,7 +184,7 @@ light of these results, we discuss how future optimizations to \bpfcontain{} and
   \subfloat{
     \includegraphics[width=0.45\linewidth]{results/graphs/Memory-Allocations.pdf}%
   }
-  \caption{
+  \caption[The results of the OSBench micro-benchmarks]{
     The results of the OSBench micro-benchmarks. The error bars show standard
     deviation and the red lines show base measurements for each test. Lower times are
     better.
@@ -191,7 +194,7 @@ light of these results, we discuss how future optimizations to \bpfcontain{} and
 
 \subsubsection{OSBench File Creation}
 
-The file creation benchmark (\Cref{tab:phoronix-files} and \Cref{fig:osbench}) indicates
+The file creation benchmark (\Cref{tab:phoronix-create-files} and \Cref{fig:osbench}) indicates
 that \bpfbox{} and \bpfcontain{} have significantly higher overhead than AppArmor in the
 \textbf{Passive} and \textbf{Allow} cases. \bpfcontain{}, in particular, performs the worst
 out of the three systems in these two cases. This poor performance can be
@@ -206,32 +209,33 @@ be acceptable in practice.  Moreover, in the \textbf{Complain} case, \bpfbox{} a
 \bpfcontain{} significantly outperform AppArmor. This result can be attributed to
 implementation differences in their event-logging mechanisms.
 
-\begingroup\small
-\begin{longtable}[c]{llrrr}
-  \caption[Results of the file creation benchmark]{
-    Results of the file creation benchmark. Units are $\mu$s per event; lower is
-    better. Percent overhead is compared to the baseline result.
-  }%
-  \label{tab:phoronix-files}\\
-  \toprule
-   Test Case & System         &  Mean  & Std & Overhead (\%)\\
-   \midrule
-   Base      & ---            &  42.21 & 1.22 &  ---     \\
-   \midrule
-   Passive   & \bpfbox{}      &  49.09 & 0.40 &  16.31\% \\
-             & \bpfcontain{}  &  48.16 & 0.36 &  14.11\% \\
-             & AppArmor       &  43.87 & 0.95 &   3.93\% \\
-   \midrule
-   Allow     & \bpfbox{}      &  49.41 & 0.39 &  17.08\% \\
-             & \bpfcontain{}  &  53.43 & 1.01 &  26.60\% \\
-             & AppArmor       &  47.07 & 1.15 &  11.52\% \\
-   \midrule
-   Complain  & \bpfbox{}      &  50.34 & 0.54 &  19.27\% \\
-             & \bpfcontain{}  &  55.67 & 0.75 &  31.89\% \\
-             & AppArmor       & 111.66 & 0.75 & 164.55\% \\
-  \bottomrule
-\end{longtable}
-\endgroup
+\input{results/tables/create-files}
+% \begingroup\small
+% \begin{longtable}[c]{llrrr}
+%   \caption[Results of the file creation benchmark]{
+%     Results of the file creation benchmark. Units are $\mu$s per event; lower is
+%     better. Percent overhead is compared to the baseline result.
+%   }%
+%   \label{tab:phoronix-files}\\
+%   \toprule
+%    Test Case & System         &  Mean  & Std & Overhead (\%)\\
+%    \midrule
+%    Base      & ---            &  42.21 & 1.22 &  ---     \\
+%    \midrule
+%    Passive   & \bpfbox{}      &  49.09 & 0.40 &  16.31\% \\
+%              & \bpfcontain{}  &  48.16 & 0.36 &  14.11\% \\
+%              & AppArmor       &  43.87 & 0.95 &   3.93\% \\
+%    \midrule
+%    Allow     & \bpfbox{}      &  49.41 & 0.39 &  17.08\% \\
+%              & \bpfcontain{}  &  53.43 & 1.01 &  26.60\% \\
+%              & AppArmor       &  47.07 & 1.15 &  11.52\% \\
+%    \midrule
+%    Complain  & \bpfbox{}      &  50.34 & 0.54 &  19.27\% \\
+%              & \bpfcontain{}  &  55.67 & 0.75 &  31.89\% \\
+%              & AppArmor       & 111.66 & 0.75 & 164.55\% \\
+%   \bottomrule
+% \end{longtable}
+% \endgroup
 
 In the \textbf{Passive} case, \bpfbox{} and \bpfcontain{}'s high performance overhead can
 be attributed to the fact that they each invoke multiple \gls{bpf} programs over multiple
@@ -263,7 +267,7 @@ access patterns to log messages.
 
 \subsubsection{OSBench Process Creation}
 
-The results of the process creation benchmark (\Cref{tab:phoronix-processes}) indicate
+The results of the process creation benchmark (\Cref{tab:phoronix-create-processes} and \Cref{fig:osbench}) indicate
 that \bpfbox{} and \bpfcontain{} introduce modest overhead on top of the \texttt{fork(2)}
 system call.  Comparatively, AppArmor introduces very little overhead, well within the
 margin of error for measurements. The additional overhead introduced by \bpfbox{} and
@@ -285,36 +289,37 @@ this code path (within 1--2$\mu$s), which should be imperceptible in practice.
 %   \label{fig:phoronix-processes}
 % \end{figure}
 
-\begingroup\small
-\begin{longtable}[c]{llrrr}
-  \caption[Results of the process creation benchmark]{
-    Results of the process creation benchmark. Units are $\mu$s per event; lower is
-    better. Percent overhead is compared to the baseline result.
-  }%
-  \label{tab:phoronix-processes}\\
-  \toprule
-   Test Case & System         &  Mean & Std & Overhead (\%)\\
-   \midrule
-   Base      & ---            & 38.65 & 0.36 &  ---    \\
-   \midrule
-   Passive   & \bpfbox{}      & 38.81 & 0.44 &  0.40\% \\
-             & \bpfcontain{}  & 40.17 & 0.39 &  3.93\% \\
-             & AppArmor       & 39.04 & 0.74 &  1.01\% \\
-   \midrule
-   Allow     & \bpfbox{}      & 39.28 & 0.41 &  1.63\% \\
-             & \bpfcontain{}  & 41.27 & 0.63 &  6.77\% \\
-             & AppArmor       & 38.94 & 0.34 &  0.74\% \\
-   \midrule
-   Complain  & \bpfbox{}      & 39.51 & 0.33 &  2.22\% \\
-             & \bpfcontain{}  & 41.49 & 0.76 &  7.33\% \\
-             & AppArmor       & 38.68 & 0.56 &  0.07\% \\
-  \bottomrule
-\end{longtable}
-\endgroup
+\input{results/tables/create-processes}
+% \begingroup\small
+% \begin{longtable}[c]{llrrr}
+%   \caption[Results of the process creation benchmark]{
+%     Results of the process creation benchmark. Units are $\mu$s per event; lower is
+%     better. Percent overhead is compared to the baseline result.
+%   }%
+%   \label{tab:phoronix-processes}\\
+%   \toprule
+%    Test Case & System         &  Mean & Std & Overhead (\%)\\
+%    \midrule
+%    Base      & ---            & 38.65 & 0.36 &  ---    \\
+%    \midrule
+%    Passive   & \bpfbox{}      & 38.81 & 0.44 &  0.40\% \\
+%              & \bpfcontain{}  & 40.17 & 0.39 &  3.93\% \\
+%              & AppArmor       & 39.04 & 0.74 &  1.01\% \\
+%    \midrule
+%    Allow     & \bpfbox{}      & 39.28 & 0.41 &  1.63\% \\
+%              & \bpfcontain{}  & 41.27 & 0.63 &  6.77\% \\
+%              & AppArmor       & 38.94 & 0.34 &  0.74\% \\
+%    \midrule
+%    Complain  & \bpfbox{}      & 39.51 & 0.33 &  2.22\% \\
+%              & \bpfcontain{}  & 41.49 & 0.76 &  7.33\% \\
+%              & AppArmor       & 38.68 & 0.56 &  0.07\% \\
+%   \bottomrule
+% \end{longtable}
+% \endgroup
 
 \subsubsection{OSBench Thread Creation}
 
-The thread creation results (\Cref{tab:phoronix-threads}) are directly related to the
+The thread creation results (\Cref{tab:phoronix-create-threads} and \Cref{fig:osbench}) are directly related to the
 process creation results discussed above, insofar as both operations exercise the same
 \gls{bpf} programs in \bpfbox{} and \bpfcontain{}. Since thread creation is faster then
 process creation, the percentage overhead of \bpfbox{} and \bpfcontain{} appear
@@ -333,37 +338,38 @@ percentage overhead of \bpfbox{} and \bpfcontain{} is still under 10\%.
 %   \label{fig:phoronix-threadsa}
 % \end{figure}
 
-\begingroup\small
-\begin{longtable}[c]{llrrr}
-  \caption[Results of the thread creation benchmark]{
-    Results of the thread creation benchmark. Units are $\mu$s per event; lower is
-    better. Percent overhead is compared to the baseline result.
-  }%
-  \label{tab:phoronix-threads}\\
-  \toprule
-   Test Case & System         &  Mean & Std  & Overhead (\%)\\
-   \midrule
-   Base      & ---            & 20.18 & 0.19 & ---     \\
-   \midrule
-   Passive   & \bpfbox{}      & 21.06 & 0.25 & 4.37\% \\
-             & \bpfcontain{}  & 21.21 & 0.30 & 5.08\% \\
-             & AppArmor       & 20.32 & 0.25 & 0.71\% \\
-   \midrule
-   Allow     & \bpfbox{}      & 21.56 & 0.37 & 6.84\% \\
-             & \bpfcontain{}  & 22.11 & 0.22 & 9.53\% \\
-             & AppArmor       & 20.29 & 0.18 & 0.54\% \\
-   \midrule
-   Complain  & \bpfbox{}      & 21.57 & 0.25 & 6.90\% \\
-             & \bpfcontain{}  & 21.96 & 0.24 & 8.80\% \\
-             & AppArmor       & 20.32 & 0.16 & 0.70\% \\
-  \bottomrule
-\end{longtable}
-\endgroup
+\input{results/tables/create-threads}
+% \begingroup\small
+% \begin{longtable}[c]{llrrr}
+%   \caption[Results of the thread creation benchmark]{
+%     Results of the thread creation benchmark. Units are $\mu$s per event; lower is
+%     better. Percent overhead is compared to the baseline result.
+%   }%
+%   \label{tab:phoronix-threads}\\
+%   \toprule
+%    Test Case & System         &  Mean & Std  & Overhead (\%)\\
+%    \midrule
+%    Base      & ---            & 20.18 & 0.19 & ---     \\
+%    \midrule
+%    Passive   & \bpfbox{}      & 21.06 & 0.25 & 4.37\% \\
+%              & \bpfcontain{}  & 21.21 & 0.30 & 5.08\% \\
+%              & AppArmor       & 20.32 & 0.25 & 0.71\% \\
+%    \midrule
+%    Allow     & \bpfbox{}      & 21.56 & 0.37 & 6.84\% \\
+%              & \bpfcontain{}  & 22.11 & 0.22 & 9.53\% \\
+%              & AppArmor       & 20.29 & 0.18 & 0.54\% \\
+%    \midrule
+%    Complain  & \bpfbox{}      & 21.57 & 0.25 & 6.90\% \\
+%              & \bpfcontain{}  & 21.96 & 0.24 & 8.80\% \\
+%              & AppArmor       & 20.32 & 0.16 & 0.70\% \\
+%   \bottomrule
+% \end{longtable}
+% \endgroup
 
 \subsubsection{OSBench Program Launching}
 
-The launch programs benchmark (\Cref{tab:phoronix-launch-programs}) is essentially the
-same as the process creation benchmark (c.f.~\Cref{tab:phoronix-processes}), with one
+The launch programs benchmark (\Cref{tab:phoronix-launch-programs} and \Cref{fig:osbench}) is essentially the
+same as the process creation benchmark (c.f.~\Cref{tab:phoronix-create-processes}), with one
 major difference: the addition of an \texttt{execve(2)} call after the \texttt{clone(2)}
 system call. This \texttt{execve(2)} call adds a constant overhead of about 20$\mu$s on
 top of the original process creation results, as well as additional \gls{lsm} hook
@@ -374,7 +380,7 @@ case.
 
 The additional \gls{lsm} hook invocations caused by the \texttt{execve(2)} severely impact
 AppArmor's performance in the \textbf{Complaining} case, for the same reasons as discussed
-in the file creation results (c.f.~\Cref{tab:phoronix-files}). \bpfbox{} and \bpfcontain{}
+in the file creation results (c.f.~\Cref{tab:phoronix-create-files}). \bpfbox{} and \bpfcontain{}
 exhibit comparatively little overhead, despite the \texttt{execve(2)} call. This result
 can be explained by the fact that \texttt{execve(2)}'s code path invokes significantly
 fewer \gls{lsm} hooks than the file creation and deletion code paths we examined earlier.
@@ -392,42 +398,46 @@ the worst case, and under $3\%$ in the majority of cases.
 %   \label{fig:phoronix-launch-programs}
 % \end{figure}
 
-\begingroup\small
-\begin{longtable}[c]{llrrr}
-  \caption[Results of the program launching benchmark]{
-    Results of the program launching benchmark. Units are $\mu$s per event; lower is
-    better. Percent overhead is compared to the baseline result.
-  }%
-  \label{tab:phoronix-launch-programs}\\
-  \toprule
-   Test Case & System         &  Mean & Std  & Overhead (\%)\\
-   \midrule
-   Base      & ---            & 61.67 & 0.20 & ---     \\
-   \midrule
-   Passive   & \bpfbox{}      & 63.30 & 0.28 & 2.64 \% \\
-             & \bpfcontain{}  & 63.12 & 0.28 & 2.34 \% \\
-             & AppArmor       & 62.84 & 0.25 & 1.89 \% \\
-   \midrule
-   Allow     & \bpfbox{}      & 63.44 & 0.40 & 2.86 \% \\
-             & \bpfcontain{}  & 65.05 & 0.38 & 5.47 \% \\
-             & AppArmor       & 63.17 & 0.21 & 2.43 \% \\
-   \midrule
-   Complain  & \bpfbox{}      & 65.22 & 0.48 & 5.75 \% \\
-             & \bpfcontain{}  & 65.66 & 0.30 & 6.47 \% \\
-             & AppArmor       & 90.56 & 1.97 & 46.83\% \\
-  \bottomrule
-\end{longtable}
-\endgroup
+\input{results/tables/launch-programs}
+% \begingroup\small
+% \begin{longtable}[c]{llrrr}
+%   \caption[Results of the program launching benchmark]{
+%     Results of the program launching benchmark. Units are $\mu$s per event; lower is
+%     better. Percent overhead is compared to the baseline result.
+%   }%
+%   \label{tab:phoronix-launch-programs}\\
+%   \toprule
+%    Test Case & System         &  Mean & Std  & Overhead (\%)\\
+%    \midrule
+%    Base      & ---            & 61.67 & 0.20 & ---     \\
+%    \midrule
+%    Passive   & \bpfbox{}      & 63.30 & 0.28 & 2.64 \% \\
+%              & \bpfcontain{}  & 63.12 & 0.28 & 2.34 \% \\
+%              & AppArmor       & 62.84 & 0.25 & 1.89 \% \\
+%    \midrule
+%    Allow     & \bpfbox{}      & 63.44 & 0.40 & 2.86 \% \\
+%              & \bpfcontain{}  & 65.05 & 0.38 & 5.47 \% \\
+%              & AppArmor       & 63.17 & 0.21 & 2.43 \% \\
+%    \midrule
+%    Complain  & \bpfbox{}      & 65.22 & 0.48 & 5.75 \% \\
+%              & \bpfcontain{}  & 65.66 & 0.30 & 6.47 \% \\
+%              & AppArmor       & 90.56 & 1.97 & 46.83\% \\
+%   \bottomrule
+% \end{longtable}
+% \endgroup
 
 \subsubsection{OSBench Memory Allocations}
 
-The memory allocation benchmark (\Cref{tab:phoronix-memory}) indicates that none of the
-systems had any significant affect on memory allocation. In some cases, percent overhead
-falsely appears to indicate a performance \textit{improvement}, which we attribute to
-measurement error rather than any indication of increased performance. This result is
-consistent with expectations, since memory allocation does not directly interact with any
-\gls{lsm} hooks in the kernel, and neither \bpfbox{} nor \bpfcontain{} instruments any
-\gls{bpf} programs on the heap allocation code path.
+The memory allocation benchmark (\Cref{tab:phoronix-memory-allocations} and
+\Cref{fig:osbench}) indicates that none of the systems had any significant affect on
+memory allocation. In some cases, percent overhead falsely appears to indicate
+a performance \textit{improvement}, which we attribute to measurement error rather than
+any indication of increased performance. This result is consistent with expectations,
+since memory allocation does not directly interact with any \gls{lsm} hooks in the kernel,
+and neither \bpfbox{} nor \bpfcontain{} instruments any \gls{bpf} programs on the heap
+allocation code path.
+
+\input{results/tables/memory-allocations}
 
 % \begin{figure}[htp]
 %   \centering
@@ -439,82 +449,85 @@ consistent with expectations, since memory allocation does not directly interact
 %   }%
 %   \label{fig:phoronix-memory}
 % \end{figure}
-
-\begingroup\small
-\begin{longtable}[c]{llrrr}
-  \caption[Results of the memory allocation benchmark]{
-    Results of the memory allocation benchmark. Units are Ns per event; lower is
-    better. Percent overhead is compared to the baseline result.
-  }%
-  \label{tab:phoronix-memory}\\
-  \toprule
-   Test Case & System         &  Mean  & Std  & Overhead (\%)\\
-   \midrule
-   Base      & ---            & 117.17 & 0.67 & ---     \\
-   \midrule
-   Passive   & \bpfbox{}      & 116.87 & 0.18 & -0.26\% \\
-             & \bpfcontain{}  & 120.05 & 1.27 &  2.46\% \\
-             & AppArmor       & 117.24 & 0.97 &  0.06\% \\
-   \midrule
-   Allow     & \bpfbox{}      & 117.41 & 0.71 &  0.21\% \\
-             & \bpfcontain{}  & 116.42 & 0.62 & -0.64\% \\
-             & AppArmor       & 117.49 & 0.81 &  0.28\% \\
-   \midrule
-   Complain  & \bpfbox{}      & 117.62 & 0.75 &  0.38\% \\
-             & \bpfcontain{}  & 115.73 & 1.04 & -1.22\% \\
-             & AppArmor       & 116.81 & 0.80 & -0.31\% \\
-  \bottomrule
-\end{longtable}
-\endgroup
+% \begingroup\small
+% \begin{longtable}[c]{llrrr}
+%   \caption[Results of the memory allocation benchmark]{
+%     Results of the memory allocation benchmark. Units are Ns per event; lower is
+%     better. Percent overhead is compared to the baseline result.
+%   }%
+%   \label{tab:phoronix-memory}\\
+%   \toprule
+%    Test Case & System         &  Mean  & Std  & Overhead (\%)\\
+%    \midrule
+%    Base      & ---            & 117.17 & 0.67 & ---     \\
+%    \midrule
+%    Passive   & \bpfbox{}      & 116.87 & 0.18 & -0.26\% \\
+%              & \bpfcontain{}  & 120.05 & 1.27 &  2.46\% \\
+%              & AppArmor       & 117.24 & 0.97 &  0.06\% \\
+%    \midrule
+%    Allow     & \bpfbox{}      & 117.41 & 0.71 &  0.21\% \\
+%              & \bpfcontain{}  & 116.42 & 0.62 & -0.64\% \\
+%              & AppArmor       & 117.49 & 0.81 &  0.28\% \\
+%    \midrule
+%    Complain  & \bpfbox{}      & 117.62 & 0.75 &  0.38\% \\
+%              & \bpfcontain{}  & 115.73 & 1.04 & -1.22\% \\
+%              & AppArmor       & 116.81 & 0.80 & -0.31\% \\
+%   \bottomrule
+% \end{longtable}
+% \endgroup
 
 
 \subsubsection{Kernel Compilation Results}
 
-The kernel compilation benchmark (\Cref{tab:phoronix-kernel}) provides a representative
-depiction of overhead for a computationally-heavy task that involves multiple processes
-and significant amounts of file I/O. The results of this benchmark indicate that \bpfbox{}
-and \bpfcontain{} exhibit performance overhead that is roughly consistent with AppArmor in
-the average case. The \textbf{Passive} and \textbf{Allow} results indicate that all three
-systems exhibit an acceptable performance overhead of under about $3\%$. The
-\textbf{Complain} results indicate that \bpfcontain{} performs significantly better than
-both \bpfbox{} and AppArmor under a large event logging volume. This result can be
-attributed to minor implementation details, including improvements in how \bpfcontain{}
-handles event logging from multiple distinct sources.
+The kernel compilation benchmark (\Cref{tab:phoronix-kernel-compilation} and
+\Cref{fig:phoronix-kernel}) provides a representative depiction of overhead for
+a computationally-heavy task that involves multiple processes and significant amounts of
+file I/O. The results of this benchmark indicate that \bpfbox{} and \bpfcontain{} exhibit
+performance overhead that is roughly consistent with AppArmor in the average case. The
+\textbf{Passive} and \textbf{Allow} results indicate that all three systems exhibit an
+acceptable performance overhead of under about $3\%$. The \textbf{Complain} results
+indicate that \bpfcontain{} performs significantly better than both \bpfbox{} and AppArmor
+under a large event logging volume. This result can be attributed to minor implementation
+details, including improvements in how \bpfcontain{} handles event logging from multiple
+distinct sources.
 %This result can likely be
 %attributed to \bpfcontain{}'s more efficient userspace implementation in Rust, which
 %significantly outperforms the \bpfbox{} Python implementation.
 
-\begingroup\small
-\begin{longtable}[c]{llrrr}
-  \caption[Results of the kernel compilation benchmark]{
-    Results of the kernel compilation benchmark. Units are seconds to compile; lower is
-    better. Percent overhead is compared to the baseline result.
-  }%
-  \label{tab:phoronix-kernel}\\
-  \toprule
-   Test Case & System         &  Mean  & Std  & Overhead (\%)\\
-   \midrule
-   Base      & ---            & 235.32 & 1.96 & ---     \\
-   \midrule
-   Passive   & \bpfbox{}      & 237.95 & 1.88 &  1.12\% \\
-             & \bpfcontain{}  & 237.63 & 2.08 &  0.98\% \\
-             & AppArmor       & 236.45 & 1.92 &  0.48\% \\
-   \midrule
-   Allow     & \bpfbox{}      & 238.23 & 2.19 &  1.24\% \\
-             & \bpfcontain{}  & 243.09 & 2.19 &  3.30\% \\
-             & AppArmor       & 237.59 & 2.04 &  0.97\% \\
-   \midrule
-   Complain  & \bpfbox{}      & 269.64 & 1.98 & 14.59\% \\
-             & \bpfcontain{}  & 244.81 & 2.04 &  4.03\% \\
-             & AppArmor       & 288.54 & 2.11 & 22.62\% \\
-  \bottomrule
-\end{longtable}
-\endgroup
+\input{results/tables/kernel-compilation}
 
-\begin{figure}[p]
+\input{results/tables/apache}
+% \begingroup\small
+% \begin{longtable}[c]{llrrr}
+%   \caption[Results of the kernel compilation benchmark]{
+%     Results of the kernel compilation benchmark. Units are seconds to compile; lower is
+%     better. Percent overhead is compared to the baseline result.
+%   }%
+%   \label{tab:phoronix-kernel}\\
+%   \toprule
+%    Test Case & System         &  Mean  & Std  & Overhead (\%)\\
+%    \midrule
+%    Base      & ---            & 235.32 & 1.96 & ---     \\
+%    \midrule
+%    Passive   & \bpfbox{}      & 237.95 & 1.88 &  1.12\% \\
+%              & \bpfcontain{}  & 237.63 & 2.08 &  0.98\% \\
+%              & AppArmor       & 236.45 & 1.92 &  0.48\% \\
+%    \midrule
+%    Allow     & \bpfbox{}      & 238.23 & 2.19 &  1.24\% \\
+%              & \bpfcontain{}  & 243.09 & 2.19 &  3.30\% \\
+%              & AppArmor       & 237.59 & 2.04 &  0.97\% \\
+%    \midrule
+%    Complain  & \bpfbox{}      & 269.64 & 1.98 & 14.59\% \\
+%              & \bpfcontain{}  & 244.81 & 2.04 &  4.03\% \\
+%              & AppArmor       & 288.54 & 2.11 & 22.62\% \\
+%   \bottomrule
+% \end{longtable}
+% \endgroup
+
+\begin{figure}[htp]
   \centering
   \includegraphics[width=0.6\linewidth]{results/graphs/Kernel-Compilation.pdf}
-  \caption{
+  \caption[Results of the kernel compilation benchmark]{
     Results of the kernel compilation benchmark.
     The error bars show standard deviation and the red line shows the base measurement.
     Lower times are better.
@@ -522,10 +535,10 @@ handles event logging from multiple distinct sources.
   \label{fig:phoronix-kernel}
 \end{figure}
 
-\begin{figure}[p]
+\begin{figure}[htp]
   \centering
   \includegraphics[width=0.6\linewidth]{results/graphs/Apache.pdf}
-  \caption{
+  \caption[Results of the Apache web server benchmark]{
     Results of the Apache web server benchmark.
     The error bars show standard deviation and the red line shows the base measurement.
     Higher requests per second are better.
@@ -536,7 +549,7 @@ handles event logging from multiple distinct sources.
 
 \subsubsection{Apache Web Server Results}
 
-The Apache web server benchmark (\Cref{tab:phoronix-apache}) indicates that, while
+The Apache web server benchmark (\Cref{tab:phoronix-apache} and \Cref{fig:phoronix-apache}) indicates that, while
 \bpfbox{} and \bpfcontain{} do exhibit a higher performance overhead than AppArmor, this
 overhead is still within an acceptable range at around $11\%$ in the worst case for
 \bpfcontain{}. This overhead should still be quite acceptable in practice, and can be
@@ -546,32 +559,32 @@ indicate a slight performance improvement for \bpfbox{} over AppArmor; this is l
 to variance in the measurements rather than a true performance improvement, as the
 difference between the two systems falls within the margin of error.
 
-\begingroup\small
-\begin{longtable}[c]{llrrr}
-  \caption[Results of the Apache web server benchmark]{
-    Results of the Apache web server benchmark. Units are requests per second; higher is
-    better. Percent overhead is compared to the baseline result.
-  }%
-  \label{tab:phoronix-apache}\\
-  \toprule
-   Test Case & System         &  Mean   & Std   & Overhead (\%)\\
-   \midrule
-   Base      & ---            & 20576.49 & 281.94 & ---     \\
-   \midrule
-   Passive   & \bpfbox{}      & 19946.04 & 233.62 &  3.06\% \\
-             & \bpfcontain{}  & 19530.92 & 317.95 &  5.08\% \\
-             & AppArmor       & 20363.42 & 331.64 &  1.04\% \\
-   \midrule
-   Allow     & \bpfbox{}      & 19465.86 & 253.81 &  5.40\% \\
-             & \bpfcontain{}  & 18934.55 & 299.23 &  7.98\% \\
-             & AppArmor       & 20276.95 &  64.30 &  1.46\% \\
-   \midrule
-   Complain  & \bpfbox{}      & 20139.10 & 101.59 &  2.13\% \\
-             & \bpfcontain{}  & 18293.09 & 160.00 & 11.10\% \\
-             & AppArmor       & 19827.05 & 298.27 &  3.64\% \\
-  \bottomrule
-\end{longtable}
-\endgroup
+% \begingroup\small
+% \begin{longtable}[c]{llrrr}
+%   \caption[Results of the Apache web server benchmark]{
+%     Results of the Apache web server benchmark. Units are requests per second; higher is
+%     better. Percent overhead is compared to the baseline result.
+%   }%
+%   \label{tab:phoronix-apache}\\
+%   \toprule
+%    Test Case & System         &  Mean   & Std   & Overhead (\%)\\
+%    \midrule
+%    Base      & ---            & 20576.49 & 281.94 & ---     \\
+%    \midrule
+%    Passive   & \bpfbox{}      & 19946.04 & 233.62 &  3.06\% \\
+%              & \bpfcontain{}  & 19530.92 & 317.95 &  5.08\% \\
+%              & AppArmor       & 20363.42 & 331.64 &  1.04\% \\
+%    \midrule
+%    Allow     & \bpfbox{}      & 19465.86 & 253.81 &  5.40\% \\
+%              & \bpfcontain{}  & 18934.55 & 299.23 &  7.98\% \\
+%              & AppArmor       & 20276.95 &  64.30 &  1.46\% \\
+%    \midrule
+%    Complain  & \bpfbox{}      & 20139.10 & 101.59 &  2.13\% \\
+%              & \bpfcontain{}  & 18293.09 & 160.00 & 11.10\% \\
+%              & AppArmor       & 19827.05 & 298.27 &  3.64\% \\
+%   \bottomrule
+% \end{longtable}
+% \endgroup
 
 % \subsubsection{\glsentryshort{ipc} Results}
 
@@ -587,6 +600,37 @@ acceptable in most practical use cases.  As \bpfbox{} and \bpfcontain{} are both
 prototypes, they have not yet been optimized to the extent that AppArmor has. This lack of
 optimization is particularly evident in the results for \bpfcontain{}, and may account for
 significant differences in performance in the file I/O and Apache web server tests.
+
+\begin{table}[ht]
+  \centering
+  \footnotesize
+  \caption[Geometric means of Phoronix benchmarking results]{
+    Geometric means of Phoronix benchmarking results, as provided by the Phoronix Test
+    Suite. These are indicative of overall performance across all tests. For test case,
+    percent change from the base results are also given. Higher values are better.
+  }%
+  \label{tab:phoronix-geometric}
+  \begin{tabular}{llrr}
+  \toprule
+             &               & Geom. Mean & Overhead (\%)\\
+   Test Case & System        &            &              \\
+   \midrule
+   Base      &               & 6.238          & --- \\
+   \cline{1-4}
+   Passive   & \bpfbox{}     & 6.007          & 3.70\% \\
+             & \bpfcontain{} & 5.951          & 4.60\% \\
+             & AppArmor      & 6.158          & 1.28\% \\
+   \cline{1-4}
+   Allow     & \bpfbox{}     & 5.944          & 4.71\% \\
+             & \bpfcontain{} & 5.763          & 7.61\% \\
+             & AppArmor      & 6.086          & 2.35\% \\
+   \cline{1-4}
+   Complain  & \bpfbox{}     & 5.823          & 6.65\% \\
+             & \bpfcontain{} & 5.693          & 8.74\% \\
+             & AppArmor      & 4.962          & 20.46\% \\
+  \bottomrule
+  \end{tabular}
+\end{table}
 
 While \bpfbox{} and \bpfcontain{} are not as efficient as AppArmor in the \textbf{Passive}
 and \textbf{Allow}  test cases, the additional performance overhead should be an
@@ -604,35 +648,6 @@ due to a more efficient event logging mechanism.  \Cref{tab:phoronix-geometric} 
 geometric mean of all tests for each test case, indicating that \bpfbox{} and
 \bpfcontain{} exhibit and average performance penalty of under $9\%$ in practice, while
 AppArmor can exhibit overheads of up to $20\%$ in the worst case.
-
-\begin{table}[htp]
-  \centering
-  \caption[Geometric means of Phoronix benchmarking results]{
-    Geometric means of Phoronix benchmarking results. These are indicative of over all
-    performance across all tests. For test case, percent change from the base results are
-    also given. Higher values are better.
-  }%
-  \label{tab:phoronix-geometric}
-  \begin{tabular}{llrr}
-  \toprule
-   Test Case & System        & Geom. Mean & Overhead (\%)\\
-   \midrule
-   Base      &               & 6.238          & --- \\
-   \midrule
-   Passive   & \bpfbox{}     & 6.007          & 3.70\% \\
-             & \bpfcontain{} & 5.951          & 4.60\% \\
-             & AppArmor      & 6.158          & 1.28\% \\
-   \midrule
-   Allow     & \bpfbox{}     & 5.944          & 4.71\% \\
-             & \bpfcontain{} & 5.763          & 7.61\% \\
-             & AppArmor      & 6.086          & 2.35\% \\
-   \midrule
-   Complain  & \bpfbox{}     & 5.823          & 6.65\% \\
-             & \bpfcontain{} & 5.693          & 8.74\% \\
-             & AppArmor      & 4.962          & 20.46\% \\
-  \bottomrule
-  \end{tabular}
-\end{table}
 
 Although the results presented in this section indicate a comparative performance with
 AppArmor, many other widely-adopted \glspl{lsm} can perform significantly worse than

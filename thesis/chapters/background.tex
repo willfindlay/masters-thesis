@@ -161,7 +161,7 @@ rings for finer-grained isolation on x86.
 \subsection{Discretionary Access Control}%
 \label{ss:dac}
 
-\textit{Discretionary access control} (DAC) comprises the most basic form of access
+\textit{\glsentryfull{dac}} comprises the most basic form of access
 control in many operating systems, including Linux, other Unix-like operating systems, and
 Microsoft Windows. First formalized in the 1983 US Department of Defense
 standard~\cite{orange_book}, a discretionary access control mechanism partitions and
@@ -282,7 +282,7 @@ that can reduce its security to the trustworthiness of an app's signing key.
 Although discretionary access control provides a convenient and intuitive user-centric
 model for object ownership and permissions, it makes some dangerous assumptions about
 security that can totally invalidate the model in
-practice~\cite{shu2016_security_isolation_study}. In particular, DAC assumes that all
+practice~\cite{shu2016_security_isolation_study}. In particular, \gls{dac} assumes that all
 processes are benign and contain no exploitable vulnerabilities. The mere existence off
 malware and exploitable vulnerabilities (e.g.~memory safety vulnerabilities) immediately
 invalidates this assumption. For instance, consider an honest but vulnerable piece of
@@ -370,22 +370,27 @@ fundamental issues and proposed the adoption of similar mechanisms.
 \section{Extensions to the Unix Security Model}%
 \label{s:security-extensions}
 
-\todo{Add small introductory paragraph}
+Having examined the classical components of an operating system security framework, we now
+turn our attention to recent extensions on top of the Unix security model, with
+a particular emphasis on Linux and other free and open source Unix-like operating systems.
+This section presents a selection of key developments on top of the original Unix security
+model which have developed over time, with a particular emphasis on process-level
+confinement.
 
-\begin{inprogress}
-  \begin{itemize}
-    \item The items discussed in 2.1 have been around for a long time
-    \item To solve problems that crop up, this model has been update over time across multiple distributions
-    \item This section presents a selection of key developments to the Unix security model
-  \end{itemize}
-\end{inprogress}
+% \begin{inprogress}
+%   \begin{itemize}
+%     \item The items discussed in 2.1 have been around for a long time
+%     \item To solve problems that crop up, this model has been update over time across multiple distributions
+%     \item This section presents a selection of key developments to the Unix security model
+%   \end{itemize}
+% \end{inprogress}
 
-\todo{Maybe add Grsecurity (OpenWall, etc.) to this background?}
+% \todo{Maybe add Grsecurity (OpenWall, etc.) to this background?}
 
 \subsection{POSIX Capabilities}
 
 POSIX capabilities~\cite{posix_capabilities, corbet2006_capabities_a,
-corbet2006_capabities_b} are highly related to Unix DAC in the sense that they were
+corbet2006_capabities_b} are highly related to Unix \gls{dac} in the sense that they were
 originally designed to break up the multitude of privileges associated with the
 \textit{root} user into more manageable pieces. In this sense, POSIX capabilities (when
 properly used) are more conducive to the principle of least-privilege. A process need not
@@ -1070,6 +1075,14 @@ from the host operating system decreases.
 % probability of container escape more likely, but it also increases the host-to-container
 % and container-to-host attack surface.
 
+\begin{inprogress}
+  \begin{itemize}
+    \item Container exploits vulnerability in the kernel
+    \item Container exploits vulnerability in the host configuration
+    \item Container exploits vulnerability in a host process
+  \end{itemize}
+\end{inprogress}
+
 \Cref{fig:containersec} depicts a high-level threat model for containers from the
 perspective of the host operating system. \todo{Connect each part of the figure to the
 text.} This model comprises a number of attack vectors, each targeting a different part of
@@ -1080,7 +1093,7 @@ a kernel-level vulnerability, such as a memory safety error in a system call
 implementation. To mitigate such attacks, the attack surface exposed by the kernel to the
 container should be minimal. Other classes of attack rely on exploiting the intended
 effects of system calls for in unintended ways.  For instance, a misconfigured security
-policy might allow a containerized process to load a kernel module or perform interprocess
+policy might allow a containerized process to load a kernel module or perform inter-process
 communication with an external daemon. Abusing shared resources can have a similar affect,
 allowing a container to manipulate or tamper with an external process.
 
@@ -1339,8 +1352,14 @@ just-in-time compiled into the native instruction set.  \Cref{fig:extended-bpf} 
 the \gls{ebpf} architecture in detail. The reader is encouraged to compare this with the classic
 BPF architecture, depicted in \Cref{fig:classic-bpf}.
 
-Dtrace~\cite{cantrill2004_dtrace, gregg2001_dtrace} served as an early inspiration for the design of
-\gls{ebpf} and related tooling. \todo{Say a bit more here.}
+Dtrace~\cite{cantrill2004_dtrace, gregg2001_dtrace} served as an early inspiration for the
+design of \gls{ebpf} and related tooling. The original Dtrace model was to make low-level
+systems tracing available to end users by exporting a simple tracing language (called D)
+and supporting upstream hooking of kernel functions using this language. \gls{ebpf}
+implements a superset of Dtrace's original functionality, enabling userspace applications
+to hook into the kernel and other userspace applications, attaching bytecode programs to
+be run as callbacks.  Userspace \gls{ebpf} tooling then simplifies the process of writing
+\gls{ebpf} programs by introducing increasingly high-level layers of abstraction.
 
 \begin{figure}[htbp]
   \centering

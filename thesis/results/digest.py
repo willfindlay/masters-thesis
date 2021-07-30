@@ -60,25 +60,6 @@ def fixup_name(s: str) -> str:
         return s.title()
 
 
-def create_table(df: pd.DataFrame):
-    # for c in RESULT_COLS:
-    #     if not df[c, 'pct_diff'].any():
-    #         df[c, 'result'] = f"{df[c, 'mean']} ({df[c, 'pct_diff']})"
-    #     else:
-    #         df[c, 'result'] = f"{df[c, 'mean']}"
-    #df = df.sort_index(axis=1)
-
-    #df = fixup_names(df)
-    #print(df)
-    #print(df.loc[:, ['test', (RESULT_COLS, ('mean', 'pct_std'))]])
-    #print(df)
-    # tests = df.loc[:, ['test']]
-    # tests.columns = [('test', '')]
-    # results = df.loc[:, (RESULT_COLS, idx[:], ('mean', 'pct_std'))]
-    # df = pd.concat([tests, results], axis=1)
-    #print(df.xs(['std', 'mean'], axis=1, level=1))
-    pass
-
 
 def ingest() -> pd.DataFrame:
     """Ingest data from json file"""
@@ -136,7 +117,43 @@ def ingest() -> pd.DataFrame:
     df['system'] = df['system'].apply(fixup_name)
     df['case'] = df['case'].apply(fixup_name)
 
+    # Apply ordered categoricals
+    df['case'] = pd.Categorical(df['case'], categories=['Base', 'Passive', 'Allow', 'Complaining'], ordered=True)
+    df['system'] = pd.Categorical(df['system'], categories=['BPFBox', 'BPFContain', 'AppArmor', 'Base'], ordered=True)
+
     return df
+
+def generate_tables(df: pd.DataFrame):
+    for test in set(df['test']):
+        # Get only the values in the current test
+        tab_df = df[df['test'] == test]
+        units = tab_df['units'].iloc[0].replace('μs', '$\mu$s')
+        # Fixup column names
+        tab_df = tab_df.rename(columns={'case': 'Test Case', 'system': 'System', 'mean': 'Mean', 'std': 'Std', 'pct_diff': 'Overhead'})
+        # Select and order columns
+        tab_df = tab_df [['Test Case', 'System', 'Mean', 'Std', 'Overhead']]
+        # HIB
+        if test == 'Apache':
+            hib = 'Higher is better'
+            tab_df['Overhead'] = -tab_df['Overhead']
+        else:
+            hib = 'Lower is better'
+        # Sort
+        tab_df = tab_df.sort_values(['Test Case', 'System'])
+        # Fixup base system
+        tab_df['System'] = tab_df['System'].replace('Base', '---', regex=False)
+        # Fixup overhead
+        tab_df['Overhead'] = tab_df['Overhead'].map(lambda x: f'{x:.2f}\\%')
+        tab_df.loc[tab_df['Test Case'] == 'Base', 'Overhead'] = '---'
+        # Convert test case and system to index
+        tab_df.set_index(['Test Case', 'System'], inplace=True)
+        # Make table
+        tab_df = tab_df.round(2)
+        caption = (f'Results of the {test.lower()} benchmark. Units are {units}. {hib}. Percent overhead is compared to the baseline result.', f'Results of the {test.lower()} benchmark')
+        test_name = test.lower().replace(" ", "-")
+        label = f'tab:phoronix-{test_name}'
+        tab_df.to_latex(f'tables/{test_name}.tex', multirow=True, caption=caption, label=label, column_format='llrrr', position='htp!', escape=False)
+
 
 def generate_graphs(df: pd.DataFrame):
     # p9 variables
@@ -172,10 +189,6 @@ def generate_graphs(df: pd.DataFrame):
         else:
             ylim = None
 
-        # Re-order cases
-        plot_df['case'] = pd.Categorical(plot_df['case'], categories=['Base', 'Passive', 'Allow', 'Complaining'], ordered=True)
-        # print(pd.Categorical(plot_df['case'], categories=['Base', 'Passive', 'Allow', 'Complaining'], ordered=True))
-
         # Make the plot
         plot = (p9.ggplot(plot_df, p9.aes(x='case', y='mean', fill='system'))
                 # TODO: Figure out how to change the order
@@ -200,7 +213,8 @@ def generate_graphs(df: pd.DataFrame):
 
 def main():
     df = ingest()
-    generate_graphs(df)
+    #generate_graphs(df)
+    generate_tables(df)
 
     #kernel = df[df['suite'] == 'Kernel Compilation']
     #digest(kernel, 'kernel-compilation')

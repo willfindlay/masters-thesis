@@ -1,0 +1,26 @@
+\begin{table}[htp!]
+\centering
+\footnotesize
+\caption[Results of the create threads benchmark]{Results of the create threads benchmark. Units are $\mu$s Per Event. Lower is better. Percent overhead is compared to the baseline result.}
+\label{tab:phoronix-create-threads}
+\begin{tabular}{llrrr}
+\toprule
+            &          &   Mean &   Std & Overhead \\
+Test Case & System &        &       &          \\
+\midrule
+Base & --- &  20.18 &  0.19 &      --- \\
+\cline{1-5}
+\multirow{3}{*}{Passive} & BPFBox &  21.06 &  0.25 &   4.37\% \\
+            & BPFContain &  21.21 &  0.30 &   5.08\% \\
+            & AppArmor &  20.32 &  0.25 &   0.71\% \\
+\cline{1-5}
+\multirow{3}{*}{Allow} & BPFBox &  21.56 &  0.37 &   6.84\% \\
+            & BPFContain &  22.11 &  0.22 &   9.53\% \\
+            & AppArmor &  20.29 &  0.18 &   0.54\% \\
+\cline{1-5}
+\multirow{3}{*}{Complaining} & BPFBox &  21.57 &  0.25 &   6.90\% \\
+            & BPFContain &  21.96 &  0.24 &   8.80\% \\
+            & AppArmor &  20.32 &  0.16 &   0.70\% \\
+\bottomrule
+\end{tabular}
+\end{table}
