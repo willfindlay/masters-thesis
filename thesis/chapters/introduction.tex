@@ -148,24 +148,17 @@ system performance.
 In this thesis, we consider the following research questions.
 
 \begin{enumerate}[label=\textbf{RQ\arabic*.}]
-  \item
+  \item What difficulties in the current state of Linux confinement lead to the semantic
+        gaps between policies and the entities they are designed to lock down? How can we design
+        a novel confinement mechanism to rectify these difficulties?
 
-  \item
+  \item Can \gls{ebpf} be used to implement a full-featured confinement framework?
+        What would such a framework look like and how would it compare with existing confinement frameworks?
 
-  \item
+  \item What levels of security and performance can we expect from a confinement mechanism
+        designed around \gls{ebpf}? What improvements to \gls{ebpf} would be required for
+        a complete solution?
 \end{enumerate}
-
-\begin{inprogress}
-  \begin{itemize}
-    \item What difficulties in the current state of Linux confinement lead to the semantic
-          gap between confinement policies and the entities they are designed to lock down? How
-          can a novel confinement mechanism rectify these difficulties?
-    \item Can \gls{ebpf} be used to implement a full-featured confinement framework, capable of
-          sandboxing processes and securing container deployments?
-    \item What levels of security and performance can we expect from a confinement mechanism designed
-          around \gls{ebpf}?
-  \end{itemize}
-\end{inprogress}
 
 \section{Motivation}%
 \label{s:motivation}
