@@ -562,15 +562,26 @@ distinct sources.
 
 \subsubsection{Apache Web Server Results}
 
-The Apache web server benchmark (\Cref{tab:phoronix-apache} and \Cref{fig:phoronix-apache}) indicates that, while
-\bpfbox{} and \bpfcontain{} do exhibit a higher performance overhead than AppArmor, this
-overhead is still within an acceptable range at around $11\%$ in the worst case for
-\bpfcontain{}. This overhead should still be quite acceptable in practice, and can be
-improved through further optimizations in \bpfcontain{}'s enforcement engine, which is
-still in the prototype phase. The results from the \textbf{Complaining} case appear to
-indicate a slight performance improvement for \bpfbox{} over AppArmor; this is likely due
-to variance in the measurements rather than a true performance improvement, as the
-difference between the two systems falls within the margin of error.
+The Apache web server benchmark (\Cref{tab:phoronix-apache} and
+\Cref{fig:phoronix-apache}) indicates that, while \bpfbox{} and \bpfcontain{} do exhibit
+a higher performance overhead than AppArmor, this overhead is still within an acceptable
+range at around $11\%$ in the worst case for \bpfcontain{}. This overhead should still be
+quite acceptable in practice, and can be improved through further optimizations in
+\bpfcontain{}'s enforcement engine, which is still in the prototype phase. The results
+from the \textbf{Complaining} case appear to indicate a slight performance improvement for
+\bpfbox{} over AppArmor; this is likely due to variance in the measurements rather than
+a true performance improvement, as the difference between the two systems falls within the
+margin of error.
+
+It is worth noting that, due to an intentional \gls{abi} breakage in the upstream AppArmor
+module, AppArmor currently does not enforce any network policy on a stock Linux
+kernel~\cite{apparmor_net1, apparmor_net2}. These results were confirmed experimentally
+when inspecting the AppArmor logs for the Apache \textbf{Complaining}  test case. This
+means that the performance results for AppArmor in the Apache test were at least
+significantly biased in favour of AppArmor.  Future experimentation is required with
+a patched version of the Linux kernel to determine AppArmor's real overhead in this test
+case. We hypothesize that AppArmor's true overhead will more closely match
+\bpfcontain{}'s.
 
 % \begingroup\small
 % \begin{longtable}[c]{llrrr}
