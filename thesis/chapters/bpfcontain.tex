@@ -292,20 +292,24 @@ most important implementation details in the subsections that follow.
 \subsection{Policy Deserialization and Loading}%
 \label{ss:bpfcontain-serde}
 
-\bpfcontain{} implements policy deserialization using Serde~\cite{serde}, a data
-serialization crate for Rust. \todo{Explain the design choice that motivated us to move
-away from a DSL... We want to have people design policies and so the tooling around the
-policy is kind of important.}
+When designing the \bpfcontain{} policy language, we made a conscious design decision to
+avoid constraining the user to one specific language syntax. In particular, we wanted to
+avoid another domain-specific language, as learning the policy language could be a barrier
+to entry for new users. A domain-specific policy language also presents issues when making
+changes to or adding new features to the policy language specification, as the parser and
+lexer must both be modified, along with underlying rule representation, and enforcement
+engine. Instead, we elect to decouple the policy language from the policy specification,
+using Serde~\cite{serde}, a data serialization and deserialization crate for Rust.
 
-Serde leverages Rust's powerful type system and procedural
-macros to derive serialization and deserialization logic for vanilla Rust structs and
-enums. Rust crates that consume Serde's \gls{api} can then use the automatically generated
-logic for serialization and deserialization. This design enables a plug-and-play
-relationship between a data schema, defined as a Rust data structure and any data
-serialization language supported through the Rust crates ecosystem. \bpfcontain{} uses
-Serde to automatically generate the accompanying deserialization logic for
-a \texttt{Policy} struct and several \texttt{Rule} structs, one for each supported rule
-type. \Cref{lst:bpfcontain-serde} depicts a simplified example of how this works.
+Serde leverages Rust's powerful type system and procedural macros to derive serialization
+and deserialization logic for vanilla Rust structs and enums. Rust crates that consume
+Serde's \gls{api} can then use the automatically generated logic for serialization and
+deserialization. This design enables a plug-and-play relationship between a data schema,
+defined as a Rust data structure and any data serialization language supported through the
+Rust crates ecosystem. \bpfcontain{} uses Serde to automatically generate the accompanying
+deserialization logic for a \texttt{Policy} struct and several \texttt{Rule} structs, one
+for each supported rule type. \Cref{lst:bpfcontain-serde} depicts a simplified example of
+how this works.
 
 \begin{lstlisting}[language=Rust, gobble=2, caption={[A simplified example of \bpfcontain{}'s policy deserialization logic]
   A simplified example of \bpfcontain{}'s policy deserialization logic. Policy rules are
@@ -449,7 +453,7 @@ path to achieving strong protection defaults. \Cref{fig:bpfcontain-enforcement} 
 
 \begin{figure}[p]
   \centering
-  \includegraphics[width=0.8\linewidth]{figs/bpfcontain/enforcement.pdf}
+  \includegraphics[width=0.7\linewidth]{figs/bpfcontain/enforcement.pdf}
   \caption[The policy enforcement strategy under \bpfcontain{}]{
     The policy enforcement strategy under \bpfcontain{}, expressed as a flowchart. Using
     container semantics, \bpfcontain{} achieves rich policy defaults, denying access to

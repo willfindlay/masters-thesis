@@ -5,40 +5,38 @@ propose ways to address current limitations, improve the \gls{ebpf} ecosystem fo
 confinement use cases, add features to \bpfbox{} and \bpfcontain{}, and conduct further
 research on the usability of both systems.
 
-\begin{inprogress}
-  New planned outline:
-  \begin{itemize}
-    \item 8.1 Contributions
-    \begin{itemize}
-      \item A paragraph per chapter (starting with 3), 1--2 sentences per section,
-            outlining the key points of what I did
-    \end{itemize}
-    \item 8.2 Limitations
-    \begin{itemize}
-      \item Leave this mostly unchanged
-      \item But revisit the \enquote{passive overhead} section (possibly remove BPF
-      namespaces part, depending on if we decide to keep it in)
-    \end{itemize}
-    \item 8.3 Future Work and Research Directions
-    \begin{itemize}
-      \item Keep policy language experimentation and user study
-      \item Possibly remove \gls{bpf} namespace and unprivileged \gls{bpf}?
-      \item Keep Docker integration and OCI spec
-      \item Keep fine-grained network policy
-      \item Remove GUI, keep policy generation
-    \end{itemize}
-    \item 8.4 Conclusion
-    \begin{itemize}
-      \item Leave this as-is and maybe fold in some of the pontificating from
-            \enquote{Improving the Status Quo}
-    \end{itemize}
-  \end{itemize}
-\end{inprogress}
+% \begin{inprogress}
+%   New planned outline:
+%   \begin{itemize}
+%     \item 8.1 Contributions
+%     \begin{itemize}
+%       \item A paragraph per chapter (starting with 3), 1--2 sentences per section,
+%             outlining the key points of what I did
+%     \end{itemize}
+%     \item 8.2 Limitations
+%     \begin{itemize}
+%       \item Leave this mostly unchanged
+%       \item But revisit the \enquote{passive overhead} section (possibly remove BPF
+%       namespaces part, depending on if we decide to keep it in)
+%     \end{itemize}
+%     \item 8.3 Future Work and Research Directions
+%     \begin{itemize}
+%       \item Keep policy language experimentation and user study
+%       \item Possibly remove \gls{bpf} namespace and unprivileged \gls{bpf}?
+%       \item Keep Docker integration and OCI spec
+%       \item Keep fine-grained network policy
+%       \item Remove GUI, keep policy generation
+%     \end{itemize}
+%     \item 8.4 Conclusion
+%     \begin{itemize}
+%       \item Leave this as-is and maybe fold in some of the pontificating from
+%             \enquote{Improving the Status Quo}
+%     \end{itemize}
+%   \end{itemize}
+% \end{inprogress}
 
 \section{Contributions}%
 \label{s:disc-contributions}
-
-This thesis makes several research contributions. \todo{MORE HERE}
 
 In \Cref{c:confinement-problem}, we presented a novel framing of the confinement problem,
 arguing that inherent complexities in Linux confinement can be solved with the
@@ -102,7 +100,8 @@ through extensions to the policy enforcement mechanism or future improvements to
 \gls{ebpf} ecosystem.
 
 %\subsection{Limited Pathname Support in \glsentryshort{ebpf}}
-\subsection{Semantic Issues in the Policy Language}
+\subsection{Semantic Issues in the Policy Language}%
+\label{ss:disc-semantic-issues}
 
 It is hard to refer to files from \gls{ebpf}. In the kernel, files are generally uniquely
 described by an \textit{inode} structure, which in turn maps to one or more pathnames via
@@ -120,7 +119,7 @@ root to a given file. Indeed, the \bpfbox{} and \bpfcontain{} policy languages u
 pathnames rather than inodes to refer to files. Unfortunately, this creates an undesired
 dichotomy between the user-facing components of \bpfbox{} and \bpfcontain{}, and the
 kernelspace implementation.  To resolve this dichotomy, we translate the pathnames into
-inode and device pairs at policy load-time. This is a workaround, subject to several
+inode and device pairs at policy load-time. This is a workaround and is subject to several
 fundamental limitations. In particular, referring to a pathname that doesn't yet exist
 becomes difficult, as inode numbers do not yet exist; inodes that are deleted or freshly
 created at runtime must be treated as special cases, dynamically updating the policy as
@@ -304,136 +303,242 @@ side.
 
 \subsection{Performance Overhead}
 
-\todo{Talk about how we are a bit higher overhead, but we get so much more flexibility}
-\todo{The overhead is not that bad, and it's not an optimized thing. This can be improved with more optimizations.}
+The performance results presented in \Cref{c:evaluation} indicate that \bpfbox{} and
+\bpfcontain{} have higher overhead than AppArmor in the OSBench micro-benchmarks.
+However, this is not indicative of their performance in the general case. In fact,
+\bpfbox{} and \bpfcontain{} perform competitively with AppArmor in the macro-benchmarks,
+suggesting that the overhead of individual system calls is outweighed by the computational
+complexity of an instrumented application and the synchronous delays introduced by
+blocking system calls on I/O. Moreover, neither \bpfbox{} nor \bpfcontain{} has been
+deliberately optimized, suggesting that there may be opportunities to improve performance
+in the future.
+
+In addition to considering potential improvements to their base overhead, we must also
+consider the additional flexibility provided by an \gls{ebpf}-based confinement mechanism.
+Using \gls{bpf} \gls{core}, \bpfcontain{} can be run on any supported kernel without the
+need to recompile or patch either the kernel of \bpfcontain{} itself. The dynamic nature
+of \gls{ebpf} means that software bugs or vulnerabilities in the enforcement engine can be
+fixed without the need to update the kernel or even reboot the system. Moreover,
+\gls{ebpf} programs are verified for safety, meaning that they are far less likely to
+expose additional attack surfaces in the kernel than a kernel patch or loadable kernel
+module.
+
+% \begin{inprogress}
+%   \begin{itemize}
+%     \item \bpfbox{} and \bpfcontain{} have higher overhead in the micro-benchmarks
+%     \item The overhead averages out in the general case
+%     \item And they perform competitively with AppArmor in the macro-benchmarks, suggesting
+%           that the overhead of individual operations is outweighed by computational complexity
+%           and the synchronicity of blocking system calls
+%     \item Also, what we are buying for the additional overhead is increased flexibility
+%     \item Unlike a traditional \gls{lsm}, an \gls{ebpf}-based confinement mechanism can be
+%           plugged into any supported kernel and just work. Moreover, any bugs or design flaws
+%           that crop up in an \gls{ebpf}-based implementation can be patched without updating the
+%           kernel, similar to how we update userspace programs.
+%   \end{itemize}
+% \end{inprogress}
+
+% Both exhibit higher performance overhead than AppArmor in many of
+% the micro-benchmarks presented . While the performance results in \Cref{c:evaluation} do show
+% that \bpfbox{} and \bpfcontain{} are competitive with AppArmor in the macro-benchmarks and that
+% they beat AppArmor in worst-case overhead,
+
+% \todo{Talk about how we are a bit higher overhead, but we get so much more flexibility}
+% \todo{The overhead is not that bad, and it's not an optimized thing. This can be improved with more optimizations.}
 
 \subsection{Security Guarantees}
 
-\todo{talk about fundamental limitations of \gls{ebpf} as a security mechanism, how we depend on the kernel}
+In \Cref{c:evaluation}, we presented a detailed security analysis of the \bpfbox{} and
+\bpfcontain{} designs.  However, this informal analysis is weak evidence for the actual
+security guarantees of these research prototypes.  In the future, we plan to conduct
+a formal security evaluation of \bpfcontain{}, measuring its ability to confine
+a container using a dedicated security test suite. Such a test suite would involve
+a combination of existing (vulnerable) container images and accompanying CVEs. We would
+then attach a \bpfcontain{} policy to the resulting container and determine its ability to
+(1) accommodate the basic functionality of the container; and (2) prevent the exploitation
+of any related CVEs. These tests would then enable us to establish \bpfcontain{}
+as a useful security mechanism for confining containers.
 
-\todo{others have used \gls{ebpf} for security, but nobody has really thought through the implications of defining security policy in this way}
+While others~\cite{tracee, cilium} have examined \gls{ebpf}'s utility for security use
+cases, this thesis presents the earliest research into defining security policies using
+\gls{ebpf} maps. Currently, \bpfbox{} and \bpfcontain{} protect themselves from a confined
+adversary by instrumenting \gls{ebpf} programs on the \texttt{bpf(2)} system call code
+path. However, in order to present a rigorous security argument, we must also formally
+verify the security of \bpfcontain{}'s \gls{ebpf} programs and maps to show that
+a confined adversary cannot tamper with them.
 
-\todo{talk about how a formal analysis/verification of \gls{ebpf} could help solidify it as a base}
+Another important aspect underpinning the security of solutions like \bpfbox{} and
+\bpfcontain{} is the security of \gls{ebpf} itself, as well as the \gls{krsi} \gls{lsm}
+programs and the underlying \gls{lsm} hooks themselves. To date, no formal analysis exists
+to verify any of these components. It may not be possible to formally verify that
+\gls{lsm} hooks provide complete mediation, due to the complexity of the Linux
+kernel~\cite{jaeger2008_os_security}. However, due to the simplicity of \gls{ebpf} and
+\gls{krsi}, it could be feasible to formally verify their security guarantees within the
+context of an unverified kernel. We leave such formal analysis of \gls{ebpf} to future
+work.
 
-\todo{talk about how we have no formal analysis currently, left for future work}
+% \todo{talk about fundamental limitations of \gls{ebpf} as a security mechanism, how we depend on the kernel}
+% \todo{others have used \gls{ebpf} for security, but nobody has really thought through the implications of defining security policy in this way}
+% \todo{talk about how a formal analysis/verification of \gls{ebpf} could help solidify it as a base}
+% \todo{talk about how we have no formal analysis currently, left for future work}
 
 
 \section{Future Work and Research Directions}%
 \label{s:disc-future-work}
 
-This section discusses opportunities for future work, both in terms of directly extending
-\bpfbox{} and \bpfcontain{} and indirectly improving them through iterations on the
-\gls{ebpf} ecosystem. We also discuss future research directions, proposing new evaluation
-strategies and policy language experimentation that can further guide the development of
-these research systems. In particular, we discuss conducting a user study to evaluate the
-usability of \bpfbox{} and \bpfcontain{}, the addition of a new \gls{bpf} namespace and
-unprivileged \gls{bpf}, integration with Docker and the \gls{oci} specification,
-finer-grained network policy, automated policy generation, and a policy management \gls{gui}.
+This section discusses opportunities for future work and potential research directions.
+We specifically examine opportunities to further evaluate the effectiveness of \bpfbox{}
+and \bpfcontain{}, as well as potential extensions that can improve \bpfcontain{}'s
+container-specific policies.  We also consider potential avenues for enabling automatic
+policy generation in \bpfcontain{}
+% This section discusses opportunities for future work, both in terms of directly extending
+% \bpfbox{} and \bpfcontain{} and indirectly improving them through iterations on the
+% \gls{ebpf} ecosystem. We also discuss future research directions, proposing new evaluation
+% strategies and policy language experimentation that can further guide the development of
+% these research systems. In particular, we discuss conducting a user study to evaluate the
+% usability of \bpfbox{} and \bpfcontain{}, the addition of a new \gls{bpf} namespace and
+% unprivileged \gls{bpf}, integration with Docker and the \gls{oci} specification,
+% finer-grained network policy, automated policy generation, and a policy management \gls{gui}.
 
-\todo{Make it more clear that most of the limitations come from \gls{ebpf}}
+\subsection{The Need for a User Study}
+\label{ss:disc-user-study}
 
-\subsection{Policy Language Experimentation and Usability Study}
+While the \bpfbox{} and \bpfcontain{} policy languages are designed to be simple, the
+usability argument behind their design is as of yet untested. In particular, both
+prototypes could benefit from a user study. A user study could offer numerous insights
+into how users interact with the policy languages, whether the resulting enforcement
+actions meet expectations, and how each system compares with equivalents like SELinux or
+AppArmor from a usability perspective. Such insights could be used to inform design
+directions for future iterations of the policy language, or to establish a stronger basis
+for comparison between \bpfbox{}, \bpfcontain{}, and alternative confinement mechanisms.
 
-\begin{inprogress}
-  Policy language experimentation
-  \begin{itemize}
-    \item There is room for further policy language experimentation
-    \item Perhaps \bpfbox{} would benefit from a similar policy language schema to \bpfcontain{}, rather than a DSL
-    \item Or perhaps \bpfcontain{} would benefit from some alternate policy languages (different schemas, different serialization formats)
-    \item Experiment with policy granularity, tunables that impact \bpfcontain{}'s default enforcement boundary
-  \end{itemize}
+User studies have proven lucrative for gleaning insights about prior work in the
+confinement space. Schreuders \etal~\cite{schreuders2012_towards} conducted a user study
+examining the usability of their FBAC-LSM security module, AppArmor, and SELinux, to
+establish a basis for comparison between alternative policy schemes. Their work revealed
+insights into how users manage expectations when writing security policy and the semantic
+gap between existing policy languages and user expectations. As systems that incorporate
+their own policy language design, \bpfbox{} and \bpfcontain{} could greatly benefit from
+a similar user study.
 
-  User study
-  \begin{itemize}
-    \item Determine quantitatively how \bpfcontain{}'s
-    \item Introduce three research questions
-    \begin{itemize}
-      \item RQ1: How well do \bpfcontain{}'s policy semantics match user expectations?
-      \begin{itemize}
-        \item Does \bpfcontain{}'s default policy fit the user's mental model of a container? Any surprises?
-        \item Is the \bpfcontain{} policy language suitable for the kind of confinement users want to do?
-      \end{itemize}
-      \item RQ2: How does the user experience of \bpfcontain{} compare with alternatives?
-      \begin{itemize}
-        \item Compare with alternative \glspl{lsm} (SELinux and AppArmor), seccomp-bpf, perhaps higher-level mechanisms like Snap
-      \end{itemize}
-      \item RQ3: How do users perceive the security of \bpfcontain{} compared with alternatives?
-      \begin{itemize}
-        \item Compare with alternative \glspl{lsm} (SELinux and AppArmor), seccomp-bpf, perhaps higher-level mechanisms like Snap
-      \end{itemize}
-    \end{itemize}
-    \item Cite the FBAC-LSM paper for some ideas on how to conduct the user study
-  \end{itemize}
+% \begin{inprogress}
+%   Policy language experimentation
+%   \begin{itemize}
+%     \item There is room for further policy language experimentation
+%     \item Perhaps \bpfbox{} would benefit from a similar policy language schema to \bpfcontain{}, rather than a DSL
+%     \item Or perhaps \bpfcontain{} would benefit from some alternate policy languages (different schemas, different serialization formats)
+%     \item Experiment with policy granularity, tunables that impact \bpfcontain{}'s default enforcement boundary
+%   \end{itemize}
 
-  User study can inform further policy language experimentation
-  \begin{itemize}
-    \item Use answers to research questions to inform further design
-    \item Adding new rule types, modifying existing rule types
-    \item Change the design of the policy language, add more tunables, etc.
-  \end{itemize}
-\end{inprogress}
+%   User study
+%   \begin{itemize}
+%     \item Determine quantitatively how \bpfcontain{}'s
+%     \item Introduce three research questions
+%     \begin{itemize}
+%       \item RQ1: How well do \bpfcontain{}'s policy semantics match user expectations?
+%       \begin{itemize}
+%         \item Does \bpfcontain{}'s default policy fit the user's mental model of a container? Any surprises?
+%         \item Is the \bpfcontain{} policy language suitable for the kind of confinement users want to do?
+%       \end{itemize}
+%       \item RQ2: How does the user experience of \bpfcontain{} compare with alternatives?
+%       \begin{itemize}
+%         \item Compare with alternative \glspl{lsm} (SELinux and AppArmor), seccomp-bpf, perhaps higher-level mechanisms like Snap
+%       \end{itemize}
+%       \item RQ3: How do users perceive the security of \bpfcontain{} compared with alternatives?
+%       \begin{itemize}
+%         \item Compare with alternative \glspl{lsm} (SELinux and AppArmor), seccomp-bpf, perhaps higher-level mechanisms like Snap
+%       \end{itemize}
+%     \end{itemize}
+%     \item Cite the FBAC-LSM paper for some ideas on how to conduct the user study
+%   \end{itemize}
 
-\subsection{The BPF Namespace and Unprivileged BPF}%
-\label{ss:bpf-namespace}
+%   User study can inform further policy language experimentation
+%   \begin{itemize}
+%     \item Use answers to research questions to inform further design
+%     \item Adding new rule types, modifying existing rule types
+%     \item Change the design of the policy language, add more tunables, etc.
+%   \end{itemize}
+% \end{inprogress}
 
-\begin{inprogress}
-  The BPF namespace
-  \begin{itemize}
-    \item The missing component from \gls{ebpf} that would take \bpfbox{} and \bpfcontain{} to the next level
-    \item The idea is simple: Implement a new namespace category in Linux, specific to \gls{bpf} programs and maps
-    \item This namespace would then act as a preliminary filter, virtualizing \gls{bpf} programs and maps according to namespace membership
-    \item A program would only apply to a thread running under the same namespace, and map accesses would be virtualized in a similar way
-    \item This can be used to implement the kind of early filtering for \gls{bpf} \gls{lsm} discussed earlier in the chapter
-    \item Reduce the overhead of \bpfbox{} and \bpfcontain{} in the passive case by attaching programs to a specific \gls{bpf} namespace
-    \item Would just need to take care that a task cannot switch out of the \gls{bpf} namespace to escape confinement
+% \subsection{The BPF Namespace and Unprivileged BPF}%
+% \label{ss:bpf-namespace}
 
-    \item The \gls{bpf} namespace would be useful for other \gls{bpf} program types as well, in addition to \gls{lsm}
-    \item For example, we might only want a specific kprobe or uprobe to apply for certain processes, rather than the entire system
-    \item Such a namespace likely wouldn't be difficult to implement, would just require
-    revisiting the way \gls{bpf} programs are attached and they way programs and maps are
-    referenced in the kernel
-  \end{itemize}
+% \begin{inprogress}
+%   The BPF namespace
+%   \begin{itemize}
+%     \item The missing component from \gls{ebpf} that would take \bpfbox{} and \bpfcontain{} to the next level
+%     \item The idea is simple: Implement a new namespace category in Linux, specific to \gls{bpf} programs and maps
+%     \item This namespace would then act as a preliminary filter, virtualizing \gls{bpf} programs and maps according to namespace membership
+%     \item A program would only apply to a thread running under the same namespace, and map accesses would be virtualized in a similar way
+%     \item This can be used to implement the kind of early filtering for \gls{bpf} \gls{lsm} discussed earlier in the chapter
+%     \item Reduce the overhead of \bpfbox{} and \bpfcontain{} in the passive case by attaching programs to a specific \gls{bpf} namespace
+%     \item Would just need to take care that a task cannot switch out of the \gls{bpf} namespace to escape confinement
 
-  Unprivileged BPF
-  \begin{itemize}
-    \item A natural extension that arises from \gls{bpf} namespace support
-    \item If we can get the semantics of a \gls{bpf} namespace right, it could enable unprivileged processes to load \gls{bpf} programs for self-introspection
-    \item This is considered a \enquote{Holy Grail} of \gls{ebpf}
-    \item Note that others have tried and failed at introducing unprivileged \gls{bpf} in the past, it's easy to get burned if you're not careful
-    \item Cite Landlock as an example
-    \item A few things to consider:
-    \begin{enumerate}
-      \item BPF as an attack vector into the kernel... The verifier is often a ripe target
-      for exploitation due to its complexity, need to consider the additional attack
-      surface exposed by allowing arbitrary users to invoke the verifier.
-      \item Need to be careful not to accidentally enable arbitrary code execution in the
-      kernel. Helpers should probably be specifically allow-listed for unprivileged
-      \gls{bpf}, to avoid potential code execution issues
-      \item Need to be very careful to ensure that information cannot leak from outside
-      the \gls{bpf} namespace... Otherwise we enable unprivileged processes to spy on the
-      kernel
-    \end{enumerate}
-    \item Conclusion? Unprivileged \gls{bpf} would be very nice to have, and the \gls{bpf}
-    namespace seems like a clear path toward this, but we need to be very careful when
-    designing the \gls{api}, particularly from a security perspective
-  \end{itemize}
-\end{inprogress}
+%     \item The \gls{bpf} namespace would be useful for other \gls{bpf} program types as well, in addition to \gls{lsm}
+%     \item For example, we might only want a specific kprobe or uprobe to apply for certain processes, rather than the entire system
+%     \item Such a namespace likely wouldn't be difficult to implement, would just require
+%     revisiting the way \gls{bpf} programs are attached and they way programs and maps are
+%     referenced in the kernel
+%   \end{itemize}
 
-\subsection{OCI and Docker Integration}%
+%   Unprivileged BPF
+%   \begin{itemize}
+%     \item A natural extension that arises from \gls{bpf} namespace support
+%     \item If we can get the semantics of a \gls{bpf} namespace right, it could enable unprivileged processes to load \gls{bpf} programs for self-introspection
+%     \item This is considered a \enquote{Holy Grail} of \gls{ebpf}
+%     \item Note that others have tried and failed at introducing unprivileged \gls{bpf} in the past, it's easy to get burned if you're not careful
+%     \item Cite Landlock as an example
+%     \item A few things to consider:
+%     \begin{enumerate}
+%       \item BPF as an attack vector into the kernel... The verifier is often a ripe target
+%       for exploitation due to its complexity, need to consider the additional attack
+%       surface exposed by allowing arbitrary users to invoke the verifier.
+%       \item Need to be careful not to accidentally enable arbitrary code execution in the
+%       kernel. Helpers should probably be specifically allow-listed for unprivileged
+%       \gls{bpf}, to avoid potential code execution issues
+%       \item Need to be very careful to ensure that information cannot leak from outside
+%       the \gls{bpf} namespace... Otherwise we enable unprivileged processes to spy on the
+%       kernel
+%     \end{enumerate}
+%     \item Conclusion? Unprivileged \gls{bpf} would be very nice to have, and the \gls{bpf}
+%     namespace seems like a clear path toward this, but we need to be very careful when
+%     designing the \gls{api}, particularly from a security perspective
+%   \end{itemize}
+% \end{inprogress}
+
+\subsection{\glsentryshort{oci} Specification and Docker Integration}%
 \label{ss:disc-docker-integration}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item Integration with Docker and the OCI spec seems like a natural path forward for \bpfcontain{}
-    \item \todo{Borrow some ideas from the discussion in our paper}
-  \end{itemize}
-\end{inprogress}
+As a container-specific confinement solution, integration with the \gls{oci} specification
+and Docker container runtime are a natural path forward for \bpfcontain{}. The \gls{oci}
+specification is an open, platform-agnostic standard for defining a container image using
+JSON~\cite{oci}. Container runtimes like Docker generate and parse an \gls{oci}
+specification for a container image before running it. Integrating \bpfcontain{} with the
+\gls{oci} specification would enable \bpfcontain{} policies to be expressed directly
+within an image's \gls{oci} representation and enable \bpfcontain{} to infer certain
+aspects of its policy from existing \gls{oci} data.
+
+Another potential avenue for extending \bpfcontain{} is to use \gls{ebpf} programs to
+trace the container runtime (e.g.~Docker's \texttt{containerd} and \texttt{moby}),
+mediating the setup phase to enforce policy on specific aspects of container construction.
+This approach could also be used to infer policy, for example by interposing on the
+filesystem mounts created by the container runtime to infer filesystem policy or observing
+the creation of the Docker network interface to inform network policy. Using uprobes,
+\bpfcontain{} could also associate a Docker container with a given container image,
+enabling it to automatically apply policy when a specific container image starts.
+
+% \begin{inprogress}
+%   \begin{itemize}
+%     \item Integration with Docker and the OCI spec seems like a natural path forward for \bpfcontain{}
+%     \item \todo{Borrow some ideas from the discussion in our paper}
+%   \end{itemize}
+% \end{inprogress}
 
 \subsection{Fine-Grained Network Policy}%
 \label{ss:disc-fine-grained-network}
 
-Currently, \bpfbox{} and \bpfcontain{} both expose a highly coarse-grained network policy
-to the user. In particular, network policy only operates at the socket level, and does not
+Currently, \bpfbox{} and \bpfcontain{} both expose a highly coarse-grained network policy.
+In particular, network policy only operates at the socket level, and does not
 consider more nuanced access controls, such as filtering by \gls{ip} address. This means
 that specifying access to a network resource essentially gives a process of container
 global access to network resources, so long as any requested access conforms to a subset
@@ -447,9 +552,19 @@ the main goals of \bpfbox{} and \bpfcontain{} is to eliminate the need to recomb
 existing policy mechanisms. Therefore, it would be best if we could incorporate
 finer-grained network policy into future iterations. Such a network policy is possible to
 enforce using \gls{ebpf}; rather than \gls{lsm} probes, we would leverage another program
-type, \texttt{TC\_CLSACT}, to implement packet filtering decisions at the protocol-level.
-We discuss the specific details of such an implementation in
-\Cref{ss:disc-fine-grained-network}.
+type, \texttt{TC\_CLSACT}, finer-grained network filtering on individual packets.
+
+The \texttt{TC\_CLSACT} (short for Traffic Control, Classifier and Action) program type is
+a socket filter that can discriminate between network traffic at the protocol-level by
+parsing packet headers. In addition to classifying traffic, this program type can make
+filtering decisions, deciding whether a packet should move on in the kernel's networking
+stack or be dropped. Using this program type to enforce network policy would enable
+\bpfcontain{} to discriminate between source and destination addresses and ports when
+making network policy decisions on ingress and egress traffic. The policy language could
+then be extended to specify specific address patterns that should be matched in order for
+a network connection to be allowed. Extending the \bpfcontain{} policy in this way would
+mark a significant improvement in \bpfcontain{}'s network security guarantees.
+
 
 % \begin{inprogress}
 %   \begin{itemize}
@@ -465,46 +580,66 @@ We discuss the specific details of such an implementation in
 %   \end{itemize}
 % \end{inprogress}
 
-\begin{inprogress}
-  The problem with existing network policy
-  \begin{itemize}
-    \item \bpfbox{} and \bpfcontain{} currently support very coarse-grained networking policy
-    \item They enforce network access control at the socket level; a process of container
-    either has access to specific socket operations or they don't
-    \item But this approach doesn't account for many of the nuances of network policy
-    \item Allowing a process to use networking capability essentially opens it up to the outside world
-    \item Further, it is often desirable to only have a container's network interface exposed to the local system
-    \item Since policies lock down access to the rest of the system, this isn't as severe of a problem as it could be... Remote adversaries are still confined to accessing specific system resources according to the confinement policy
-    \item But it would still be better to support much finer-grained networking policy from a least-privilege point of view
-    \item Eliminate the need for a netfilter firewall (e.g.~iptables) for securing container's networking stack
-  \end{itemize}
+% \begin{inprogress}
+%   The problem with existing network policy
+%   \begin{itemize}
+%     \item \bpfbox{} and \bpfcontain{} currently support very coarse-grained networking policy
+%     \item They enforce network access control at the socket level; a process of container
+%     either has access to specific socket operations or they don't
+%     \item But this approach doesn't account for many of the nuances of network policy
+%     \item Allowing a process to use networking capability essentially opens it up to the outside world
+%     \item Further, it is often desirable to only have a container's network interface exposed to the local system
+%     \item Since policies lock down access to the rest of the system, this isn't as severe of a problem as it could be... Remote adversaries are still confined to accessing specific system resources according to the confinement policy
+%     \item But it would still be better to support much finer-grained networking policy from a least-privilege point of view
+%     \item Eliminate the need for a netfilter firewall (e.g.~iptables) for securing container's networking stack
+%   \end{itemize}
 
-  How network policy could be extended
-  \begin{itemize}
-    \item \gls{ebpf} \texttt{TC\_CLSACT} program
-    \item Stands for \enquote{traffic classifier and actions}
-    \item Can be attached to a network interface, handles both ingress and egress
-    \item Works similar in spirit to classic \gls{bpf} packet filters, but additionally supports making policy decisions and modifying packets
-    \item We can use this program type, attached to a container's networking interface, to match specific characteristics of network traffic,
-    such as IP address patterns, port numbers, and other protocol-level details
-    \item The security policy itself cam be extended to support these characteristics in addition to basic socket operations
-    \item We can then match this information against the container's security policy, and achieve much finer-grained network policy enforcement
-  \end{itemize}
-\end{inprogress}
+%   How network policy could be extended
+%   \begin{itemize}
+%     \item \gls{ebpf} \texttt{TC\_CLSACT} program
+%     \item Stands for \enquote{traffic classifier and actions}
+%     \item Can be attached to a network interface, handles both ingress and egress
+%     \item Works similar in spirit to classic \gls{bpf} packet filters, but additionally supports making policy decisions and modifying packets
+%     \item We can use this program type, attached to a container's networking interface, to match specific characteristics of network traffic,
+%     such as IP address patterns, port numbers, and other protocol-level details
+%     \item The security policy itself cam be extended to support these characteristics in addition to basic socket operations
+%     \item We can then match this information against the container's security policy, and achieve much finer-grained network policy enforcement
+%   \end{itemize}
+% \end{inprogress}
 
-\subsection{\bpfcontain{} Policy Generation and \glsentryshort{gui}}
+\subsection{\bpfcontain{} Policy Generation}
 
-\begin{inprogress}
-  \begin{itemize}
-    \item
-  \end{itemize}
-\end{inprogress}
+The version of \bpfcontain{} presented in this thesis requires a policy author to write
+security policies by hand. Future iterations of \bpfcontain{} should support automatic or
+at least semi-automatic policy generation to ease the burden on users and facilitate
+security policy authorship. This can be accomplished in one of two ways.  We discuss each
+in turn.
+
+\begin{enumerate}
+  \item We could extend \bpfcontain{}'s \gls{ebpf} programs with the ability to
+  automatically generate policy in real time. This approach is similar in spirit to
+  signature-based anomaly detection, establishing a normal behavioural profile for
+  a container during a training phase, and enforcing security policy once a normal profile
+  has been established. Implementing such profile generation would require minimal changes
+  to \bpfcontain{}'s existing enforcement mechanism, although further investigation is
+  required to determine the correct approach for minimizing false positives and false
+  negatives in policy generation.
+
+  \item We could implement policy generation from audit logs, similar in spirit to
+  SELinux's \texttt{audit2allow}~\cite{audit2allow} or AppArmor's
+  \texttt{aa-logprof}~\cite{aa_logprof}. Accomplishing this would require a few changes to
+  \bpfcontain{}'s log generation. In particular, we would need a way to map inode and
+  filesystem number pairs back to the underlying host pathnames so that they can be
+  correctly logged in userspace.  The alternative is translating or caching these pairs in
+  userspace, which may prove to be too expensive in practice.  In order to support
+  pathname translation in \bpfcontain{}, additional upstream work in the \gls{ebpf}
+  subsystem is required to enable pathname resolution in more \gls{lsm} hooks, as outlined
+  in \Cref{ss:disc-semantic-issues}.
+\end{enumerate}
 
 
 \section{Improving the Status Quo}%
 \label{s:disc-improving}
-
-\todo{Move this section to after the limitations}
 
 In this section, we discuss how \bpfbox{} and \bpfcontain{} improve upon the status quo in
 confinement, with a particular emphasis on how their unique properties encourage
@@ -719,11 +854,12 @@ for local confinement. While undoubtedly useful on their own, perhaps the greate
 provided by these research systems is as a proof of concept, demonstrating the value of
 \gls{ebpf}-based confinement solutions.
 
-A myriad of potential extensions of \bpfbox{} and \bpfcontain{} can provide increased
-security and flexibility as well as significantly reduce overhead to achieve better
-performance than competitive solutions.  Extensions on top of the existing \gls{bpf}
-ecosystem can help to position it as the dominant framework for implementing future
-kernel-based security solutions. Such extensions can help to improve \bpfbox{} and
+A myriad of potential extensions on top of \bpfbox{} and \bpfcontain{} can provide
+increased security and flexibility.  Future optimizations in the \bpfbox{} and
+\bpfcontain{} enforcement engines can further improve their performance, making them more
+competitive with existing confinement solutions. Extensions on top of the existing
+\gls{bpf} ecosystem can help to position it as the dominant framework for implementing
+future kernel-based security solutions. Such extensions can help to improve \bpfbox{} and
 \bpfcontain{} as well as promote the adoption of other security mechanisms based on
 \gls{ebpf}.
 
@@ -733,4 +869,4 @@ of system behaviour. Such a solution would encompass the capabilities of \bpfbox
 \bpfcontain{} and potentially expand them to include intrusion detection, network
 filtering, software hot patches, and beyond. In the short term, improvements on top of the
 \gls{ebpf} ecosystem as well as \bpfbox{} and \bpfcontain{} can make incremental progress
-towards such a system.
+towards realizing this goal.
