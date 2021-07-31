@@ -38,229 +38,71 @@ research on the usability of both systems.
 \section{Contributions}%
 \label{s:disc-contributions}
 
-\todo{Provide an overview of our contributions, what we did, state it in the least
-controversial way possible. Think of these as bringing together chapter 6 and 7, couple of
-sentences per section. Tie chapters together, say the uncontroversial part here.}
+This thesis makes several research contributions. \todo{MORE HERE}
 
-\todo{So like, in chapter X, we did this. Then use a couple sections per section.
-Non-controversial, very matter-of-fact}
+In \Cref{c:confinement-problem}, we presented a novel framing of the confinement problem,
+arguing that inherent complexities in Linux confinement can be solved with the
+introduction of simple, unified mechanisms designed for process- and container-level
+confinement. We also argue that there is no fundamental reason why containers cannot be
+considered as secure as virtual machines, since a container expose specific interfaces to
+the outside world, just as a virtual machine does. We identify fundamental issues with
+Linux confinement, highlighting its complexity, unsuitability for containers, and the poor
+adoptability of alternative solutions. We also examine how container frameworks apply
+confinement primitives and discuss the fundamental reasons underlying their fail-open
+approach to security. In light of this analysis, we outline the design goals for \bpfbox{}
+and \bpfcontain{}, explain how the latter evolved from the former, and present a threat
+model for confinement.
 
-\section{Improving the Status Quo}%
-\label{s:disc-improving}
+In \Cref{c:bpfbox}, we outline the design and implementation details of \bpfbox{},
+a proof-of-concept sandboxing framework based on \gls{ebpf} programs attached to \gls{lsm}
+hooks.  We provide an overview of \bpfbox{}'s design and explain how policy enforcement
+works at a high level. \bpfbox{} translates policies written in a simple, domain-specific
+language into entries in \gls{ebpf} maps, then resolves policy at runtime using \gls{ebpf}
+programs attached to \gls{lsm} hooks. We then discuss the specific implementation details
+of \bpfbox{}'s enforcement engine and document an early version of its policy language.
 
-\todo{Move this section to after the limitations}
+In \Cref{c:bpfcontain}, we describe the design and implementation of \bpfcontain{},
+a successor to \bpfbox{} that focuses on container-level confinement. We highlight
+\bpfbox{}'s limitations and describe how \bpfcontain{} improves upon the original
+\bpfbox{} design. Specifically, \bpfcontain{} eliminates large dependency overheads,
+enabling it to be compiled once and run on any supported target kernel. \bpfcontain{} also
+introduces container semantics into its enforcement engine design and simplifies and
+extends \bpfbox{}'s policy language. We provide an overview of \bpfcontain{}'s design and
+explain how it enforces policy at a high level. We then describe \bpfcontain{}'s specific
+implementation details and document the schema of its policy language, focusing on
+policies written in the YAML serialization format.  We also describe how a future
+iteration on \bpfcontain{} can integrate with Docker, introducing additional container-level
+semantics that can simplify policies.
 
-In this section, we discuss how \bpfbox{} and \bpfcontain{} improve upon the status quo in
-confinement, with a particular emphasis on how their unique properties encourage
-application- and container-specific confinement, and promote local policy variation. We
-also examine how their implementation as \gls{ebpf}-based security solutions positions
-them as highly adoptable alternatives to traditional kernel security mechanisms, with the
-potential to drive further innovation going forward.
+In \Cref{c:evaluation}, we present an evaluation of \bpfbox{} and \bpfcontain{} in terms
+of their performance overhead and security. Specifically, we conduct a series of micro-
+and macro-benchmarking tests comparing \bpfbox{} and \bpfcontain{} with the base system
+and AppArmor, a popular \gls{lsm}. We find that \bpfbox{} and \bpfcontain{} perform
+competitively with AppArmor in the macro-benchmarks, despite being unoptimized research
+prototypes. We also present a detailed security analysis of \bpfbox{} and \bpfcontain{}
+pointing out potential weaknesses in policy enforcement and describing how they can be
+rectified.
 
-\subsection{Application-Specific and Container-Specific Policies}
-
-Due to their simplicity and flexibility, \bpfbox{} and \bpfcontain{} encourage a different
-kind of confinement compared with existing \gls{lsm}-based solutions. Rather than focusing
-on global, system-wide \gls{mac} policy enforcement like
-SELinux~\cite{smalley2001_selinux} or AppArmor~\cite{cowan2000_apparmor}, \bpfbox{} and
-\bpfcontain{} focus on application-specific and container-specific confinement
-respectively. The former enables light-weight, ad-hoc confinement of individual Linux
-processes, while the latter extends this model to work with container semantics.  This
-represents a stark contrast over existing work in the confinement space, which generally
-focuses on reusing existing primitives designed for global enforcement.  Rather than
-outright simple policies, these confinement frameworks compile down into hundreds or even
-thousands of lines of policy for the underlying confinement primitive.
-
-The \textit{application-specific} approach of \bpfbox{} takes a different path\,---\,a
-\bpfbox{} policy directly applies to the \bpfbox{} enforcement engine, without relying on
-existing primitives like SELinux, AppArmor, or Seccomp-bpf. The result is policies that
-are far simpler without being too coarse-grained or abstracted beyond the point of
-auditability\,---\,expressiveness without complexity. Further, application-specific
-policies afford a great deal of flexibility to the end-user; rather than authoring complex
-policies that cover the entire system, instead they may focus on the specific behaviours
-that they want their applications to exhibit. In turn, this flexibility means that
-different types of users can leverage \bpfbox{} in different ways.  Application developers
-can write fine-grained policies that enforce behaviours at the function-call-level.
-Conversely, end-users can deploy custom \bpfbox{} policies to restrict specific
-behaviours, such as access to the home directory.
-
-\bpfcontain{} extends the \bpfbox{} model to be \textit{container-specific}. Like
-\bpfbox{}, much of the implicit strength inherent in this model is that it does not rely
-on existing primitives and does not attempt to enforce policy over the entire system.
-Instead, we focus on individual containers, identifying the specific \gls{os} interfaces
-needed for the container to function.  This approach introduces additional advantages
-specific to the container use case, on top of the advantages already present in the
-\bpfbox{} design. By including container semantics as part of its internal model of the
-system, \bpfcontain{} can enforce highly nuanced policy defaults, defining an enforcement
-boundary around the container. This boundary, in turn, simplifies resulting policies by
-allowing the policy author to focus on which external interfaces the container needs,
-without worrying about specifying access to internal resources. In this way, \bpfcontain{}
-policies mirror the process of provisioning resources in a virtual machine.
-
-% \begin{inprogress}
-%   Application-specific and container-specific policies
-%   \begin{itemize}
-%     \item \bpfbox{} policies are \textit{application-specific}
-%     \item Specifically, \bpfbox{} doesn't try to enforce policy over the entire system like AppArmor or SELinux
-%     \item Instead, we focus on ad-hoc confinement of a specific application
-%     \item This affords the user a great deal of flexibility; no need to author complex policies that cover the entire system. Instead, focus on the specific behaviours you want your application to exhibit
-%     \item In turn, this flexibility means that different types of users can leverage \bpfbox{} in different ways. Application developers can write fine-grained policies that enforce behaviours at the function-call-level. End-users can deploy custom \bpfbox{} policies to restrict specific behaviours, such as access to the home directory.
-
-%     \item \bpfcontain{} extends the \bpfbox{} model to be \textit{container-specific}
-%     \item Like \bpfbox{}, a lot of the implicit strength behind this approach is that policies are not trying to enforce system-wide behaviour
-%     \item But the container-specific approach also affords even more implicit advantages
-%     \item First, it is designed to be applicable to the container use-case, unlike traditional \gls{lsm} which are designed to enforce generic confinement policy on the whole system
-%     \item Using container semantics, we can avoid the need to use overly coarse-grained policy templates, instead focusing on protecting the container at a per-resource level
-%     \item We can significantly simplify policy and improve container security by defining a clear protection boundary around the container
-%     \item User-defined policies then focus on defining specific exceptions to the security boundary
-%     \item This mirrors the idea of provisioning shared resources in a virtual machine
-%   \end{itemize}
-% \end{inprogress}
-
-\subsection{Encouraging Local Policy Variation}
-
-An implicit advantage of simple yet flexible confinement policies is that they encourage
-\textit{policy variation}. In computer security, \textit{diversity} is an area that has
-seen some exploration in the past~\cite{somayaji2007_immunology, persaud2016_frankenssl,
-matrawy2005_mitigating, neti2012_software}. The idea is deceptively simple, inspired by
-biological sources of diversity found in nature. Attackers rely on similarities between
-system for widespread exploitation; for instance, consider a set of deployed systems all
-running the same vulnerable version of a piece of a software with similar configurations.
-Since each of these systems have the same vulnerability, exploiting one system is much
-like exploiting the others; thus, the knowledge and effort required to exploit each system
-will be roughly equivalent to exploiting just one. The point of introducing diversity into
-software deployments and configurations is to confound this basic assumption. On
-a macroscopic scale, increased diversity improves the security of the entire population.
-
-Classically, computer diversity has primarily been explored through source- or
-binary-level variations~\cite{somayaji2007_immunology, persaud2016_frankenssl,
-neti2012_software}. Solutions recombine existing software in new ways, such that each
-deployment has a unique code footprint. However, a primary limiting factor to the adoption
-of such security solutions is that they fly in the face of the traditional approach to
-computing. Namely, we want our software to be as predictable, reliable, and effective as
-possible. The same input into a piece of software should produce the same (or at least
-predictable) output, regardless of the underlying system configuration. Source- or
-binary-level software diversity invalidates this assumption, by introducing potential
-variations in common code paths.
-
-Unlike traditional sources of diversity in computing, \textit{policy-level diversity} has
-the potential to be quite effective while maintaining the underlying assumption that
-software should \enquote{just work}. Security policies may be tailored to some
-locally-desired use case, only invalidating code paths that would never be taken to begin
-with. For example, consider an Apache web server configuration. In one deployment, it may
-be necessary to support the execution of \gls{cgi} helper scripts, whereas another may
-only need to serve static webpages. Each configuration could use a different security
-policy, based on the needs of the local deployment. A natural diversity arises as an
-emergent property of this model when scaled up over thousands of deployments across
-thousands of applications.  Since \bpfbox{} and \bpfcontain{} policies are so simple yet
-so flexible, they naturally encourage precisely the soft of local policy variations
-required to achieve policy-level diversity at scale.
-
-
-% \begin{inprogress}
-%   Simple yet expressive policies encourage local policy variation
-%   \begin{itemize}
-%     \item Diversity in computer security is an area that is now seeing increasing exploration (cite some of Anil's papers)
-%     \item Increasing the diversity of software deployments can make it difficult for an attacker to re-use knowledge of one
-%     system configuration to attack another. For example, software configuration might have a particular vulnerability, but
-%     another might have a totally different vulnerability. By invalidating attacker knowledge and assumptions, we can preemptively
-%     make it much harder to execute successful attacks at scale
-
-%     \item Classically, researchers have investigated source-level or binary-level variations as a source of diversity
-%     \item However, these are often quite baroque and have limited practical use, since diversity at the source or binary level can
-%     lead to difficulties in scalable deployment, reliability, and the effectiveness of software
-%     \item This notion goes against much of what we want to do as computer scientists: have a system be as predictable and reproducible as possible
-
-%     \item However, security policies make good sense as a layer to introduce diversity. By diversifying security policies, we can
-%     make the exploitation targets less reliable and consistent for attackers, without necessarily impacting the usefulness of an application.
-%     For instance, one end-user of a piece of software might only need a certain subset of its functionality. In this case, their security policy
-%     might look very different from another end-user that requires a different subset of functionality. Introducing variations in security policy
-%     for this software can confound attackers, much in the same way that source-level or binary-level variations would.
-%     \item \bpfbox{} and \bpfcontain{} are ideal security mechanisms for encouraging this kind of policy variation,
-%     because they are designed for a local administrator to tailor a security policy to precisely the set of desired functionality
-%   \end{itemize}
-% \end{inprogress}
-
-\subsection{\glsentryshort{ebpf}, Adoptability, and Future Innovation}
-
-A third improvement over the status quo in confinement lies in \bpfbox{} and
-\bpfcontain{}'s novelty as \gls{ebpf}-based confinement implementations. Whereas existing
-kernel security mechanisms are based on kernel patches or loadable kernel modules,
-\bpfbox{} and \bpfcontain{} leverage \gls{ebpf} for dynamic runtime security monitoring,
-verified for safety and correctness before being loaded into the kernel. An
-\gls{ebpf}-based implementation affords \bpfbox{} and \bpfcontain{} a number of advantages
-over traditional security solutions.
-
-\begin{enumerate}
-  \item \textbf{\gls{ebpf} is already widely-used in production Linux environments.} At
-  the time of writing this thesis, major software companies like Facebook, Netflix, and
-  Google~\cite{gregg2019_bpf} already use \gls{ebpf} in production servers for performance
-  and security monitoring, the implementation of L4 routing and load balancing algorithms,
-  and other various use cases. In fact, the KRSI patch that provides the \gls{lsm} probes
-  used by \bpfbox{} and \bpfcontain{} was initially developed at Google for dynamic
-  security monitoring use cases~\cite{singh2019_krsi}. As time goes on, \gls{ebpf}-based
-  kernel code is seeing increasing deployment across multidisciplinary areas of industry.
-  This widespread deployment is a key incentive toward the adoption of security mechanisms
-  like \bpfbox{} and \bpfcontain{}. Not only is this widespread adoption an emergent
-  phenomenon from \gls{ebpf}'s safety and flexibility properties, but it is also
-  a valuable case study in how \gls{ebpf} is reshaping the way we think about kernel
-  observability in practice.
-
-  \item \textbf{The barrier to entry for running new \gls{ebpf} code on a production
-  system is much lower than a new kernel module or kernel patch.}
-  Since \gls{ebpf} programs and maps can be dynamically loaded into the kernel and are
-  checked for safety and correctness before they are allowed to run, the barrier to entry
-  for running a new \gls{ebpf}-based implementation in production is far lower than that
-  of a kernel module or kernel patch. \gls{ebpf} programs are far less likely to contain
-  memory safety errors or other software bugs that plague kernel code in practice. Due to
-  new technologies like \gls{bpf} \gls{core}~\cite{nakryiko2020_core}, \gls{ebpf}-based
-  solutions are also far more portable across different kernel versions and
-  configurations. These factors combined make \bpfbox{} and particularly \bpfcontain{} far
-  more adoptable as novel kernel security mechanisms. Future security implementations
-  based on \gls{ebpf} can also enjoy these advantages.
-
-  \item \textbf{\gls{ebpf} enables rapid prototyping and deployment of kernel security mechanisms.}
-  Due to its dynamic nature, safety, and portability across kernels, it is far easier to
-  rapidly prototype, test, and deploy novel security solutions based on \gls{ebpf}. In the
-  case of \bpfbox{} and \bpfcontain{}, this enables rapid prototyping of the policy
-  language and enforcement engine, and makes it easy to incorporate novel extensions on
-  top of these research systems, redefining key aspects of policy enforcement and adding
-  new data sources from the kernel and userspace programs. In the future, we will likely see
-  \gls{ebpf} positioned as a key enabling factor behind the rapid development of novel kernel
-  security extensions, further combining system observability with dynamic policy enforcement.
-\end{enumerate}
-
-% \begin{inprogress}
-%   \gls{ebpf} and adoptability
-%   \begin{itemize}
-%     \item Adoptability that comes with \gls{ebpf} compared with traditional \glspl{lsm}
-%     \item Companies are already using \gls{ebpf} in production for performance monitoring use cases
-%     \item The KRSI patch that provides \gls{lsm} probes was invented at Google for custom policies and security auditing in their production servers
-%     \item The barrier to entry for running new \gls{ebpf} code on a production system is much lower than a new kernel module or kernel patch
-%     \item \gls{ebpf} kernel code is far less likely to have adverse side effects, security vulnerabilities
-
-%     \item Another advantage of an \gls{ebpf}-based solution over traditional solutions is that it is far easier to extend and modify
-%     \item Rapidly prototype, test, and deploy new kernel security mechanisms
-%     \item Easy to modify \bpfbox{} and \bpfcontain{} to support new rule types, employ different policy defaults, and to include other aspects of system state
-%     \item In the future, we will likely see \gls{ebpf} being increasingly used to develop new and innovative security solutions, combining
-%     system observability with policy enforcement
-%   \end{itemize}
-% \end{inprogress}
-
+In \Cref{c:case-studies}, we present example policies for \bpfbox{} and \bpfcontain{},
+targeting three realistic use cases. We first examine how \bpfbox{} and \bpfcontain{} can
+be used to confine a simple Apache httpd and mysqld deployment. We then consider how
+\bpfbox{} and \bpfcontain{} can be used to implement Docker's default confinement policy,
+and finally examine how a future version of \bpfcontain{} can be used to secure an
+untrusted Docker container with minimal effort.
 
 \section{Limitations}%
 \label{s:disc-limitations}
 
-In this section, we discuss some limitations of the \bpfbox{} and \bpfcontain{}.  While
-some limitations arise due to a lack of support for the correct primitives in the current
-\gls{ebpf} ecosystem, others arise due to the prototypical nature of \bpfbox{} and
-\bpfcontain{} as research systems. In both cases, we discuss how future iterations of
-\bpfbox{} and \bpfcontain{} can address these limitations, either through extensions to
-the policy enforcement mechanism or future improvements to the \gls{ebpf} ecosystem.
+In this section, we discuss some limitations of the \bpfbox{} and \bpfcontain{}
+prototypes. While some limitations arise due to a lack of support for the correct
+primitives in the current \gls{ebpf} ecosystem, others arise due to the prototypical
+nature of \bpfbox{} and \bpfcontain{} as research systems. In both cases, we discuss how
+future iterations of \bpfbox{} and \bpfcontain{} can address these limitations, either
+through extensions to the policy enforcement mechanism or future improvements to the
+\gls{ebpf} ecosystem.
 
-\subsection{Limited Pathname Support in \glsentryshort{ebpf}}
-
-\todo{Rename this to policy semantic issues in the policy language?}
+%\subsection{Limited Pathname Support in \glsentryshort{ebpf}}
+\subsection{Semantic Issues in the Policy Language}
 
 It is hard to refer to files from \gls{ebpf}. In the kernel, files are generally uniquely
 described by an \textit{inode} structure, which in turn maps to one or more pathnames via
@@ -465,43 +307,6 @@ side.
 \todo{Talk about how we are a bit higher overhead, but we get so much more flexibility}
 \todo{The overhead is not that bad, and it's not an optimized thing. This can be improved with more optimizations.}
 
-\subsection{Network Policy Granularity}
-
-\todo{Move this down to fine-grained network policy}
-
-Currently, \bpfbox{} and \bpfcontain{} both expose a highly coarse-grained network policy
-to the user. In particular, network policy only operates at the socket level, and does not
-consider more nuanced access controls, such as filtering by \gls{ip} address. This means
-that specifying access to a network resource essentially gives a process of container
-global access to network resources, so long as any requested access conforms to a subset
-of specified operations. While this is not strictly problematic for applications that do
-not require network access, it quickly becomes an overprivilege issue for applications
-that do.
-
-Under the current implementation, provisioning a fine-grained network policy would require
-a netfilter-based firewall such as iptables. While this is not strictly an issue, one of
-the main goals of \bpfbox{} and \bpfcontain{} is to eliminate the need to recombine
-existing policy mechanisms. Therefore, it would be best if we could incorporate
-finer-grained network policy into future iterations. Such a network policy is possible to
-enforce using \gls{ebpf}; rather than \gls{lsm} probes, we would leverage another program
-type, \texttt{TC\_CLSACT}, to implement packet filtering decisions at the protocol-level.
-We discuss the specific details of such an implementation in
-\Cref{ss:disc-fine-grained-network}.
-
-% \begin{inprogress}
-%   \begin{itemize}
-%     \item Network policy in \bpfbox{} and \bpfcontain{} is currently very coarse-grained
-%     \item Only operates at the socket level, and does not considered nuanced access
-%     controls such as at the per-IP-address level.
-%     \item This means that specifying access to the network essentially gives the process or container
-%     access to the global network.
-%     \item While this is not problematic for applications that do not require network access,
-%     it quickly becomes an overprivilege issue for applications that do.
-%     \item To fix this, we can introduce a finer-grained network policy that specifies per-IP network access, an extension which
-%     is possible using currently available \gls{ebpf} technology. (Forward ref to protocol-level network policy)
-%   \end{itemize}
-% \end{inprogress}
-
 \subsection{Security Guarantees}
 
 \todo{talk about fundamental limitations of \gls{ebpf} as a security mechanism, how we depend on the kernel}
@@ -627,6 +432,39 @@ finer-grained network policy, automated policy generation, and a policy manageme
 \subsection{Fine-Grained Network Policy}%
 \label{ss:disc-fine-grained-network}
 
+Currently, \bpfbox{} and \bpfcontain{} both expose a highly coarse-grained network policy
+to the user. In particular, network policy only operates at the socket level, and does not
+consider more nuanced access controls, such as filtering by \gls{ip} address. This means
+that specifying access to a network resource essentially gives a process of container
+global access to network resources, so long as any requested access conforms to a subset
+of specified operations. While this is not strictly problematic for applications that do
+not require network access, it quickly becomes an overprivilege issue for applications
+that do.
+
+Under the current implementation, provisioning a fine-grained network policy would require
+a netfilter-based firewall such as iptables. While this is not strictly an issue, one of
+the main goals of \bpfbox{} and \bpfcontain{} is to eliminate the need to recombine
+existing policy mechanisms. Therefore, it would be best if we could incorporate
+finer-grained network policy into future iterations. Such a network policy is possible to
+enforce using \gls{ebpf}; rather than \gls{lsm} probes, we would leverage another program
+type, \texttt{TC\_CLSACT}, to implement packet filtering decisions at the protocol-level.
+We discuss the specific details of such an implementation in
+\Cref{ss:disc-fine-grained-network}.
+
+% \begin{inprogress}
+%   \begin{itemize}
+%     \item Network policy in \bpfbox{} and \bpfcontain{} is currently very coarse-grained
+%     \item Only operates at the socket level, and does not considered nuanced access
+%     controls such as at the per-IP-address level.
+%     \item This means that specifying access to the network essentially gives the process or container
+%     access to the global network.
+%     \item While this is not problematic for applications that do not require network access,
+%     it quickly becomes an overprivilege issue for applications that do.
+%     \item To fix this, we can introduce a finer-grained network policy that specifies per-IP network access, an extension which
+%     is possible using currently available \gls{ebpf} technology. (Forward ref to protocol-level network policy)
+%   \end{itemize}
+% \end{inprogress}
+
 \begin{inprogress}
   The problem with existing network policy
   \begin{itemize}
@@ -661,6 +499,211 @@ finer-grained network policy, automated policy generation, and a policy manageme
     \item
   \end{itemize}
 \end{inprogress}
+
+
+\section{Improving the Status Quo}%
+\label{s:disc-improving}
+
+\todo{Move this section to after the limitations}
+
+In this section, we discuss how \bpfbox{} and \bpfcontain{} improve upon the status quo in
+confinement, with a particular emphasis on how their unique properties encourage
+application- and container-specific confinement, and promote local policy variation. We
+also examine how their implementation as \gls{ebpf}-based security solutions positions
+them as highly adoptable alternatives to traditional kernel security mechanisms, with the
+potential to drive further innovation going forward.
+
+\subsection{Application-Specific and Container-Specific Policies}
+
+Due to their simplicity and flexibility, \bpfbox{} and \bpfcontain{} encourage a different
+kind of confinement compared with existing \gls{lsm}-based solutions. Rather than focusing
+on global, system-wide \gls{mac} policy enforcement like
+SELinux~\cite{smalley2001_selinux} or AppArmor~\cite{cowan2000_apparmor}, \bpfbox{} and
+\bpfcontain{} focus on application-specific and container-specific confinement
+respectively. The former enables light-weight, ad-hoc confinement of individual Linux
+processes, while the latter extends this model to work with container semantics.  This
+represents a stark contrast over existing work in the confinement space, which generally
+focuses on reusing existing primitives designed for global enforcement.  Rather than
+outright simple policies, these confinement frameworks compile down into hundreds or even
+thousands of lines of policy for the underlying confinement primitive.
+
+The \textit{application-specific} approach of \bpfbox{} takes a different path\,---\,a
+\bpfbox{} policy directly applies to the \bpfbox{} enforcement engine, without relying on
+existing primitives like SELinux, AppArmor, or Seccomp-bpf. The result is policies that
+are far simpler without being too coarse-grained or abstracted beyond the point of
+auditability\,---\,expressiveness without complexity. Further, application-specific
+policies afford a great deal of flexibility to the end-user; rather than authoring complex
+policies that cover the entire system, instead they may focus on the specific behaviours
+that they want their applications to exhibit. In turn, this flexibility means that
+different types of users can leverage \bpfbox{} in different ways.  Application developers
+can write fine-grained policies that enforce behaviours at the function-call-level.
+Conversely, end-users can deploy custom \bpfbox{} policies to restrict specific
+behaviours, such as access to the home directory.
+
+\bpfcontain{} extends the \bpfbox{} model to be \textit{container-specific}. Like
+\bpfbox{}, much of the implicit strength inherent in this model is that it does not rely
+on existing primitives and does not attempt to enforce policy over the entire system.
+Instead, we focus on individual containers, identifying the specific \gls{os} interfaces
+needed for the container to function.  This approach introduces additional advantages
+specific to the container use case, on top of the advantages already present in the
+\bpfbox{} design. By including container semantics as part of its internal model of the
+system, \bpfcontain{} can enforce highly nuanced policy defaults, defining an enforcement
+boundary around the container. This boundary, in turn, simplifies resulting policies by
+allowing the policy author to focus on which external interfaces the container needs,
+without worrying about specifying access to internal resources. In this way, \bpfcontain{}
+policies mirror the process of provisioning resources in a virtual machine.
+
+% \begin{inprogress}
+%   Application-specific and container-specific policies
+%   \begin{itemize}
+%     \item \bpfbox{} policies are \textit{application-specific}
+%     \item Specifically, \bpfbox{} doesn't try to enforce policy over the entire system like AppArmor or SELinux
+%     \item Instead, we focus on ad-hoc confinement of a specific application
+%     \item This affords the user a great deal of flexibility; no need to author complex policies that cover the entire system. Instead, focus on the specific behaviours you want your application to exhibit
+%     \item In turn, this flexibility means that different types of users can leverage \bpfbox{} in different ways. Application developers can write fine-grained policies that enforce behaviours at the function-call-level. End-users can deploy custom \bpfbox{} policies to restrict specific behaviours, such as access to the home directory.
+
+%     \item \bpfcontain{} extends the \bpfbox{} model to be \textit{container-specific}
+%     \item Like \bpfbox{}, a lot of the implicit strength behind this approach is that policies are not trying to enforce system-wide behaviour
+%     \item But the container-specific approach also affords even more implicit advantages
+%     \item First, it is designed to be applicable to the container use-case, unlike traditional \gls{lsm} which are designed to enforce generic confinement policy on the whole system
+%     \item Using container semantics, we can avoid the need to use overly coarse-grained policy templates, instead focusing on protecting the container at a per-resource level
+%     \item We can significantly simplify policy and improve container security by defining a clear protection boundary around the container
+%     \item User-defined policies then focus on defining specific exceptions to the security boundary
+%     \item This mirrors the idea of provisioning shared resources in a virtual machine
+%   \end{itemize}
+% \end{inprogress}
+
+\subsection{Encouraging Local Policy Variation}
+
+An implicit advantage of simple yet flexible confinement policies is that they encourage
+\textit{policy variation}. In computer security, \textit{diversity} is an area that has
+seen some exploration in the past~\cite{somayaji2007_immunology, persaud2016_frankenssl,
+matrawy2005_mitigating, neti2012_software}. The idea is deceptively simple, inspired by
+biological sources of diversity found in nature. Attackers rely on similarities between
+system for widespread exploitation; for instance, consider a set of deployed systems all
+running the same vulnerable version of a piece of a software with similar configurations.
+Since each of these systems have the same vulnerability, exploiting one system is much
+like exploiting the others; thus, the knowledge and effort required to exploit each system
+will be roughly equivalent to exploiting just one. The point of introducing diversity into
+software deployments and configurations is to confound this basic assumption. On
+a macroscopic scale, increased diversity improves the security of the entire population.
+
+Classically, computer diversity has primarily been explored through source- or
+binary-level variations~\cite{somayaji2007_immunology, persaud2016_frankenssl,
+neti2012_software}. Solutions recombine existing software in new ways, such that each
+deployment has a unique code footprint. However, a primary limiting factor to the adoption
+of such security solutions is that they fly in the face of the traditional approach to
+computing. Namely, we want our software to be as predictable, reliable, and effective as
+possible. The same input into a piece of software should produce the same (or at least
+predictable) output, regardless of the underlying system configuration. Source- or
+binary-level software diversity invalidates this assumption, by introducing potential
+variations in common code paths.
+
+Unlike traditional sources of diversity in computing, \textit{policy-level diversity} has
+the potential to be quite effective while maintaining the underlying assumption that
+software should \enquote{just work}. Security policies may be tailored to some
+locally-desired use case, only invalidating code paths that would never be taken to begin
+with. For example, consider an Apache web server configuration. In one deployment, it may
+be necessary to support the execution of \gls{cgi} helper scripts, whereas another may
+only need to serve static webpages. Each configuration could use a different security
+policy, based on the needs of the local deployment. A natural diversity arises as an
+emergent property of this model when scaled up over thousands of deployments across
+thousands of applications.  Since \bpfbox{} and \bpfcontain{} policies are so simple yet
+so flexible, they naturally encourage precisely the soft of local policy variations
+required to achieve policy-level diversity at scale.
+
+
+% \begin{inprogress}
+%   Simple yet expressive policies encourage local policy variation
+%   \begin{itemize}
+%     \item Diversity in computer security is an area that is now seeing increasing exploration (cite some of Anil's papers)
+%     \item Increasing the diversity of software deployments can make it difficult for an attacker to re-use knowledge of one
+%     system configuration to attack another. For example, software configuration might have a particular vulnerability, but
+%     another might have a totally different vulnerability. By invalidating attacker knowledge and assumptions, we can preemptively
+%     make it much harder to execute successful attacks at scale
+
+%     \item Classically, researchers have investigated source-level or binary-level variations as a source of diversity
+%     \item However, these are often quite baroque and have limited practical use, since diversity at the source or binary level can
+%     lead to difficulties in scalable deployment, reliability, and the effectiveness of software
+%     \item This notion goes against much of what we want to do as computer scientists: have a system be as predictable and reproducible as possible
+
+%     \item However, security policies make good sense as a layer to introduce diversity. By diversifying security policies, we can
+%     make the exploitation targets less reliable and consistent for attackers, without necessarily impacting the usefulness of an application.
+%     For instance, one end-user of a piece of software might only need a certain subset of its functionality. In this case, their security policy
+%     might look very different from another end-user that requires a different subset of functionality. Introducing variations in security policy
+%     for this software can confound attackers, much in the same way that source-level or binary-level variations would.
+%     \item \bpfbox{} and \bpfcontain{} are ideal security mechanisms for encouraging this kind of policy variation,
+%     because they are designed for a local administrator to tailor a security policy to precisely the set of desired functionality
+%   \end{itemize}
+% \end{inprogress}
+
+\subsection{\glsentryshort{ebpf}, Adoptability, and Future Innovation}
+
+A third improvement over the status quo in confinement lies in \bpfbox{} and
+\bpfcontain{}'s novelty as \gls{ebpf}-based confinement implementations. Whereas existing
+kernel security mechanisms are based on kernel patches or loadable kernel modules,
+\bpfbox{} and \bpfcontain{} leverage \gls{ebpf} for dynamic runtime security monitoring,
+verified for safety and correctness before being loaded into the kernel. An
+\gls{ebpf}-based implementation affords \bpfbox{} and \bpfcontain{} a number of advantages
+over traditional security solutions.
+
+\begin{enumerate}
+  \item \textbf{\gls{ebpf} is already widely-used in production Linux environments.} At
+  the time of writing this thesis, major software companies like Facebook, Netflix, and
+  Google~\cite{gregg2019_bpf} already use \gls{ebpf} in production servers for performance
+  and security monitoring, the implementation of L4 routing and load balancing algorithms,
+  and other various use cases. In fact, the KRSI patch that provides the \gls{lsm} probes
+  used by \bpfbox{} and \bpfcontain{} was initially developed at Google for dynamic
+  security monitoring use cases~\cite{singh2019_krsi}. As time goes on, \gls{ebpf}-based
+  kernel code is seeing increasing deployment across multidisciplinary areas of industry.
+  This widespread deployment is a key incentive toward the adoption of security mechanisms
+  like \bpfbox{} and \bpfcontain{}. Not only is this widespread adoption an emergent
+  phenomenon from \gls{ebpf}'s safety and flexibility properties, but it is also
+  a valuable case study in how \gls{ebpf} is reshaping the way we think about kernel
+  observability in practice.
+
+  \item \textbf{The barrier to entry for running new \gls{ebpf} code on a production
+  system is much lower than a new kernel module or kernel patch.}
+  Since \gls{ebpf} programs and maps can be dynamically loaded into the kernel and are
+  checked for safety and correctness before they are allowed to run, the barrier to entry
+  for running a new \gls{ebpf}-based implementation in production is far lower than that
+  of a kernel module or kernel patch. \gls{ebpf} programs are far less likely to contain
+  memory safety errors or other software bugs that plague kernel code in practice. Due to
+  new technologies like \gls{bpf} \gls{core}~\cite{nakryiko2020_core}, \gls{ebpf}-based
+  solutions are also far more portable across different kernel versions and
+  configurations. These factors combined make \bpfbox{} and particularly \bpfcontain{} far
+  more adoptable as novel kernel security mechanisms. Future security implementations
+  based on \gls{ebpf} can also enjoy these advantages.
+
+  \item \textbf{\gls{ebpf} enables rapid prototyping and deployment of kernel security mechanisms.}
+  Due to its dynamic nature, safety, and portability across kernels, it is far easier to
+  rapidly prototype, test, and deploy novel security solutions based on \gls{ebpf}. In the
+  case of \bpfbox{} and \bpfcontain{}, this enables rapid prototyping of the policy
+  language and enforcement engine, and makes it easy to incorporate novel extensions on
+  top of these research systems, redefining key aspects of policy enforcement and adding
+  new data sources from the kernel and userspace programs. In the future, we will likely see
+  \gls{ebpf} positioned as a key enabling factor behind the rapid development of novel kernel
+  security extensions, further combining system observability with dynamic policy enforcement.
+\end{enumerate}
+
+% \begin{inprogress}
+%   \gls{ebpf} and adoptability
+%   \begin{itemize}
+%     \item Adoptability that comes with \gls{ebpf} compared with traditional \glspl{lsm}
+%     \item Companies are already using \gls{ebpf} in production for performance monitoring use cases
+%     \item The KRSI patch that provides \gls{lsm} probes was invented at Google for custom policies and security auditing in their production servers
+%     \item The barrier to entry for running new \gls{ebpf} code on a production system is much lower than a new kernel module or kernel patch
+%     \item \gls{ebpf} kernel code is far less likely to have adverse side effects, security vulnerabilities
+
+%     \item Another advantage of an \gls{ebpf}-based solution over traditional solutions is that it is far easier to extend and modify
+%     \item Rapidly prototype, test, and deploy new kernel security mechanisms
+%     \item Easy to modify \bpfbox{} and \bpfcontain{} to support new rule types, employ different policy defaults, and to include other aspects of system state
+%     \item In the future, we will likely see \gls{ebpf} being increasingly used to develop new and innovative security solutions, combining
+%     system observability with policy enforcement
+%   \end{itemize}
+% \end{inprogress}
+
+
 
 
 
