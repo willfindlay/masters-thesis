@@ -124,6 +124,12 @@
 
 \frontmatter%
 
+\vspace*{6em}
+\begin{center}
+\textit{To my parents and grandparents, for believing in me\\even when I didn't believe in myself.}
+\end{center}
+\vspace*{\fill}
+
 \chapter*{Abstract}%
 \addcontentsline{toc}{chapter}{Abstract}%
 \todo{ABSTRACT HERE}
@@ -136,17 +142,32 @@
 
 \chapter*{Prior Publication}%
 \addcontentsline{toc}{chapter}{Prior Publication}%
-\todo{PRIOR PUBLICATION HERE}
+A publication and pre-print have arisen as a direct result of the research in this thesis.
+While these works represent joint contributions of all authors, any sections reproduced in
+this thesis represent the sole work of the thesis author, with editorial and positioning
+contributions by co-authors. Each work is listed below.
+
+\Cref{c:bpfbox} contains text and ideas from our paper \enquote{\bpfbox{}: Simple Precise
+Process Confinement in \gls{ebpf}}~\cite{findlay2020_bpfbox}, co-authored with Anil
+Somayaji and David Barrera, and published at the Cloud Computer Security Workshop (CCSW)
+2020 as part of the ACM CCS conference.
+
+\Cref{c:bpfcontain} contains some text and ideas from our paper \enquote{\bpfcontain{}:
+Fixing the Soft Underbelly of Container Security}~\cite{findlay2021_bpfcontain},
+co-authored with David Barrera and Anil Somayaji. An early draft of this work is available
+on the ArXiV pre-print database, although it differs substantially from the version
+presented in this thesis.
 \cleardoublepage%
 
 % TOC
 \begingroup
 \hypersetup{linkcolor=black}
 \tableofcontents
-\begingroup
+\begin{singlespace}
 \listoffigures
 \listoftables
 \lstlistoflistings
+\end{singlespace}
 \endgroup
 
 \mainmatter%
