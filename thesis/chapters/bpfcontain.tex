@@ -453,7 +453,7 @@ path to achieving strong protection defaults. \Cref{fig:bpfcontain-enforcement} 
 
 \begin{figure}[p]
   \centering
-  \includegraphics[width=0.7\linewidth]{figs/bpfcontain/enforcement.pdf}
+  \includegraphics[width=0.75\linewidth]{figs/bpfcontain/enforcement.pdf}
   \caption[The policy enforcement strategy under \bpfcontain{}]{
     The policy enforcement strategy under \bpfcontain{}, expressed as a flowchart. Using
     container semantics, \bpfcontain{} achieves rich policy defaults, denying access to
@@ -681,17 +681,18 @@ in~\Cref{c:discussion}). \Cref{lst:bpfcontain-policy-example} depicts an example
 
 \subsection{File and Filesystem Rules}
 
-\todo{See David's comment about \enquote{Explaining the why in addition to the what}}
-
 For specifying access to regular files, \bpfcontain{} supports two major rule types.
 \textit{File rules} specify access at the granularity of individual files, while
 \textit{filesystem rules} specify access at the granularity of a filesystem.  These may be
 combined to grant or restrict coarse-grained access to entire filesystems and define
-fine-grained exceptions to this coarse-grained access for specific files. Each file and
-filesystem rule consists of a pathname and an access pattern. In the case of filesystem
-rules, the given pathname must be the mountpoint of the filesystem. \bpfcontain{} supports
-several access flags for fine-grained control over file access.
-\Cref{tab:bpfcontain-file-access} describes each flag and its corresponding effect.
+fine-grained exceptions to this coarse-grained access for specific files. These rules are
+necessary since not every \bpfcontain{} policy targets an application running in
+a container, and containers often access files directly from the host filesystem
+(e.g.~through a Docker volume mount). Each file and filesystem rule consists of a pathname
+and an access pattern. In the case of filesystem rules, the given pathname must be the
+mountpoint of the filesystem. \bpfcontain{} supports several access flags for fine-grained
+control over file access. \Cref{tab:bpfcontain-file-access} describes each flag and its
+corresponding effect.
 
 \begin{table}[htbp]
   \centering

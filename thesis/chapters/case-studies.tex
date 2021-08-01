@@ -10,6 +10,350 @@ can impact the resulting policy file.
 
 % \todo{This section will present the methodology used to select existing policies and
 % compare them with \bpfbox{} and \bpfcontain{} policies}
+%
+\section{Confining a Web Server and Database}
+
+We first examine a practical use case: confining a simple web server and database
+deployment. In particular, we focus on the Apache httpd web server and the MySQL data base
+management system. These two pieces of software are often used together (e.g.\ as part of
+the LAMP stack~\todo{CITE}) and provide a good example of how we can define specific
+policy exceptions to allow two processes or containers to communicate with each other, and
+with the outside world. In this example, we assume that httpd and mysqld communicate with
+each other using a shared Unix domain socket, created by mysqld. We synthesize policies
+through a combination of running the programs under \texttt{strace}, finding library
+dependencies with \texttt{ldd}, and running the programs under \bpfcontain{}'s complaining
+mode.
+
+\subsubsection{\bpfbox{}}
+
+In \bpfbox{}, we define two profiles: one for httpd, and one for mysqld.
+\Cref{lst:bpfbox-apache} depicts the httpd policy, while \Cref{lst:bpfbox-mysql} depicts
+the mysqld policy. These policies are simplified examples, but provide a representative
+idea of what it's like to confine a complex application down to its basest functionality.
+
+The httpd policy (\Cref{lst:bpfbox-apache}) defines allow and taint rules for three
+categories of socket access: \texttt{inet}, \texttt{inet6}, and \texttt{unix}. These
+categories cover IPv4 and IPv6 network access, as well as \gls{ipc} over a Unix domain
+socket. This Unix domain socket is what httpd will use to communicate with the database.
+By defining these network rules as both allow and taint, we indicate that default-deny
+enforcement should begin only \textit{after} the Apache daemon has begun interacting with
+the outside world. Using this technique, the \bpfbox{} policy may be greatly simplified by
+eliminating the need to define any policy corresponding to the setup phase of httpd.
+
+The bulk of the \bpfbox{} policy is made up of filesystem rules, enabling access to
+a variety of configuration files that httpd needs to read at runtime, a few informational
+files exposed by the kernel under procfs, shared libraries that may be loaded at runtime,
+the mysqld Unix socket, and the directory that httpd will use to serve web content. We
+also define a rule allowing httpd to run suexec, a helper application used to launch
+\gls{cgi} scripts.  We indicate that launching suexec should untaint the process and
+transition to a suexec profile.  This profile would then define the access control policy
+for suexec (e.g.\ which scripts it is allowed to run).
+
+\clearpage
+
+\begin{lstlisting}[language=bpfbox, gobble=4, float=false, caption={[A \bpfbox{} policy for Apache httpd]
+  A \bpfbox{} policy for Apache httpd.
+  %\todo{Describe this}
+}, label={lst:bpfbox-apache}]
+    #![profile "/bin/httpd"]
+
+    /* Allow IP and Unix socket operations, and taint when they occur */
+    #[allow]
+    #[taint] {
+      net(inet, any)
+      net(inet6, any)
+      net(unix, any)
+    }
+
+    #[allow] {
+      /* Allows kill(2) to check for process existence
+       * and to send fatal signals */
+      signal("/bin/httpd", check|fatal)
+
+      /* Write to logs */
+      fs("/var/log/httpd/*log", getattr|read|append)
+      fs("/var/log/httpd", getattr|read|write)
+
+      /* Create PID file */
+      fs("/run/httpd/", write)
+      /* Delete or modify an existing PID file if necessary */
+      fs("/run/httpd/httpd.pid", getattr|rm|write)
+
+      /* Serve files from /srv/html/ and all subdirectories */
+      fs("/srv/html/**", read|getattr)
+
+      /* Access to mysqld socket */
+      fs("/run/mysqld", getattr|read)
+      fs("/run/mysqld/mysqld.sock", getattr|read|write)
+
+      /* Read configuration */
+      fs("/usr/share/httpd/**", read|getattr)
+      fs("/etc/httpd/", getattr)
+      fs("/etc/httpd/conf/**", read|getattr)
+      fs("/usr/share/zoneinfo/**", read|getattr)
+
+      /* Read hostname information */
+      fs("/etc/resolv.conf", read|getattr)
+      fs("/etc/host*", read|getattr)
+
+      /* Read-only access to required kernel info */
+      fs("/proc/sys/kernel/random/boot_id", read)
+      fs("/proc/sys/kernel/ngroups_max", read)
+
+      /* Shared libraries loaded at runtime */
+      fs("/usr/lib/httpd/modules/*.so", getattr|read|exec)
+      fs("/usr/lib/libnss*.so.*", getattr|read|exec)
+      fs("/usr/lib/libgcc_s.so.*", getattr|read|exec)
+    }
+
+    /* Transition to a separate suexec policy */
+    #[transition] {
+      fs("/usr/bin/suexec", getattr|read|exec)
+    }
+\end{lstlisting}
+
+The \bpfbox{} policy for mysqld works in much the same way as the policy for httpd. Major
+differences include disabling all socket access except to Unix domain sockets. This
+ensures that the database is not exposed to the outside world, but still enables is to
+communicate with httpd over its Unix socket. Like with httpd, we define specific rules
+enabling mysqld to read important configuration files, log events, create and modify its
+\gls{pid} file and Unix socket, and load some shared libraries at runtime. The entire
+setup phase for mysqld occurs while the process is untainted, thus allowing us to
+eliminate rules for any shared libraries loaded before the process becomes tainted.
+
+\begin{lstlisting}[language=bpfbox, gobble=4, float=false, caption={[A \bpfbox{} policy for MySQL]
+  A \bpfbox{} policy for MySQL.
+  %\todo{Describe this}
+}, label={lst:bpfbox-mysql}]
+    #![profile "/bin/mysqld"]
+
+    /* Allow Unix socket operations, and taint when they occur */
+    #[allow]
+    #[taint] {
+      net(unix, any)
+    }
+
+    #[allow] {
+      /* Allows kill(2) to check for process existence
+       * and to send fatal signals */
+      signal("/bin/mysqld", check|fatal)
+
+      /* Write to logs */
+      fs("/var/log/mysqld/*log", getattr|read|append)
+      fs("/var/log/mysqld", getattr|read|write)
+
+      /* Access to /var/lib/mysqld */
+      fs("/var/lib/mysqld", read|write|getattr)
+      fs("/var/lib/mysqld/**", read|write|getattr|rm)
+
+      /* Create PID file and socket */
+      fs("/run/mysqld", getattr|read|write)
+      fs("/run/mysqld/**", getattr|read|write|rm)
+
+      /* Read configuration */
+      fs("/etc/mysqld", read|getattr)
+      fs("/etc/mysqld/**", read|getattr)
+      fs("/usr/share/zoneinfo", read|getattr)
+      fs("/usr/share/zoneinfo/**", read|getattr)
+
+      /* Read hostname information */
+      fs("/etc/resolv.conf", read|getattr)
+      fs("/etc/host*", read|getattr)
+
+      /* Shared libraries loaded at runtime */
+      fs("/var/lib/mysql/plugin/*.so", getattr|read|exec)
+    }
+\end{lstlisting}
+
+\subsubsection{\bpfcontain{}}
+
+In \bpfcontain{}, we once again define a policy for httpd and a policy for mysqld.  These
+policies are depicted in \Cref{lst:bpfcontain-apache} and \Cref{lst:bpfcontain-mysql}
+respectively. These policies are largely similar to the \bpfbox{} policies, with a few
+minor differences that can be attributed to \bpfcontain{}'s nuanced policy defaults and
+its updated policy language.
+
+Like \bpfbox{}, the majority of the \bpfcontain{} httpd policy
+(\Cref{lst:bpfcontain-apache}) focuses on specifying filesystem access for httpd. Since
+\bpfcontain{} also supports tainting semantics, we leverage these to eliminate the need to
+define rules for operations preceding the taint. Specifically, we taint container once it
+has performed any networking operations or any \gls{ipc} with mysqld. Unlike \bpfbox{},
+however, \bpfcontain{} does not support untainting a process. This is a natural extension
+of the fact that \bpfcontain{} deals in container semantics rather than process-level
+confinement\,---\,it does not make sense to untaint and transition profiles in the context
+of a container, since a single security policy applies to the entire container. This
+means that we must still specify access to shared libraries that will be loaded by suexec
+(along with whatever applications suexec will run, such as Python).
+
+Aside from the aforementioned differences, the per-file policy is more or less the same as
+\bpfbox{}. To enable \gls{ipc} between the httpd and mysql, we define an \gls{ipc} allow
+rule that lists the mysqld policy. We also enable socket networking using a network allow
+rule and enable signalling of existing instances of httpd with a signal rule. Finally,
+we use a capability rule to grant access to the \texttt{CAP\_NET\_BIND\_SERVICE} capability,
+allowing httpd to bind to privileged ports. Since \bpfbox{} does not support capability rules,
+there is no equivalent to this rule in the \bpfbox{} policy.
+
+\begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A \bpfcontain{} policy for Apache httpd]
+  A \bpfcontain{} policy for Apache httpd.
+  %\todo{Describe this}
+}, label={lst:bpfcontain-apache}]
+    name: httpd
+    defaultTaint: false
+
+    allow:
+      # Access to log files
+      file: {pathname: /var/log/httpd, access: rw}
+      file: {pathname: /var/log/httpd/*log, access: ra}
+
+      # Create pidfile, delete or modify an existing pid file if necessary
+      file: {pathname: /run/httpd, access: rw}
+      file: {pathname: /run/httpd/**, access: rwd}
+
+      # Read configuration
+      file: {pathname: /usr/share/httpd/**, access: r}
+      file: {pathname: /etc/httpd, access: r}
+      file: {pathname: /etc/httpd/conf/**, access: r}
+      file: {pathname: /usr/share/zoneinfo/**, access: r}
+
+      # Read hostname information
+      file: {pathname: /etc/resolv.conf, access: r}
+      file: {pathname: /etc/host*, access: r}
+
+      # Shared libraries loaded at runtime
+      file: {pathname: /usr/lib/httpd/modules/*.so, access: mr}
+      file: {pathname: /usr/lib/libnss*.so.*, access: mr}
+      file: {pathname: /usr/lib/libgcc_s.so.*, access: mr}
+
+      # Execute suexec and python
+      file: {pathname: /usr/bin/suexec, access: rx}
+      file: {pathname: /usr/bin/python, access: rx}
+
+      # Shared libraries required for suexec and python
+      # This is unfortunately required since BPFContain currently
+      # has no notion of untainting like BPFBox
+      file: {pathname: /usr/lib/libpython*.so.*, access: mr}
+      file: {pathname: /usr/lib/libc.so.*, access: mr}
+      file: {pathname: /usr/lib/libpthread.so.*, access: mr}
+      file: {pathname: /usr/lib/libdl.so.*, access: mr}
+      file: {pathname: /usr/lib/libutil.so.*, access: mr}
+      file: {pathname: /usr/lib/libm.so.*, access: mr}
+      file: {pathname: /usr/lib64/ld-linux-x86-64.so.*, access: mr}
+
+      # Allow ipc with mysql
+      ipc: mysqld
+
+      # Allow sending signals to existing httpd instances
+      ipc: httpd
+
+      # Bind to privileged ports
+      capability: [netbindservice]
+
+      # Use networking
+      net: [server, send, recv]
+
+    taint:
+      # Taint when performing any ipc or networking
+      net: any
+      ipc: mysqld
+\end{lstlisting}
+
+The mysqld policy for \bpfcontain{} (\Cref{lst:bpfcontain-mysql}) also shares many
+similarities with the \bpfbox{} version.  In particular, we define equivalent file access
+rules to enable the mysqld to access all of the files it requires for normal operation. We
+define an \gls{ipc} rule, granting mutual \gls{ipc} access to the httpd policy, and
+enabling the two to communicate with each other. We taint the container once it has
+performed any \gls{ipc} with httpd.
+
+\begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A \bpfcontain{} policy for MySQL]
+  A \bpfcontain{} policy for MySQL.
+  %\todo{Describe this}
+}, label={lst:bpfcontain-mysql}]
+    name: mysqld
+    defaultTaint: false
+
+    allow:
+      # Access to log files
+      file: {pathname: /var/log/mysqld, access: rw}
+      file: {pathname: /var/log/mysqld/*log, access: ra}
+
+      # Access to /var/lib/mysql
+      file: {pathname: /var/lib/mysqld, access: rw}
+      file: {pathname: /var/lib/mysqld/**, access: rwd}
+
+      # Create pidfile and socket
+      file: {pathname: /run/mysqld, access: rw}
+      file: {pathname: /run/mysqld/**, access: rwd}
+
+      # Read configuration
+      file: {pathname: /etc/mysqld, access: r}
+      file: {pathname: /etc/mysqld/**, access: r}
+      file: {pathname: /usr/share/zoneinfo, access: r}
+      file: {pathname: /usr/share/zoneinfo/**, access: r}
+
+      # Read hostname information
+      file: {pathname: /etc/resolv.conf, access: r}
+      file: {pathname: /etc/host*, access: r}
+
+      # Shared libraries loaded at runtime
+      file: {pathname: /var/lib/mysql/plugin/*.so, access: mr}
+
+      # Allow ipc with httpd
+      ipc: httpd
+
+      # Allow sending signals to existing mysqld instances
+      ipc: mysqld
+
+    taint:
+      # Taint when performing any ipc
+      ipc: httpd
+\end{lstlisting}
+
+\subsubsection{Simplifying the \bpfcontain{} Example}
+
+Once \bpfcontain{} has been fully integrated with Docker support, we can greatly simplify
+the above policy examples, leveraging default filesystem policy to grant access to all of
+the required files, without the need to explicitly specify rules for each file. We
+leverage a shared \texttt{/tmp} filesystem, mounted on the host, to allow both mysqld and
+httpd to access the same Unix socket. The result is an extremely simple policy that can
+express all the required interfaces in just a few lines. \Cref{lst:bpfcontain-httpd-next}
+and \Cref{lst:bpfcontain-mysqld-next} give example policies for httpd and mysqld
+respectively.
+
+\begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A simplified \bpfcontain{} policy for Apache httpd]
+  A simplified \bpfcontain{} policy for Apache httpd running in a Docker container,
+  leveraging future support for automatic filesystem policy.
+  %\todo{Describe this}
+}, label={lst:bpfcontain-httpd-next}]
+    name: httpd-container
+    defaultTaint: true
+
+    allow:
+      # Grant access to global /tmp filesystem, mounted as a Docker volume
+      # This is where the mysqld Unix socket will go
+      fs: {pathname: /tmp, access: rw}
+      # Allow network access
+      net: [server, send, recv]
+      # Allow ipc access with mysqld
+      ipc: mysqld-container
+      # Bind to privileged ports
+      capability: [netbindservice]
+\end{lstlisting}
+
+\begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A simplified \bpfcontain{} policy for MySQL]
+  A simplified \bpfcontain{} policy for MySQL running in a Docker container, leveraging
+  future support for automatic filesystem policy.
+  %\todo{Describe this}
+}, label={lst:bpfcontain-mysqld-next}]
+    name: mysqld-container
+    defaultTaint: true
+
+    allow:
+      # Grant access to global /tmp filesystem, mounted as a Docker volume
+      # This is where the mysqld Unix socket will go
+      fs: {pathname: /tmp, access: rw}
+      # Allow ipc access with httpd
+      ipc: httpd-container
+\end{lstlisting}
 
 
 \section{The Default Docker Policy}
@@ -409,360 +753,18 @@ capability to allow it to bind to privileged ports.
 % resources outside of its protection boundary, unless otherwise specified. The resulting
 % \bpfcontain{} policy is just a few lines long.
 
-\section{Confining a Web Server and Database}
-
-We now turn our attentions to a more nuanced use case: confining a simple web server and
-database deployment. In particular, we focus on the Apache httpd web server and the MySQL
-data base management system. These two pieces of software are often used together (e.g.\ as
-part of the LAMP stack~\todo{CITE}) and provide a good example of how we can define
-specific policy exceptions to allow two processes or containers to communicate with each
-other, and with the outside world. In this example, we assume that httpd and mysqld
-communicate with each other using a shared Unix domain socket, created by mysqld.
-
-\subsubsection{\bpfbox{}}
-
-In \bpfbox{}, we define two profiles: one for httpd, and one for mysqld.
-\Cref{lst:bpfbox-apache} depicts the httpd policy, while \Cref{lst:bpfbox-mysql} depicts
-the mysqld policy. These policies are simplified examples, but provide a representative
-idea of what it's like to confine a complex application down to its basest functionality.
-
-The httpd policy (\Cref{lst:bpfbox-apache}) defines allow and taint rules for three
-categories of socket access: \texttt{inet}, \texttt{inet6}, and \texttt{unix}. These
-categories cover IPv4 and IPv6 network access, as well as \gls{ipc} over a Unix domain
-socket. This Unix domain socket is what httpd will use to communicate with the database.
-By defining these network rules as both allow and taint, we indicate that default-deny
-enforcement should begin only \textit{after} the Apache daemon has begun interacting with
-the outside world. Using this technique, the \bpfbox{} policy may be greatly simplified by
-eliminating the need to define any policy corresponding to the setup phase of httpd.
-
-The bulk of the \bpfbox{} policy is made up of filesystem rules, enabling access to
-a variety of configuration files that httpd needs to read at runtime, a few informational
-files exposed by the kernel under procfs, shared libraries that may be loaded at runtime,
-the mysqld Unix socket, and the directory that httpd will use to serve web content. We
-also define a rule allowing httpd to run suexec, a helper application used to launch
-\gls{cgi} scripts.  We indicate that launching suexec should untaint the process and
-transition to a suexec profile.  This profile would then define the access control policy
-for suexec (e.g.\ which scripts it is allowed to run).
-
-\clearpage
-
-\begin{lstlisting}[language=bpfbox, gobble=4, float=false, caption={[A \bpfbox{} policy for Apache httpd]
-  A \bpfbox{} policy for Apache httpd.
-  %\todo{Describe this}
-}, label={lst:bpfbox-apache}]
-    #![profile "/bin/httpd"]
-
-    /* Allow IP and Unix socket operations, and taint when they occur */
-    #[allow]
-    #[taint] {
-      net(inet, any)
-      net(inet6, any)
-      net(unix, any)
-    }
-
-    #[allow] {
-      /* Allows kill(2) to check for process existence
-       * and to send fatal signals */
-      signal("/bin/httpd", check|fatal)
-
-      /* Write to logs */
-      fs("/var/log/httpd/*log", getattr|read|append)
-      fs("/var/log/httpd", getattr|read|write)
-
-      /* Create PID file */
-      fs("/run/httpd/", write)
-      /* Delete or modify an existing PID file if necessary */
-      fs("/run/httpd/httpd.pid", getattr|rm|write)
-
-      /* Serve files from /srv/html/ and all subdirectories */
-      fs("/srv/html/**", read|getattr)
-
-      /* Access to mysqld socket */
-      fs("/run/mysqld", getattr|read)
-      fs("/run/mysqld/mysqld.sock", getattr|read|write)
-
-      /* Read configuration */
-      fs("/usr/share/httpd/**", read|getattr)
-      fs("/etc/httpd/", getattr)
-      fs("/etc/httpd/conf/**", read|getattr)
-      fs("/usr/share/zoneinfo/**", read|getattr)
-
-      /* Read hostname information */
-      fs("/etc/resolv.conf", read|getattr)
-      fs("/etc/host*", read|getattr)
-
-      /* Read-only access to required kernel info */
-      fs("/proc/sys/kernel/random/boot_id", read)
-      fs("/proc/sys/kernel/ngroups_max", read)
-
-      /* Shared libraries loaded at runtime */
-      fs("/usr/lib/httpd/modules/*.so", getattr|read|exec)
-      fs("/usr/lib/libnss*.so.*", getattr|read|exec)
-      fs("/usr/lib/libgcc_s.so.*", getattr|read|exec)
-    }
-
-    /* Transition to a separate suexec policy */
-    #[transition] {
-      fs("/usr/bin/suexec", getattr|read|exec)
-    }
-\end{lstlisting}
-
-The \bpfbox{} policy for mysqld works in much the same way as the policy for httpd. Major
-differences include disabling all socket access except to Unix domain sockets. This
-ensures that the database is not exposed to the outside world, but still enables is to
-communicate with httpd over its Unix socket. Like with httpd, we define specific rules
-enabling mysqld to read important configuration files, log events, create and modify its
-\gls{pid} file and Unix socket, and load some shared libraries at runtime. The entire
-setup phase for mysqld occurs while the process is untainted, thus allowing us to
-eliminate rules for any shared libraries loaded before the process becomes tainted.
-
-\begin{lstlisting}[language=bpfbox, gobble=4, float=false, caption={[A \bpfbox{} policy for MySQL]
-  A \bpfbox{} policy for MySQL.
-  %\todo{Describe this}
-}, label={lst:bpfbox-mysql}]
-    #![profile "/bin/mysqld"]
-
-    /* Allow Unix socket operations, and taint when they occur */
-    #[allow]
-    #[taint] {
-      net(unix, any)
-    }
-
-    #[allow] {
-      /* Allows kill(2) to check for process existence
-       * and to send fatal signals */
-      signal("/bin/mysqld", check|fatal)
-
-      /* Write to logs */
-      fs("/var/log/mysqld/*log", getattr|read|append)
-      fs("/var/log/mysqld", getattr|read|write)
-
-      /* Access to /var/lib/mysqld */
-      fs("/var/lib/mysqld", read|write|getattr)
-      fs("/var/lib/mysqld/**", read|write|getattr|rm)
-
-      /* Create PID file and socket */
-      fs("/run/mysqld", getattr|read|write)
-      fs("/run/mysqld/**", getattr|read|write|rm)
-
-      /* Read configuration */
-      fs("/etc/mysqld", read|getattr)
-      fs("/etc/mysqld/**", read|getattr)
-      fs("/usr/share/zoneinfo", read|getattr)
-      fs("/usr/share/zoneinfo/**", read|getattr)
-
-      /* Read hostname information */
-      fs("/etc/resolv.conf", read|getattr)
-      fs("/etc/host*", read|getattr)
-
-      /* Shared libraries loaded at runtime */
-      fs("/var/lib/mysql/plugin/*.so", getattr|read|exec)
-    }
-\end{lstlisting}
-
-\subsubsection{\bpfcontain{}}
-
-In \bpfcontain{}, we once again define a policy for httpd and a policy for mysqld.  These
-policies are depicted in \Cref{lst:bpfcontain-apache} and \Cref{lst:bpfcontain-mysql}
-respectively. These policies are largely similar to the \bpfbox{} policies, with a few
-minor differences that can be attributed to \bpfcontain{}'s nuanced policy defaults and
-its updated policy language.
-
-Like \bpfbox{}, the majority of the \bpfcontain{} httpd policy
-(\Cref{lst:bpfcontain-apache}) focuses on specifying filesystem access for httpd. Since
-\bpfcontain{} also supports tainting semantics, we leverage these to eliminate the need to
-define rules for operations preceding the taint. Specifically, we taint container once it
-has performed any networking operations or any \gls{ipc} with mysqld. Unlike \bpfbox{},
-however, \bpfcontain{} does not support untainting a process\footnote{This is because
-\bpfcontain{} taints at the container-level rather than the process-level. Future
-iterations of \bpfcontain{} may change this behaviour, for example by tainting at the
-container-level and untainting at the process-level.}. \todo{Remove the footnote, talk
-about how \bpfcontain{} deals in a different policy abstraction, and therefore tainting
-and switching policies doesn't make sense. We have no notion of transitioning from one
-policy to another.} This means that we must still specify access to shared libraries that
-will be loaded by suexec (along with whatever applications suexec will run, such as
-Python).
-
-Aside from the aforementioned differences, the per-file policy is more or less the same as
-\bpfbox{}.  To enable \gls{ipc} between the httpd and mysql, we define an \gls{ipc} allow
-rule that lists the mysqld policy. We also enable socket networking using a network allow
-rule and enable signalling of existing instances of httpd with a signal rule. Finally,
-we use a capability rule to grant access to the \texttt{CAP\_NET\_BIND\_SERVICE} capability,
-allowing httpd to bind to privileged ports. Since \bpfbox{} does not support capability rules,
-there is no equivalent to this rule in the \bpfbox{} policy.
-
-\begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A \bpfcontain{} policy for Apache httpd]
-  A \bpfcontain{} policy for Apache httpd.
-  %\todo{Describe this}
-}, label={lst:bpfcontain-apache}]
-    name: httpd
-    defaultTaint: false
-
-    allow:
-      # Access to log files
-      file: {pathname: /var/log/httpd, access: rw}
-      file: {pathname: /var/log/httpd/*log, access: ra}
-
-      # Create pidfile, delete or modify an existing pid file if necessary
-      file: {pathname: /run/httpd, access: rw}
-      file: {pathname: /run/httpd/**, access: rwd}
-
-      # Read configuration
-      file: {pathname: /usr/share/httpd/**, access: r}
-      file: {pathname: /etc/httpd, access: r}
-      file: {pathname: /etc/httpd/conf/**, access: r}
-      file: {pathname: /usr/share/zoneinfo/**, access: r}
-
-      # Read hostname information
-      file: {pathname: /etc/resolv.conf, access: r}
-      file: {pathname: /etc/host*, access: r}
-
-      # Shared libraries loaded at runtime
-      file: {pathname: /usr/lib/httpd/modules/*.so, access: mr}
-      file: {pathname: /usr/lib/libnss*.so.*, access: mr}
-      file: {pathname: /usr/lib/libgcc_s.so.*, access: mr}
-
-      # Execute suexec and python
-      file: {pathname: /usr/bin/suexec, access: rx}
-      file: {pathname: /usr/bin/python, access: rx}
-
-      # Shared libraries required for suexec and python
-      # This is unfortunately required since BPFContain currently
-      # has no notion of untainting like BPFBox
-      file: {pathname: /usr/lib/libpython*.so.*, access: mr}
-      file: {pathname: /usr/lib/libc.so.*, access: mr}
-      file: {pathname: /usr/lib/libpthread.so.*, access: mr}
-      file: {pathname: /usr/lib/libdl.so.*, access: mr}
-      file: {pathname: /usr/lib/libutil.so.*, access: mr}
-      file: {pathname: /usr/lib/libm.so.*, access: mr}
-      file: {pathname: /usr/lib64/ld-linux-x86-64.so.*, access: mr}
-
-      # Allow ipc with mysql
-      ipc: mysqld
-
-      # Allow sending signals to existing httpd instances
-      ipc: httpd
-
-      # Bind to privileged ports
-      capability: [netbindservice]
-
-      # Use networking
-      net: [server, send, recv]
-
-    taint:
-      # Taint when performing any ipc or networking
-      net: any
-      ipc: mysqld
-\end{lstlisting}
-
-The mysqld policy for \bpfcontain{} (\Cref{lst:bpfcontain-mysql}) also shares many
-similarities with the \bpfbox{} version.  In particular, we define equivalent file access
-rules to enable the mysqld to access all of the files it requires for normal operation. We
-define an \gls{ipc} rule, granting mutual \gls{ipc} access to the httpd policy, and
-enabling the two to communicate with each other. We taint the container once it has
-performed any \gls{ipc} with httpd.
-
-\begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A \bpfcontain{} policy for MySQL]
-  A \bpfcontain{} policy for MySQL.
-  %\todo{Describe this}
-}, label={lst:bpfcontain-mysql}]
-    name: mysqld
-    defaultTaint: false
-
-    allow:
-      # Access to log files
-      file: {pathname: /var/log/mysqld, access: rw}
-      file: {pathname: /var/log/mysqld/*log, access: ra}
-
-      # Access to /var/lib/mysql
-      file: {pathname: /var/lib/mysqld, access: rw}
-      file: {pathname: /var/lib/mysqld/**, access: rwd}
-
-      # Create pidfile and socket
-      file: {pathname: /run/mysqld, access: rw}
-      file: {pathname: /run/mysqld/**, access: rwd}
-
-      # Read configuration
-      file: {pathname: /etc/mysqld, access: r}
-      file: {pathname: /etc/mysqld/**, access: r}
-      file: {pathname: /usr/share/zoneinfo, access: r}
-      file: {pathname: /usr/share/zoneinfo/**, access: r}
-
-      # Read hostname information
-      file: {pathname: /etc/resolv.conf, access: r}
-      file: {pathname: /etc/host*, access: r}
-
-      # Shared libraries loaded at runtime
-      file: {pathname: /var/lib/mysql/plugin/*.so, access: mr}
-
-      # Allow ipc with httpd
-      ipc: httpd
-
-      # Allow sending signals to existing mysqld instances
-      ipc: mysqld
-
-    taint:
-      # Taint when performing any ipc
-      ipc: httpd
-\end{lstlisting}
-
-\subsubsection{Simplifying the \bpfcontain{} Example}
-
-Once \bpfcontain{} has been fully integrated with Docker support, we can greatly simplify
-the above policy examples, leveraging default filesystem policy to grant access to all of
-the required files, without the need to explicitly specify rules for each file. We
-leverage a shared \texttt{/tmp} filesystem, mounted on the host, to allow both mysqld and
-httpd to access the same Unix socket. The result is an extremely simple policy that can
-express all the required interfaces in just a few lines. \Cref{lst:bpfcontain-httpd-next}
-and \Cref{lst:bpfcontain-mysqld-next} give example policies for httpd and mysqld
-respectively.
-
-\begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A simplified \bpfcontain{} policy for Apache httpd]
-  A simplified \bpfcontain{} policy for Apache httpd running in a Docker container,
-  leveraging future support for automatic filesystem policy.
-  %\todo{Describe this}
-}, label={lst:bpfcontain-httpd-next}]
-    name: httpd-container
-    defaultTaint: true
-
-    allow:
-      # Grant access to global /tmp filesystem, mounted as a Docker volume
-      # This is where the mysqld Unix socket will go
-      fs: {pathname: /tmp, access: rw}
-      # Allow network access
-      net: [server, send, recv]
-      # Allow ipc access with mysqld
-      ipc: mysqld-container
-      # Bind to privileged ports
-      capability: [netbindservice]
-\end{lstlisting}
-
-\begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A simplified \bpfcontain{} policy for MySQL]
-  A simplified \bpfcontain{} policy for MySQL running in a Docker container, leveraging
-  future support for automatic filesystem policy.
-  %\todo{Describe this}
-}, label={lst:bpfcontain-mysqld-next}]
-    name: mysqld-container
-    defaultTaint: true
-
-    allow:
-      # Grant access to global /tmp filesystem, mounted as a Docker volume
-      # This is where the mysqld Unix socket will go
-      fs: {pathname: /tmp, access: rw}
-      # Allow ipc access with httpd
-      ipc: httpd-container
-\end{lstlisting}
 
 \section{Summary}
 
 This chapter has presented and compared \bpfbox{} and \bpfcontain{} policies for various
-use cases. In particular, we examine how each system can be used to implement a policy
-resembling the Docker default policy, how \bpfcontain{} can be used to confine an
-untrusted container, and how \bpfbox{} and \bpfcontain{} can confine a simple web server
-and database deployment. We find that each confinement mechanism has its respective
-strengths and weaknesses.  \bpfcontain{} supports more access categories and combines
-semantically related accesses into the same rule types, simplifying policies and providing
-increased expressiveness. However, \bpfbox{}'s tainting and untainting semantics prove
-advantageous for complex deployments on the host system. Future iterations on
-\bpfcontain{}'s default policy can greatly simplify existing container-specific policy
-semantics, shortening long and complex policies down to just a few lines.
+use cases. In particular, we examine how \bpfbox{} and \bpfcontain{} can confine a simple
+web server and database deployment,  how each system can be used to implement a policy
+resembling the Docker default policy, and how a future version of \bpfcontain{} can be
+used to confine an untrusted container with minimal effort. We find that each confinement
+mechanism has its respective strengths and weaknesses.  \bpfcontain{} supports more access
+categories and combines semantically related accesses into the same rule types,
+simplifying policies and providing increased expressiveness. However, \bpfbox{}'s tainting
+and untainting semantics prove advantageous for complex deployments on the host system.
+Future iterations on \bpfcontain{}'s default policy can greatly simplify existing
+container-specific policy semantics, shortening long and complex policies down to just
+a few lines.
