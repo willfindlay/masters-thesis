@@ -645,13 +645,21 @@ A process that is sandboxed using this policy would be unable to access
 
 
 
-\section{Discrepancies in the \bpfbox{} Implementation}
+\section{State of the \bpfbox{} Implementation}
 \label{s:bpfbox-discrepancies}
 
-\todo{List aspects of the \bpfbox{} design that have not been fully implemented}
-
-\todo{Discuss how many aspects of the \bpfbox{} design made it into \bpfcontain{} (\Cref{c:bpfcontain})}
-
+This chapter has presented \bpfbox{} as it was originally designed. However, some aspects
+of the \bpfbox{} policy language were never fully realized, despite being implemented on
+the \gls{ebpf} side. In particular, decorators to transition profiles and untaint
+a process when making an execve call are currently unimplemented. Other aspects of the
+policy language, such as the formulation of ptrace rules, also differ from the current
+implementation. Before a full implementation could be completed, the transition toward
+\bpfcontain{} (c.f.\ \Cref{c:bpfcontain}) had already begun; in our view, \bpfcontain{} is
+a successor to \bpfbox{}, and thus deprecates the original \bpfbox{} implementation. As
+a result, many of the unimplemented aspects of \bpfbox{}'s policy language are reflected
+in the \bpfcontain{} implementation, either through its policy language schema
+(\Cref{s:bpfcontain-policy}), or through its default policy enforcement
+(\Cref{ss:bpfcontain-default}).
 
 
 

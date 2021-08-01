@@ -53,7 +53,7 @@ goal is to examine these limitations as an early motivating factor for the devel
     simultaneously simplify policies and improve security by defining a clear protection
     boundary around a container.
 
-  \item \textbf{Policy Language Simplification.}
+  \item \textbf{Policy Language Improvements.}
     In addition to adding container semantics, other aspects of the \bpfbox{} policy
     language can also be improved and simplified. For instance, \bpfbox{} implements
     policy in a domain-specific policy language, designed specifically with \bpfbox{}'s
@@ -859,10 +859,8 @@ can provide these benefits at virtually zero overhead, in line with traditional 
 programming languages like C and significantly better than interpreted languages such as
 Python.
 
-\subsection{Simplified Policy Language}%
+\subsection{Improved Policy Language}%
 \label{ss:bpfcontain-simplified}
-
-\todo{See David's comments about this paragraph}
 
 \bpfcontain{} greatly simplifies the original \bpfbox{} policy language. Rather than
 defining a specific policy language syntax, \bpfcontain{} defines a schema that can be
@@ -886,6 +884,13 @@ possible resource that a container can access. Along with the simplifications af
 \bpfcontain{}'s sensible policy defaults, we make additional changes to the policy
 language that help decouple it from the underlying details of the operating system, such
 as higher-level network policy and semantically-guided device driver access defaults.
+
+Moreover, \bpfcontain{} improves upon the original \bpfbox{} policy language design by
+introducing new rule types to cover weaknesses in the original design. It also fully
+implements many aspects of \bpfbox{} that were left unfinished in the current
+implementation, providing a more fully realized prototype. For these reasons,
+\bpfcontain{} deprecates \bpfbox{} by implementing a superset of its original
+functionality and improving upon flaws in the original \bpfbox{} design.
 
 % \begin{inprogress}
 % \bpfcontain{} eschews the original policy language and instead reaches for a more modular

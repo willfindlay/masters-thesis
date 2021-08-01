@@ -1075,55 +1075,61 @@ from the host operating system decreases.
 % probability of container escape more likely, but it also increases the host-to-container
 % and container-to-host attack surface.
 
-\begin{inprogress}
-  \begin{itemize}
-    \item Container exploits vulnerability in the kernel
-    \item Container exploits vulnerability in the host configuration
-    \item Container exploits vulnerability in a host process
-  \end{itemize}
-\end{inprogress}
-
-\Cref{fig:containersec} depicts a high-level threat model for containers from the
-perspective of the host operating system. \todo{Connect each part of the figure to the
-text.} This model comprises a number of attack vectors, each targeting a different part of
-the system. A malicious container can target another container, a regular host process, or
-the host operating system kernel. Similarly, a malicious host process can target
-a container. To attack the \gls{os} kernel, a container must generally exploit
-a kernel-level vulnerability, such as a memory safety error in a system call
-implementation. To mitigate such attacks, the attack surface exposed by the kernel to the
-container should be minimal. Other classes of attack rely on exploiting the intended
-effects of system calls for in unintended ways.  For instance, a misconfigured security
-policy might allow a containerized process to load a kernel module or perform inter-process
-communication with an external daemon. Abusing shared resources can have a similar affect,
-allowing a container to manipulate or tamper with an external process.
-
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/container_security.pdf}
   \caption[A sample threat model for container security]{
     A sample threat model for container security.
-    \todo{Description here}
+    (A) A container process attacks the host kernel directly.
+    (B) A container process attacks another container process, passing through the host kernel's reference monitor.
+    (C) A container process attacks a (privileged) host process, passing through the host kernel's reference monitor.
+    (D) A host process attacks a container, passing through the host kernel's reference monitor.
   }%
   \label{fig:containersec}
 \end{figure}
 
-\todo{Add a bulleted list of container escapes}
-\begin{inprogress}
-\begin{itemize}
-  \item It's kind of leaky
-  \item Even if you configure it perfectly, there are ways to misconfigure it
-  \item The things you are subject to are the things you're subject to in the classic security model
-  \item No different than software security in general... Because a container is just a set of processes
-\end{itemize}
-  \begin{itemize}
-    \item Shared-resource attack
-    \item Privilege escalation
-    \begin{itemize}
-      \item Exploiting a privileged process (e.g.\ confused deputy)
-      \item Exploiting kernel directly
-    \end{itemize}
-  \end{itemize}
-\end{inprogress}
+\Cref{fig:containersec} depicts a high-level threat model for containers from the
+perspective of the host operating system.  This model comprises a number of attack
+vectors, each targeting a different part of the system. For instance, a malicious
+container process can target the host kernel directly, providing input to a kernel
+function through a system call (Item A in \Cref{fig:containersec}). This input can be
+crafted to trigger a specific vulnerability in the host kernel, resulting in privilege
+escalation, information disclosure, or denial of service.
+
+A malicious container process can also target a process belonging to another container
+(Item B in \Cref{fig:containersec}) or a (possibly privileged) host process (Item C in
+\Cref{fig:containersec}). An attack could occur as a result of a misconfigured security
+policy or some system resource shared by both processes. The end goal might be tampering
+with the other process, or privilege escalation (for instance, via a Confused Deputy
+attack~\cite{hardy1988_confused_deputy}). Finally, a host process can attack a container
+process (Item D in \Cref{fig:containersec}). Goals in this case might include tampering
+with a container belonging to another user of a multi-tenant system.
+
+Not pictured in \Cref{fig:containersec} but important nonetheless is the case where
+a process (containerized or otherwise) abuses a vulnerability in system hardware or
+firmware (e.g.~a side channel attack on cache memory) to leak information about another
+process (containerized or otherwise). Such attacks can totally bypass the operating
+system's reference monitor and generally require trusted computing technologies or
+hardware/software co-design to mitigate. As such, they are out of scope for this thesis.
+Resource starvation attacks are also considered out of scope.
+
+% \todo{Add a bulleted list of container escapes}
+% \begin{inprogress}
+% \begin{itemize}
+%   \item It's kind of leaky
+%   \item Even if you configure it perfectly, there are ways to misconfigure it
+%   \item The things you are subject to are the things you're subject to in the classic security model
+%   \item No different than software security in general... Because a container is just a set of processes
+% \end{itemize}
+%   \begin{itemize}
+%     \item Shared-resource attack
+%     \item Privilege escalation
+%     \begin{itemize}
+%       \item Exploiting a privileged process (e.g.\ confused deputy)
+%       \item Exploiting kernel directly
+%     \end{itemize}
+%   \end{itemize}
+% \end{inprogress}
 
 \subsubsection{Container Security in Industry}%
 \label{sss:container-security-industry}

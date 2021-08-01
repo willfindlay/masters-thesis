@@ -120,7 +120,43 @@
 % ==============================================================================
 
 % Title page
-\input{titlepage}
+\makeatletter
+\begin{titlepage}
+    \newgeometry{margin=0.8in}
+    \begin{center}
+      \vspace*{1cm}
+      {\LARGE\bfseries \@title}
+
+      \vspace{1cm}
+      by
+      \vspace{1cm}
+
+      {\itshape\large \@author\/}
+
+      \vfill
+
+      A thesis submitted to the Faculty of Graduate and Postdoctoral Affairs\\
+      in partial fulfillment of the requirements for the degree of
+
+      \vspace{3cm}
+      {\bfseries Master of Computer Science}
+      \vspace{3cm}
+
+
+      {\@date}
+      \vspace{0.5cm}
+
+      Carleton University\\
+      Ottawa, Ontario
+      \vspace{0.5cm}
+
+      \copyright{}~2021 \@author%
+    \end{center}
+\end{titlepage}
+\makeatother
+\cleardoublepage
+
+\renewcommand*{\titlepagestyle}{plain}
 
 \frontmatter%
 
@@ -134,7 +170,38 @@
 \addcontentsline{toc}{chapter}{Abstract}%
 \begingroup
 \small
-\todo{Abstract here}
+Confining operating system processes is essential for preserving least-privilege access to
+system resources, hardening the system against successful exploitation by malicious
+actors. Classically, confinement on Linux has been accomplished through a variety of
+disparate confinement primitives, each targeting a different aspect of process behaviour
+and each with its own set of policy semantics. This has led to difficulties in realizing
+practical confinement goals, due to the complexities, inter-dependence relationships, and
+semantic gaps that arise from recombining existing confinement primitives in unintended
+ways. Linux containers are a particularly poignant example of this phenomenon, with
+existing container security policies often being overly complex and overly permissive in
+practice.
+
+To better isolate user processes and achieve practical confinement goals, we argue that
+novel confinement mechanisms are needed to bridge the semantic gap between security policy
+and enforcement. We hypothesize that a new Linux kernel technology, eBPF, enables the
+creation of precisely such a confinement mechanism. eBPF programs can be dynamically
+loaded into the kernel by a privileged process and are checked for safety before they run
+in kernelspace.  This new paradigm affords an opportunity to create an adoptable,
+container-specific confinement mechanism without tying the kernel down to one specific
+implementation.  Further, an eBPF-based confinement solution can be loaded and unloaded at
+runtime, without updating or even restarting the operating system kernel; this property
+enables rapid prototyping and debugging, similar in spirit to how we debug userspace
+applications in practice.
+
+In this thesis, we present the design and implementation of two novel confinement
+solutions based on eBPF, \bpfbox{} and its successor, \bpfcontain{}. We discuss issues in
+the Linux confinement space that motivated the creation of \bpfbox{} and \bpfcontain{},
+discuss policy examples, and present the results of a performance evaluation and informal
+security analysis. Results from this research indicate that \bpfbox{} and \bpfcontain{}
+perform competitively with existing Linux security solutions despite their increased
+flexibility.  We also find that there is significant opportunity to improve \bpfbox{} and
+\bpfcontain{}, and to introduce future security mechanisms based on eBPF\@.
+
 \endgroup
 \cleardoublepage%
 

@@ -16,7 +16,7 @@ can impact the resulting policy file.
 We first examine a practical use case: confining a simple web server and database
 deployment. In particular, we focus on the Apache httpd web server and the MySQL data base
 management system. These two pieces of software are often used together (e.g.\ as part of
-the LAMP stack~\todo{CITE}) and provide a good example of how we can define specific
+the LAMP stack~\cite{lamp}) and provide a good example of how we can define specific
 policy exceptions to allow two processes or containers to communicate with each other, and
 with the outside world. In this example, we assume that httpd and mysqld communicate with
 each other using a shared Unix domain socket, created by mysqld. We synthesize policies
@@ -49,8 +49,6 @@ also define a rule allowing httpd to run suexec, a helper application used to la
 transition to a suexec profile.  This profile would then define the access control policy
 for suexec (e.g.\ which scripts it is allowed to run).
 
-\clearpage
-
 \begin{lstlisting}[language=bpfbox, gobble=4, float=false, caption={[A \bpfbox{} policy for Apache httpd]
   A \bpfbox{} policy for Apache httpd.
   %\todo{Describe this}
@@ -80,6 +78,8 @@ for suexec (e.g.\ which scripts it is allowed to run).
       fs("/run/httpd/httpd.pid", getattr|rm|write)
 
       /* Serve files from /srv/html/ and all subdirectories */
+      fs("/srv", read|getattr)
+      fs("/srv/html", read|getattr)
       fs("/srv/html/**", read|getattr)
 
       /* Access to mysqld socket */
@@ -121,6 +121,8 @@ enabling mysqld to read important configuration files, log events, create and mo
 setup phase for mysqld occurs while the process is untainted, thus allowing us to
 eliminate rules for any shared libraries loaded before the process becomes tainted.
 
+\clearpage
+
 \begin{lstlisting}[language=bpfbox, gobble=4, float=false, caption={[A \bpfbox{} policy for MySQL]
   A \bpfbox{} policy for MySQL.
   %\todo{Describe this}
@@ -146,13 +148,18 @@ eliminate rules for any shared libraries loaded before the process becomes taint
       fs("/var/lib/mysqld", read|write|getattr)
       fs("/var/lib/mysqld/**", read|write|getattr|rm)
 
+      /* Access to /usr/share/mysql */
+      fs("/usr/share/mysql", read|write|getattr)
+      fs("/usr/share/mysql/**", read|write|getattr|rm)
+
       /* Create PID file and socket */
       fs("/run/mysqld", getattr|read|write)
       fs("/run/mysqld/**", getattr|read|write|rm)
 
       /* Read configuration */
-      fs("/etc/mysqld", read|getattr)
-      fs("/etc/mysqld/**", read|getattr)
+      fs("/etc/mysql", read|getattr)
+      fs("/etc/mysql/**", read|getattr)
+      fs("/etc/localtime", read|getattr)
       fs("/usr/share/zoneinfo", read|getattr)
       fs("/usr/share/zoneinfo/**", read|getattr)
 
@@ -214,6 +221,11 @@ there is no equivalent to this rule in the \bpfbox{} policy.
       file: {pathname: /etc/httpd, access: r}
       file: {pathname: /etc/httpd/conf/**, access: r}
       file: {pathname: /usr/share/zoneinfo/**, access: r}
+
+      # Serve files
+      file: {pathname: /srv, access: r}
+      file: {pathname: /srv/html, access: r}
+      file: {pathname: /srv/html/**, access: r}
 
       # Read hostname information
       file: {pathname: /etc/resolv.conf, access: r}
@@ -280,13 +292,18 @@ performed any \gls{ipc} with httpd.
       file: {pathname: /var/lib/mysqld, access: rw}
       file: {pathname: /var/lib/mysqld/**, access: rwd}
 
+      # Access to /etc/mysql
+      file: {pathname: /etc/mysql, access: rw}
+      file: {pathname: /etc/mysql/**, access: rwd}
+
       # Create pidfile and socket
       file: {pathname: /run/mysqld, access: rw}
       file: {pathname: /run/mysqld/**, access: rwd}
 
       # Read configuration
-      file: {pathname: /etc/mysqld, access: r}
-      file: {pathname: /etc/mysqld/**, access: r}
+      file: {pathname: /etc/mysql, access: r}
+      file: {pathname: /etc/mysql, access: r}
+      file: {pathname: /etc/localtime, access: r}
       file: {pathname: /usr/share/zoneinfo, access: r}
       file: {pathname: /usr/share/zoneinfo/**, access: r}
 
