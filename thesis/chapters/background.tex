@@ -44,11 +44,11 @@ Anderson~\cite{anderson1972_report}.
   \includegraphics[width=0.6\linewidth]{figs/background/refmon.pdf}
   \caption[The reference monitor concept]{
     The reference monitor concept as outlined in the Anderson Report. Redrawn and adapted
-    from Anderson~\cite{anderson1972_report}. User processes make requests (e.g.~via
+    from Anderson~\cite{anderson1972_report}. User processes make requests (e.g.\ via
     system calls to the operating system). The \gls{os} kernel invokes the reference
     monitor, which is implemented in software as a security kernel. The reference monitor
     queries its security policy taking the subject, object, and other parameters as input.
-    As output, it returns a security decision (i.e.~whether the requested access should be
+    As output, it returns a security decision (i.e.\ whether the requested access should be
     \textit{allowed} or \textit{denied}).
   }%
   \label{fig:refmon}
@@ -57,7 +57,7 @@ Anderson~\cite{anderson1972_report}.
 While the majority of modern operating systems do not include a security kernel as
 described by Anderson, the reference monitor architecture has informed the design of
 modern access control mechanisms and models the reference validation process that occurs
-when the kernel is servicing userspace requests (i.e.~system
+when the kernel is servicing userspace requests (i.e.\ system
 calls)~\cite{van_oorschot2020_tools_jewels}. In order for such a design to be considered
 valid, Anderson enumerates three key properties: (i) Tamper Resistance; (ii) Complete
 Mediation; and (iii) Verifiability. These properties facilitate reasoning about the
@@ -68,7 +68,7 @@ reference monitor model.
 
 In order for the reference monitor to be considered \textit{tamper-resistant}, an unauthorized
 party must not be able to alter the reference monitor's code or modify any data
-(e.g.~memory, persistent storage) that the reference monitor relies on to enforce correct
+(e.g.\ memory, persistent storage) that the reference monitor relies on to enforce correct
 reference validation~\cite{anderson1972_report}. This property follows from the fact that
 unauthorized tampering with the reference monitor totally invalidates any security
 guarantees.
@@ -111,7 +111,7 @@ translation of memory addresses, modern processors cache this mapping in a speci
 cache area called the \gls{tlb}.  In Unix, each user process gets its own virtual address
 space by default, maintained in a per-process page table. Where necessary, this isolation
 may be voluntarily broken using memory sharing mechanisms provided by the \gls{os} kernel
-(e.g.~multi-threading or shared memory mappings). The kernel also gets its own address
+(e.g.\ multi-threading or shared memory mappings). The kernel also gets its own address
 space which maps the entirety of physical memory.
 
 While virtual memory can help isolate user processes from each other and user process from
@@ -165,7 +165,7 @@ rings for finer-grained isolation on x86.
 control in many operating systems, including Linux, other Unix-like operating systems, and
 Microsoft Windows. First formalized in the 1983 US Department of Defense
 standard~\cite{orange_book}, a discretionary access control mechanism partitions and
-labels system objects (i.e.~resources such as files) by the subjects (i.e.~actors such as
+labels system objects (i.e.\ resources such as files) by the subjects (i.e.\ actors such as
 users and user processes) that \textit{own} them. The corresponding resource owner then
 has full authority to decide which subjects have access to its owned objects. This notion
 of ultimate authority over a subject's owned objects constitutes the primary difference
@@ -188,7 +188,7 @@ coarse-grained access to the file according to a subject's \gls{uid} and \gls{gi
 Permission bits are divided into three sections: \textit{User}, \textit{Group}, and
 \textit{Other}. The \textit{User} bits apply to subjects whose \gls{uid} matches the
 resource owner's \gls{uid}, while the \textit{Group} bits consider the \gls{gid} instead.
-In all other cases (i.e.~when neither the \gls{uid} nor the \gls{gid} matches), the
+In all other cases (i.e.\ when neither the \gls{uid} nor the \gls{gid} matches), the
 \textit{Other} bits determine the allowed access. To determine which access should be
 allowed, permission bits encode a coarse-grained \textit{access vector}, specifying read,
 write, and execute access on a file or directory (in the case of a directory, execute
@@ -284,7 +284,7 @@ model for object ownership and permissions, it makes some dangerous assumptions 
 security that can totally invalidate the model in
 practice~\cite{shu2016_security_isolation_study}. In particular, \gls{dac} assumes that all
 processes are benign and contain no exploitable vulnerabilities. The mere existence off
-malware and exploitable vulnerabilities (e.g.~memory safety vulnerabilities) immediately
+malware and exploitable vulnerabilities (e.g.\ memory safety vulnerabilities) immediately
 invalidates this assumption. For instance, consider an honest but vulnerable piece of
 software running under a given \gls{uid} $X$. An attacker exploiting a vulnerability in
 this application could perform arbitrary operations on any files owned by $X$. Similarly,
@@ -315,7 +315,7 @@ Both industry and academia have long recognized that weaknesses in the Unix disc
 access control model must be addressed. Many have turned to mandatory access
 control~\cite{spencer1999_flask, smalley2001_selinux, wright2002_lsm, cowan2000_apparmor,
 schaufler_smack, schreuders2012_towards, hu2013_fsf, harada2004_tomoyo, salaun_landlockio,
-singh2019_krsi} (c.f.~\Cref{ss:mac}) to solve the fundamental issues in \gls{dac}, while
+singh2019_krsi} (c.f.\ \Cref{ss:mac}) to solve the fundamental issues in \gls{dac}, while
 others have proposed improvements or alternative schemes for implementing discretionary
 access control~\cite{mao2009_trojan_resistant_dac, solworth2004_layered_dac,
 dranger2006_dac_complexity, dittmer2014_setuid, tsafrir2008_setuid, chen2002_setuid}. This
@@ -333,7 +333,7 @@ process are considered when making access control decisions; under IFEDAC, the \
 and \gls{gid} of the owner of the underlying executable would also be considered, along
 with any other parties that may have influenced the state of the running process. This
 approach is similar in spirit to taint tracking mechanisms~\cite{livshits2012_dynamic}
-(c.f.~\Cref{ss:taint-tracking}). To enable programs to function correctly, IFEDAC enables
+(c.f.\ \Cref{ss:taint-tracking}). To enable programs to function correctly, IFEDAC enables
 the user to define \textit{exception policy} that specifies exceptions to IFEDAC
 enforcement. Mao \etal~recommend that application authors and OS vendors should be
 responsible for distributing such policies~\cite{mao2009_trojan_resistant_dac}.
@@ -406,7 +406,7 @@ which are discussed in \Cref{ss:syscall-filtering}. POSIX capabilities specify t
 set of all capabilities that a process is ever allowed to possess. The inheritable set
 determines the set of all capabilities that can be inherited across \texttt{execve} calls.
 Finally, the effective set determines the set of capabilities that a process can use
-(i.e.~which capabilities a process currently possesses).
+(i.e.\ which capabilities a process currently possesses).
 
 Linux exposes POSIX capabilities through extended filesystem attributes, much the same way
 that \glspl{acl} are implemented~\cite{corbet2006_capabities_b}. These file-based
@@ -414,7 +414,7 @@ capabilities function in a similar manner to the setuid bit, implicitly setting 
 bounding, inheritable, and effective capability sets on execution. In addition so
 supporting capabilities as extended filesystem attributes, the kernel also supports
 dropping specific capabilities from each of the three sets through the \texttt{ptrctl(2)}
-system call. This enables a higher-privileged process (e.g.~running as root) to drop
+system call. This enables a higher-privileged process (e.g.\ running as root) to drop
 elevated privileges while retaining those it needs to function. As of Linux 5.12, the
 kernel supports 41 capabilities in total, including the all-encompassing
 \texttt{CAP\_SYS\_ADMIN}~\cite{linux_capability_h}.
@@ -502,7 +502,7 @@ this is an evolving process and no formal verification exists to prove the secur
   \caption[The \glsentryshort{lsm} architecture]{
     The \gls{lsm} architecture. A single \textit{exclusive} \gls{lsm} may be loaded at a time,
     and complemented by zero or more \textit{stackable} \gls{lsm}s. When userspace
-    requests a privileged operation (e.g.~through a system call), this operation causes one
+    requests a privileged operation (e.g.\ through a system call), this operation causes one
     or more security hooks to be invoked. These hooks in turn call into the respective
     hook implementations provided by each loaded \gls{lsm}. Each hook returns a policy
     decision, and these decisions are then taken together to arrive at a final decision.
@@ -538,7 +538,7 @@ of which have subsequently been merged into the mainline Linux kernel. AppArmor
 SELinux, enforcing security policy based on \textit{pathnames} rather than security
 labels.  AppArmor policies, called \textit{profiles}, are assigned on a per-executable
 basis. Rather than being labelled, AppArmor policies identify system objects directly
-(e.g.~through pathnames, \gls{ipc} categories, or network \gls{ip} addresses). Each system
+(e.g.\ through pathnames, \gls{ipc} categories, or network \gls{ip} addresses). Each system
 object is associated with a particular access pattern, which determines the privileges for
 a given AppArmor profile. Similar to SELinux, AppArmor offers a suite of userspace tooling
 for automated and semi-automated policy generation based on enforcement
@@ -769,7 +769,7 @@ at the resource-level and enforces this access within the system call layer.
 
 To confine processes, capsicum exposes a special \texttt{cap\_enter(2)} system call which
 causes a process to enter \textit{capability mode}. A process in capability mode no longer
-has access to global namespaces (e.g.~the \gls{pid} namespace) and may only make a subset of
+has access to global namespaces (e.g.\ the \gls{pid} namespace) and may only make a subset of
 system calls which do not directly access these global namespaces. Other system calls are
 constrained so that they may only operate under the context of an open capability
 descriptor (a file descriptor which has been extended with capability
@@ -882,7 +882,7 @@ a virtualization and confinement mechanism, approaching a full solution.
 
 Jails take the approach of defining a clear security boundary around a collection of
 processes, filesystem resources, and network resources~\cite{kamp2000_jails}. A process
-existing within this boundary (i.e.~a member of the jail) enjoys the standard set of Unix
+existing within this boundary (i.e.\ a member of the jail) enjoys the standard set of Unix
 permissions on resources within the jail. Access to resources outside of the jail is
 forbidden, including access by the root user. Visibility is similarly restricted by
 remapping namespaces in such a way as outside resources are effectively invisible.
@@ -908,7 +908,7 @@ Notably, namespaces and cgroups are \textit{not} confinement mechanisms in and o
 themselves. This property is in stark contrast with Jails and Zones, which were designed
 to offer strong confinement guarantees over their respective security boundaries.
 As the canonical process-level virtualization building blocks in Linux, namespaces and
-cgroups form the backbone of Linux containers (c.f.~\Cref{ss:container-security-bg}).
+cgroups form the backbone of Linux containers (c.f.\ \Cref{ss:container-security-bg}).
 
 Linux namespaces~\cite{biederman2006_namespaces, linux_namespaces} limit the visibility of
 system resource by providing a virtual remapping of global resource identifiers to
@@ -1119,7 +1119,7 @@ allowing a container to manipulate or tamper with an external process.
     \item Shared-resource attack
     \item Privilege escalation
     \begin{itemize}
-      \item Exploiting a privileged process (e.g.~confused deputy)
+      \item Exploiting a privileged process (e.g.\ confused deputy)
       \item Exploiting kernel directly
     \end{itemize}
   \end{itemize}
@@ -1257,7 +1257,7 @@ scanning techniques to a continuous integration pipeline, flagging and fixing im
 vulnerabilities during development.
 
 \gls{ebpf} is seeing increasing prominence within the container security space. Besides
-\bpfbox{} (c.f.~\Cref{c:bpfbox}) and \bpfcontain{} (c.f.~\Cref{c:bpfcontain}), other
+\bpfbox{} (c.f.\ \Cref{c:bpfbox}) and \bpfcontain{} (c.f.\ \Cref{c:bpfcontain}), other
 projects have arisen over the past few years, albeit with a general focus on observability
 rather than policy enforcement. Tracee~\cite{tracee} is a container observability tool
 developed by Aqua Security that can watch system calls made by a container, along with
@@ -1304,7 +1304,7 @@ operating system that runs in protection ring 0\footnote{Code that runs in ring 
 to run with \textit{supervisor privileges} and is able to access all system memory. Ring
 0 is the highest level of memory protection provided by the \gls{cpu}~\cite{jaeger2008_os_security}.}
 and which is most commonly associated with any parts of the operating system that do not
-run in \textit{userland} (i.e.~the context of an ordinary user process). This provides
+run in \textit{userland} (i.e.\ the context of an ordinary user process). This provides
 a considerable performance advantage over conventional approaches to network monitoring.
 A typical network monitor runs in \textit{userspace}, meaning that packets need to be
 copied over from kernelspace before they can be properly analyzed. This is an expensive
@@ -1338,7 +1338,7 @@ backbone of widely used traffic monitoring tools, most notably tcpdump~\cite{tcp
 mccanne1993_bpf}. In Linux, the \texttt{seccomp(2)} system
 call~\cite{anderson2017_comparison} was enhanced to include classic \gls{bpf} filters,
 allowing a user process to use classic \gls{bpf} programs to define allowlists and
-denylists of system calls (c.f.~\Cref{sss:seccomp}).
+denylists of system calls (c.f.\ \Cref{sss:seccomp}).
 
 In 2014, Alexei Starovoitov and Daniel Borkmann~\cite{starovoitov2014_ebpf} first proposed
 a total overhaul of the Linux \gls{bpf} engine. Their proposal, dubbed \gls{ebpf}, expanded the
@@ -1400,17 +1400,17 @@ constraints~\cite{starovoitov2014_ebpf, gregg2019_bpf}.
 In particular, \gls{ebpf} programs must consist of fewer than 1 million \gls{bpf}
 instructions and must not call into any kernel functions outside of the allowlisted
 helpers. The program is also constrained to a 512 byte stack size; any additional memory
-required by the program must come from an \gls{ebpf} map (c.f.~\Cref{ss:bpf-maps-bg}). For
+required by the program must come from an \gls{ebpf} map (c.f.\ \Cref{ss:bpf-maps-bg}). For
 safety, memory accesses into allocated buffers must be properly bounds checked, pointers
 must be null-checked before dereferencing, and any access to external memory
-(e.g.~belonging to userspace programs or to the kernel itself) must be read-only. Since
+(e.g.\ belonging to userspace programs or to the kernel itself) must be read-only. Since
 \gls{ebpf} programs must provably terminate, no back-edges are permitted in their control
 flow and all loops must be bounded by some fixed constant $i$ iterations.
 
 To guard against data races, \gls{ebpf} programs always hold the kernel's RCU (read-copy-update)
 lock while executing, gated by the \texttt{bpf\_prog\_enter} and \texttt{bpf\_prog\_exit}
 functions in the kernel. In simple terms, the RCU lock allows concurrent reads, except in
-the presence of updates, optimizing for read-mostly workloads (i.e.~precisely the sort of
+the presence of updates, optimizing for read-mostly workloads (i.e.\ precisely the sort of
 workload \gls{ebpf} is designed for)~\cite{mckenney2007_rcu}. This implicitly enables \gls{bpf}
 programs to read from many common kernel data structures without fear of data races and
 simultaneously protects reads and updates to \gls{ebpf} maps, at a slight (albeit reasonable)
@@ -1418,7 +1418,7 @@ performance penalty~\cite{mckenney2007_rcu}. In addition to holding the RCU lock
 programs are not considered \textit{preemptable} by default. In practice, this means that
 \gls{ebpf} programs cannot sleep and must run to termination on their assigned core. This
 property, while useful in many circumstances, enforces undesirable limitations on \gls{ebpf}
-helpers, since it precludes any functionality that may cause the program to sleep (e.g.~a
+helpers, since it precludes any functionality that may cause the program to sleep (e.g.\ a
 page fault). To account for use cases where sleeping is unavoidable, Linux 5.10 introduced
 sleepable versions of some \gls{ebpf} program types~\cite{starovoitov2020_sleepable}.
 
@@ -1427,14 +1427,14 @@ own reference count. Loading a \gls{bpf} program and attaching it to a system ev
 the reference count, while detaching and unloading the program decrements the reference
 count. The kernel also exposes a special filesystem, \textit{bpffs} , which allows \gls{bpf}
 programs to be pinned. This also increments the reference count, allowing an attached
-program to outlive its controlling process (i.e.~the process that loaded and attached
+program to outlive its controlling process (i.e.\ the process that loaded and attached
 it)~\cite{gregg2019_bpf}.
 
 \subsubsection*{Working with the Verifier}
 
 In practice, the restrictions imposed by the verifier mean that \gls{ebpf} programs are not
 \textit{Turing-complete}~\cite{gregg2019_bpf}.  This property is required, given that the
-halting problem (i.e.~the decidability of program termination) is known not to be solvable
+halting problem (i.e.\ the decidability of program termination) is known not to be solvable
 for Turing-complete programs. This notion of Turing-incompleteness means that the set of
 all possible \gls{ebpf} programs is a strict subset of the set of all possible C programs. While
 these limitations help to ensure program safety, they also naturally restrict some
@@ -1475,7 +1475,7 @@ types and their properties.
   \textit{\gls{lsm} Probes}    & \gls{lsm} probes~\cite{singh2019_krsi} attach to the kernel's \gls{lsm} hooks and can be used to audit security events and make policy decisions.\\
   \textit{Raw Tracepoints}     & Raw tracepoint programs attach to a stable tracing interface exposed by the Linux kernel. Tracepoints are considered a stable \gls{api}, but are more limiting than alternatives such as Kprobes or Fentry probes.\\
   \textit{Kprobes/Kretprobes}  & Kprobe programs can attach to any kernel function, by replacing the function with a trap into the \gls{bpf} program. The \gls{bpf} program has read-only access to the function arguments. Kretprobes work in the same way, but handle function returns instead of function calls.\\
-  \textit{Fentry/Fexit Probes} & A more efficient version of Kprobes and Kretprobes that directly trampolines into the \gls{bpf} program instead of trapping. These programs can also be used to modify the return value of specifically allowlisted kernel functions (e.g.~system call implementations).\\
+  \textit{Fentry/Fexit Probes} & A more efficient version of Kprobes and Kretprobes that directly trampolines into the \gls{bpf} program instead of trapping. These programs can also be used to modify the return value of specifically allowlisted kernel functions (e.g.\ system call implementations).\\
   \textit{Uprobes/Uretprobes}  & The userspace equivalent of Kprobes and Kretprobes.\\
   \textit{\glsentryshort{usdt} Probes}  & A statically defined version of uprobes and uretprobes. Application developers may place these at strategic points within an application in order to add explicit support for userspace tracing at compile-time.\\
   \bottomrule
@@ -1488,7 +1488,7 @@ It is worth spending more time focusing specifically on \gls{lsm} probes, as the
 extensively in \bpfbox{} and \bpfcontain{} to enforce policy over security-sensitive
 events. Introduced by KP Singh in his \gls{krsi}
 patch~\cite{singh2019_krsi}, \gls{lsm} probes define a canonical framework for attaching \gls{ebpf}
-programs to the Linux kernel's \gls{lsm} security hooks (c.f.~\Cref{ss:mac}). Unlike
+programs to the Linux kernel's \gls{lsm} security hooks (c.f.\ \Cref{ss:mac}). Unlike
 traditional \gls{lsm}s which are implemented as static kernel modules, \gls{lsm} probes are
 \textit{dynamically attachable}, meaning that \gls{mac} and audit policy can be adjusted at
 runtime, simply by loading a new \gls{ebpf} program.  \Cref{fig:bpf-lsm} depicts how \gls{lsm} probes
@@ -1503,7 +1503,7 @@ integrate with the \gls{lsm} framework.
 
 As with other \gls{lsm}s, \gls{lsm} probes implement a form of mandatory access control.
 Each \gls{lsm} probe can be attached to one or more \gls{lsm} hooks defined in the kernel.
-When the hook fires (i.e.~when a task requests a privileged operation form the kernel),
+When the hook fires (i.e.\ when a task requests a privileged operation form the kernel),
 every attached probe fires as part of the normal \gls{lsm} pipeline. The body of the
 \gls{bpf} program defines filtering and audit logic, optionally accessing maps to store
 and query persistent state. The \gls{bpf} program then returns a security decision about
@@ -1516,7 +1516,7 @@ probe.
 Owing to the properties discussed earlier in this section, \gls{ebpf} confers a natural
 flexibility to \gls{lsm} probes quite unlike that of traditional \gls{lsm}-based security
 frameworks.  In particular, \gls{lsm} probes can be attached at runtime and can cooperate
-with other \gls{ebpf} program types using \gls{ebpf} maps (c.f.~\Cref{ss:bpf-maps-bg}).
+with other \gls{ebpf} program types using \gls{ebpf} maps (c.f.\ \Cref{ss:bpf-maps-bg}).
 This notion of cooperating programs presents an opportunity to design modular policy
 enforcement mechanisms that operate beyond the scope of the \gls{lsm} hooks framework
 itself.  Another key advantage of \gls{lsm} probes over traditional \gls{lsm}s lies in
@@ -1596,9 +1596,9 @@ or higher, barring any \gls{api} incompatibilities like changes in a hooker func
 Such incompatibilities can be resolved with the use of built-in kernel configuration
 checks.
 
-\bpfcontain{} (c.f.~\Cref{c:bpfcontain}) leverages libbpf and \gls{core} through libbpf-rs, the
+\bpfcontain{} (c.f.\ \Cref{c:bpfcontain}) leverages libbpf and \gls{core} through libbpf-rs, the
 canonical Rust bindings for libbpf, providing adoptability advantages over the original
-\bpfbox{} prototype (c.f.~\Cref{c:bpfbox}), which uses bcc.
+\bpfbox{} prototype (c.f.\ \Cref{c:bpfbox}), which uses bcc.
 
 \subsection{Comparing eBPF with Loadable Kernel Modules}%
 \label{ss:bpf-vs-modules}

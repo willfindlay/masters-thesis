@@ -83,7 +83,7 @@ guest operating system, virtualized hardware, and physical hardware. Here, secur
 intrinsically tied to functionality. Administrators poke holes in this isolation all the
 time, through shared filesystems, virtual network interfaces, and the like. From there, it
 is up to the administrator to use conventional \gls{os} security mechanisms
-(c.f.~\Cref{s:process-security-model,s:security-extensions} in \Cref{c:background}) such
+(c.f.\ \Cref{s:process-security-model,s:security-extensions} in \Cref{c:background}) such
 as filesystem access controls and network firewalls to lock down the exposed interface.
 A clear pattern emerges: first provision the resource, then secure it, just as in an
 ordinary operating system (after all, a guest operating system \textit{is} just an
@@ -126,7 +126,7 @@ implement the missing confinement mechanism that will enable our vision for cont
 security to become a reality.
 
 Before we can address concrete goals for such a confinement mechanism
-(c.f.~\Cref{s:cp-design,s:cp-threat-model}), it is important to understand the fundamental
+(c.f.\ \Cref{s:cp-design,s:cp-threat-model}), it is important to understand the fundamental
 issues underlying the current state-of-the-art in Linux confinement and container
 security. To that end, \Cref{s:cp-issues} outlines three main issues with current Linux
 confinement primitives and \Cref{s:cp-containers} examines and critiques how container
@@ -323,7 +323,7 @@ of decreasing prioritization, they are:
   \item \textbf{Virtualization.}
     Containers should virtualize system resources, creating the illusion of running on
     a separate physical machine. Where possible, resources should be transparently reused
-    between multiple containers (e.g.~sharing a single base copy of the same shared
+    between multiple containers (e.g.\ sharing a single base copy of the same shared
     library between two container images).
 
     To achieve virtualization, containers generally rely on the namespaces and cgroups
@@ -420,14 +420,14 @@ administrators claim that no user data was actually compromised~\cite{newsblur}.
 
 To rectify the issues discussed in \Cref{s:cp-issues} and \Cref{s:cp-containers}, this
 thesis introduces two novel confinement mechanisms, \bpfbox{} and \bpfcontain{},
-implemented using \gls{ebpf}. \bpfbox{} (c.f.~\Cref{c:bpfbox}) is a sandboxing framework
+implemented using \gls{ebpf}. \bpfbox{} (c.f.\ \Cref{c:bpfbox}) is a sandboxing framework
 that enables the definition of simple yet precise per-application policies that can be
 dynamically loaded and enforced at runtime. Leveraging \gls{ebpf}'s system
 introspection capabilities, \bpfbox{} policies can specify rules that span userspace and
 kernelspace, targeting behaviours at the per-function-call level and enforcing policy
 through \gls{lsm} hooks.
 
-\bpfcontain{} (c.f.~\Cref{c:bpfcontain}) extends \bpfbox{} to model container semantics,
+\bpfcontain{} (c.f.\ \Cref{c:bpfcontain}) extends \bpfbox{} to model container semantics,
 enabling it to clearly define a hard boundary around containerized processes.
 \bpfcontain{} policies then define explicit exceptions to the default protection boundary,
 offering fine-grained control over the interface that a container exposes to the outside
@@ -572,7 +572,7 @@ confinement problem described in this chapter. Rather than a completely new syst
 In particular, \bpfbox{} satisfies each of the design goals enumerated in
 \Cref{s:cp-design} to varying degrees; \bpfcontain{} improves upon this by further
 simplifying the policy language, introducing container-level policy semantics, and
-improving adoptability by leveraging \gls{bpf} \gls{core} (c.f.~\Cref{ss:bpf-userspace} in
+improving adoptability by leveraging \gls{bpf} \gls{core} (c.f.\ \Cref{ss:bpf-userspace} in
 \Cref{c:background}).
 
 Thus, \bpfbox{} and \bpfcontain{} should not be seen as competing or even complementary

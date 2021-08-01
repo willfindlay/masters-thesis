@@ -215,7 +215,7 @@ undergone significant performance optimizations over time. Future optimizations 
 a seemingly high performance overhead in the \textbf{Passive} and \textbf{Allow} cases,
 \bpfbox{} and \bpfcontain{} incur a performance penalty of under 12$\mu$s each.  The
 kernel compilation macro-benchmarks, presented later in this section
-(c.f.~\Cref{fig:phoronix-kernel} and \Cref{tab:phoronix-kernel-compilation}) indicate that
+(c.f.\ \Cref{fig:phoronix-kernel} and \Cref{tab:phoronix-kernel-compilation}) indicate that
 this slowdown has very little effect on even moderately complex workloads.  Moreover, in
 the \textbf{Complaining} case, \bpfbox{} and \bpfcontain{} significantly outperform
 AppArmor. This result can be attributed to implementation differences in their
@@ -382,7 +382,7 @@ percentage overhead of \bpfbox{} and \bpfcontain{} is still under 10\%.
 \subsubsection{OSBench Program Launching}
 
 The launch programs benchmark (\Cref{tab:phoronix-launch-programs} and \Cref{fig:osbench}) is essentially the
-same as the process creation benchmark (c.f.~\Cref{tab:phoronix-create-processes}), with one
+same as the process creation benchmark (c.f.\ \Cref{tab:phoronix-create-processes}), with one
 major difference: the addition of an \texttt{execve(2)} call after the \texttt{clone(2)}
 system call. This \texttt{execve(2)} call adds a constant overhead of about 20$\mu$s on
 top of the original process creation results, as well as additional \gls{lsm} hook
@@ -393,7 +393,7 @@ case.
 
 The additional \gls{lsm} hook invocations caused by the \texttt{execve(2)} severely impact
 AppArmor's performance in the \textbf{Complaining} case for the same reasons as discussed
-in the file creation results (c.f.~\Cref{tab:phoronix-create-files}). \bpfbox{} and \bpfcontain{}
+in the file creation results (c.f.\ \Cref{tab:phoronix-create-files}). \bpfbox{} and \bpfcontain{}
 exhibit comparatively little overhead despite the \texttt{execve(2)} call. This result
 can be explained by the fact that \texttt{execve(2)}'s code path invokes significantly
 fewer \gls{lsm} hooks than the file creation and deletion code paths we examined earlier.
@@ -753,12 +753,12 @@ processes.
 In order to restrict access to files (and special files), our enforcement engine must have
 complete mediation over the set of all file operations exposed by the \gls{os} kernel and
 our policy language must be expressive enough such that it can express the set of all
-allowed operations on a specific filesystem object (e.g.~an inode).
+allowed operations on a specific filesystem object (e.g.\ an inode).
 
 \subsubsection{\bpfbox{}}
 
 To confine a process' access to the filesystem, \bpfbox{} supports \enquote{file} rules
-(c.f.~\Cref{ss:bpfbox-filesystem-rules}), which take a pathname and corresponding access
+(c.f.\ \Cref{ss:bpfbox-filesystem-rules}), which take a pathname and corresponding access
 vector. This access vector encodes the specific file operations that a process can perform
 on the file. Since \bpfbox{} policies are default-deny, an adversary running under
 a \bpfbox{} confinement policy should be unable to perform an operation $Op_i$ on any file
@@ -851,7 +851,7 @@ capabilities in any way. Instead, \bpfbox{} denies access to system resources us
 \gls{lsm} hooks directly. To prevent the adversary from interfering with \bpfbox{}'s
 \gls{ebpf} programs or maps, \bpfbox{} always denies the \texttt{bpf(2)} system call from
 a confined process, as well as any system calls that could load code into the kernel
-(e.g.~load a kernel module).
+(e.g.\ load a kernel module).
 
 The current version of \bpfbox{} does not perform any access validation on mounting
 filesystems, which could potentially allow an attacker to modify the global filesystem
@@ -895,12 +895,12 @@ This provides improved security over traditional \gls{lsm}-based approaches, as 
 Access to the kernel's networking stack enables an adversary to connect to remote hosts,
 potentially enabling the exfiltration of sensitive data or providing an entrypoint for
 additional attacks. A network socket could also be used by an attacker to bypass
-inter-process communication checks (i.e.~two processes could communicate over the network
+inter-process communication checks (i.e.\ two processes could communicate over the network
 instead of using canonical \gls{ipc} mechanisms provided by the kernel). Thus, securing
 the kernel's networking stack is critically important for ensuring confinement.
 % Access to the
 % network also leaves a confined process vulnerable to outside attacks by a remote adversary
-% (e.g.~memory corruption attacks using input from the network).
+% (e.g.\ memory corruption attacks using input from the network).
 
 \subsubsection{\bpfbox{}}
 
@@ -914,7 +914,7 @@ improving security in the case where a remote adversary wants to interact with a
 or exfiltrate sensitive information.
 
 The \bpfbox{} prototype presented in this thesis does not support defining more advanced
-network policy at the protocol-level (e.g.~filtering network traffic by \gls{ip} addresses
+network policy at the protocol-level (e.g.\ filtering network traffic by \gls{ip} addresses
 and port numbers). This means that \bpfbox{} cannot discriminate between network traffic
 according to its source and destination, potentially enabling network-based attacks for
 software that requires a network connection to function.  Adding support for more advanced
@@ -926,7 +926,7 @@ improve the granularity of network policy.
 Like \bpfbox{}, \bpfcontain{} defines network policy at the socket layer, through its own
 \enquote{network} rules. However, \bpfcontain{} greatly simplifies the \bpfbox{} model by
 restricting network rules to the IPv4 and IPv6 address families. Other families are either
-covered under \gls{ipc} rules (c.f.~the next subsection) or are outright denied by
+covered under \gls{ipc} rules (c.f.\ the next subsection) or are outright denied by
 default. Future versions of \bpfcontain{} may define additional rules for interacting with
 other address families like netlink.
 

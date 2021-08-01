@@ -52,7 +52,7 @@ To confine an application, a user first authors a high-level policy written in \
 domain-specific policy language\footnote{Subsequent iterations on \bpfbox{} experimented
 with a TOML-based policy language, before the transition to \bpfcontain{}. We document the
 original domain-specific language here, and leave alternative policy languages to
-\bpfcontain{} (c.f.~\Cref{c:bpfcontain}).} (outlined in \Cref{s:bpfbox-policies}). The
+\bpfcontain{} (c.f.\ \Cref{c:bpfcontain}).} (outlined in \Cref{s:bpfbox-policies}). The
 policy language is designed in such a way as to permit the authorship of simple
 confinement policies while offering the ability to augment them with specific context.
 Thus, the user has full control over the balance between policy expressiveness and policy
@@ -175,7 +175,7 @@ it provides and how it is implemented.
 
 \bpfbox{} policies are per-executable and are stored in an exclusively root-controlled
 directory (by default, \texttt{/var/lib/bpfbox/}), written in \bpfbox{}'s policy language
-(c.f.~\Cref{s:bpfbox-policies}). When an executable is loaded, \bpfbox{} loads the corresponding
+(c.f.\ \Cref{s:bpfbox-policies}). When an executable is loaded, \bpfbox{} loads the corresponding
 policy file (if it exists) and translates it into a series of function calls to \gls{usdt}
 stub functions.  These function calls trigger the corresponding \gls{ebpf} code, thus recording
 the policy in the policy maps as a set of policy structures.  A policy structure consists

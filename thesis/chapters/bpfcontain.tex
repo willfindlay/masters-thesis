@@ -19,7 +19,7 @@ outlined in \Cref{s:cp-design} of \Cref{c:confinement-problem} is arguably hampe
 a few inherent limitations. We enumerate and describe these limitations as follows.  The
 goal is to examine these limitations as an early motivating factor for the development of
 \bpfcontain{}, which will inform later comparisons between these two systems
-(c.f.~\Cref{s:bpfcontain-improvements}).
+(c.f.\ \Cref{s:bpfcontain-improvements}).
 
 \begin{enumerate}
   \item \textbf{Dependency Overhead and Runtime Overhead.}
@@ -68,7 +68,7 @@ goal is to examine these limitations as an early motivating factor for the devel
 \subsection{Motivating \bpfcontain{}}
 
 The key insight behind \bpfcontain{} is that \bpfbox{} approached the confinement problem
-(c.f.~\Cref{c:confinement-problem}) from a \textit{per-process} perspective. When dealing
+(c.f.\ \Cref{c:confinement-problem}) from a \textit{per-process} perspective. When dealing
 with containers, we should instead approach the confinement problem from
 a \textit{per-process-group} perspective. That is, we expand the unit of confinement from
 an individual process to a collection of related processes. Specifically, our goal is to
@@ -142,7 +142,7 @@ will discuss each of these items in detail.
 \bpfcontain{} is a container security daemon for Linux with an emphasis on simple,
 high-level confinement policies for container deployments. Although it is expressly
 designed to work with container semantics in mind, \bpfcontain{} implements a superset of
-\bpfbox{}'s capabilities (c.f.~\Cref{c:bpfbox}) and works for confining ordinary
+\bpfbox{}'s capabilities (c.f.\ \Cref{c:bpfbox}) and works for confining ordinary
 applications as well as containers. To achieve confinement, \bpfcontain{} leverages
 \gls{ebpf} programs attached to \gls{lsm} hooks in the kernel for security enforcement.
 
@@ -257,7 +257,7 @@ any supported kernel, regardless of the underlying configuration or architectura
 
 \bpfcontain{} leverages several \gls{bpf} program and map types to implement container
 tracing and confinement. While many of the major program types are shared with \bpfbox{},
-there are a few distinct differences (c.f.~\Cref{ss:bpfbox-architecture} of
+there are a few distinct differences (c.f.\ \Cref{ss:bpfbox-architecture} of
 \Cref{c:bpfbox}). We enumerate these differences as follows. Map types are outlined in
 \textbf{\green{green}} and program types are outlined in \textbf{\purple{purple}}.
 \begin{itemize}
@@ -421,14 +421,14 @@ namespace membership after starting confinement.
 results in the access being denied, and the corresponding system call returning
 \texttt{-EACCES} to the user. A decision of \texttt{taint} causes \bpfcontain{} to taint
 the container, a process that is similar in spirit to tainting under \bpfbox{}
-(c.f.~\Cref{ss:bpfbox-enforcement} of \Cref{c:bpfbox}). When a container is tainted, it
+(c.f.\ \Cref{ss:bpfbox-enforcement} of \Cref{c:bpfbox}). When a container is tainted, it
 transitions into a stricter default-deny policy. Finally, a decision of \texttt{forcequit}
 causes the kernel to terminate the offending process by delivering an uncatchable
 \texttt{SIGKILL}\footnote{\texttt{SIGKILL} is a POSIX signal that causes a process to
 immediately force quit. Unlike most signals, this signal cannot be ignored or handled by
 the process.}. This decision is reserved for aggressive violations of \bpfcontain{}'s
 default policy, such as a process attempting to load code into the kernel
-(c.f.~\Cref{ss:bpfcontain-default}).
+(c.f.\ \Cref{ss:bpfcontain-default}).
 
 When enforcing policy, \bpfcontain{} employs a simple heuristic to judge what the
 resulting policy decision should be. If any rule matches a \texttt{deny} decision, the
@@ -531,7 +531,7 @@ membership.
 
 There are a few technical challenges surrounding this idea, but it should be possible to
 achieve in the future, once \bpfcontain{} has been more integrated with Docker
-(c.f.~\Cref{ss:disc-docker-integration} in \Cref{c:discussion}). In particular, we can use
+(c.f.\ \Cref{ss:disc-docker-integration} in \Cref{c:discussion}). In particular, we can use
 \gls{ebpf} uprobes and kfunc probes to trace Docker's containerd shim as it switches
 namespaces and mounts the appropriate filesystems. We could then incorporate these
 filesystems directly into \bpfcontain{}'s default policy, without relying on user
@@ -622,7 +622,7 @@ including the policy name and a few tunable parameters. Tunables include the abi
 mark a container as pre-tainted and the ability to specify a command to use as the default
 entrypoint for \texttt{bpfcontain-run}. A pre-tainted container spawns tainted rather than
 untainted, falling back to stricter defaults when no rule matches the requested access
-(c.f.~\Cref{fig:bpfcontain-enforcement} on page \pageref{fig:bpfcontain-enforcement}).
+(c.f.\ \Cref{fig:bpfcontain-enforcement} on page \pageref{fig:bpfcontain-enforcement}).
 
 Aside from policy metadata, the policy is divided into four sections: allow, deny, and
 taint. Each of these sections specifies the corresponding policy decision for any rules
@@ -734,7 +734,7 @@ Unlike \bpfbox{}, \bpfcontain{} takes great care to avoid conflating regular fil
 special files. The key insight underlying this design choice is that the semantics of
 regular files and special files are quite different, despite supporting fundamentally the
 same operations. Provisioning over-permissive access to the wrong special file
-(e.g.~\texttt{/dev/mem}, which provides access to the system memory map) can have
+(e.g.\ \texttt{/dev/mem}, which provides access to the system memory map) can have
 devastating security consequences. For this reason, access to a special file must be
 specified via a \textit{device rule} using the \lstinline[language=yaml]|dev| keyword,
 rather than the \lstinline[language=yaml]|file| or \lstinline[language=yaml]|filesystem|
@@ -761,7 +761,7 @@ may be omitted to match \textit{any} device of the specified major number.
 high-level use cases, rather than the underlying socket operations themselves. This
 approach is informed by the insight that specific applications tend use specific sets of
 socket operations, depending on if the application is designed as a client, a server, or
-some combination of the two (e.g.~a peer-to-peer model). Specifically, a server would
+some combination of the two (e.g.\ a peer-to-peer model). Specifically, a server would
 require the ability to create sockets, bind them to an \gls{ip} address, listen for and
 accept incoming connections, and shut down existing connections. Conversely, a client
 generally needs to connect to an existing bound socket. We further partition access by
@@ -788,7 +788,7 @@ overview of these access categories.
 
 \bpfcontain{}'s network policy covers \gls{ip}v4 and \gls{ip}v6 sockets. Netlink and raw
 packet sockets are prohibited by default, and Unix domain sockets are relegated to
-\gls{ipc} rules rather than network rules (c.f.~\Cref{ss:bpfcontain-ipc}).
+\gls{ipc} rules rather than network rules (c.f.\ \Cref{ss:bpfcontain-ipc}).
 
 \subsection{\glsentryshort{ipc} Rules}%
 \label{ss:bpfcontain-ipc}
@@ -866,7 +866,7 @@ Python.
 \bpfcontain{} greatly simplifies the original \bpfbox{} policy language. Rather than
 defining a specific policy language syntax, \bpfcontain{} defines a schema that can be
 encoded in multiple different data serialization languages.  This simultaneously enables
-\bpfcontain{} to support a policy language that users will be familiar with (e.g.~YAML)
+\bpfcontain{} to support a policy language that users will be familiar with (e.g.\ YAML)
 and provides a clear path for extending \bpfcontain{} to support additional policy
 languages in the future. Further, this approach presents an opportunity for integrating
 \bpfcontain{} policy with existing specifications, such as the \gls{oci} specification or

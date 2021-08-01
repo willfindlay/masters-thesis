@@ -282,7 +282,7 @@ side.
 % \begin{inprogress}
 %   \begin{itemize}
 %     \item Currently, \bpfbox{} and \bpfcontain{} are competitive with mainstream
-%     confinement solutions based on \gls{lsm} (e.g.~AppArmor, see chapter 6)
+%     confinement solutions based on \gls{lsm} (e.g.\ AppArmor, see chapter 6)
 %     \item This competitiveness is actually an advantage, considering that \bpfbox{} and
 %     \bpfcontain{} can be dynamically loaded and attached to various system events. In this sense,
 %     we are getting increased flexibility without paying much of a cost in performance.
@@ -519,7 +519,7 @@ within an image's \gls{oci} representation and enable \bpfcontain{} to infer cer
 aspects of its policy from existing \gls{oci} data.
 
 Another potential avenue for extending \bpfcontain{} is to use \gls{ebpf} programs to
-trace the container runtime (e.g.~Docker's \texttt{containerd} and \texttt{moby}),
+trace the container runtime (e.g.\ Docker's \texttt{containerd} and \texttt{moby}),
 mediating the setup phase to enforce policy on specific aspects of container construction.
 This approach could also be used to infer policy, for example by interposing on the
 filesystem mounts created by the container runtime to infer filesystem policy or observing
@@ -591,7 +591,7 @@ mark a significant improvement in \bpfcontain{}'s network security guarantees.
 %     \item Further, it is often desirable to only have a container's network interface exposed to the local system
 %     \item Since policies lock down access to the rest of the system, this isn't as severe of a problem as it could be... Remote adversaries are still confined to accessing specific system resources according to the confinement policy
 %     \item But it would still be better to support much finer-grained networking policy from a least-privilege point of view
-%     \item Eliminate the need for a netfilter firewall (e.g.~iptables) for securing container's networking stack
+%     \item Eliminate the need for a netfilter firewall (e.g.\ iptables) for securing container's networking stack
 %   \end{itemize}
 
 %   How network policy could be extended

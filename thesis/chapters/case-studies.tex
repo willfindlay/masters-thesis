@@ -39,7 +39,7 @@ GitHub~\cite{docker_default_apparmor}.
     confinement primitives, including AppArmor, Seccomp-bpf, and dropped POSIX
     capabilities at runtime. Docker generates and loads AppArmor policy at container
     runtime using a pre-determined, coarse-grained AppArmor template file
-    (c.f.~\Cref{lst:docker-default}).
+    (c.f.\ \Cref{lst:docker-default}).
   }%
   \label{tab:docker-default}
   \footnotesize
@@ -284,9 +284,9 @@ rules in the policy.
 As with the procfs and sysfs policy, \bpfcontain{} also includes sensible defaults for
 \gls{ipc} and ptrace access. In particular, processes running within the same container
 are free to perform \gls{ipc} with one another and ptrace one another, so long as the
-basic Unix access rights are satisfied (e.g.~the process possesses CAP\_PTRACE or is the
+basic Unix access rights are satisfied (e.g.\ the process possesses CAP\_PTRACE or is the
 direct ancestor of the tracee). In the case of signals and ptrace, these defaults directly
-match the Docker policy (c.f.~\Cref{tab:docker-default}).  In other cases, these defaults
+match the Docker policy (c.f.\ \Cref{tab:docker-default}).  In other cases, these defaults
 are more secure than the Docker policy, while permits all other forms of \gls{ipc}
 regardless of container membership.
 
@@ -413,7 +413,7 @@ capability to allow it to bind to privileged ports.
 
 We now turn our attentions to a more nuanced use case: confining a simple web server and
 database deployment. In particular, we focus on the Apache httpd web server and the MySQL
-data base management system. These two pieces of software are often used together (e.g.~as
+data base management system. These two pieces of software are often used together (e.g.\ as
 part of the LAMP stack~\todo{CITE}) and provide a good example of how we can define
 specific policy exceptions to allow two processes or containers to communicate with each
 other, and with the outside world. In this example, we assume that httpd and mysqld
@@ -442,7 +442,7 @@ the mysqld Unix socket, and the directory that httpd will use to serve web conte
 also define a rule allowing httpd to run suexec, a helper application used to launch
 \gls{cgi} scripts.  We indicate that launching suexec should untaint the process and
 transition to a suexec profile.  This profile would then define the access control policy
-for suexec (e.g.~which scripts it is allowed to run).
+for suexec (e.g.\ which scripts it is allowed to run).
 
 \clearpage
 

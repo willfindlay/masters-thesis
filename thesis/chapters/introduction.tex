@@ -15,14 +15,14 @@
 % virtualization and confinement and how conflating the two can result in problematic
 % misunderstandings about the security of a system. From first principles, a container is
 % nothing more than a group of associated processes (and system resources) managed by some
-% container management engine (e.g.~Docker or \textit{lxc}). While often used for dependency
+% container management engine (e.g.\ Docker or \textit{lxc}). While often used for dependency
 % management, containers also offer lightweight virtualization and confinement using
 % a series primitives exposed by the \gls{os} kernel. Namespaces and cgroups virtualize
 % system resources while confinement layers such as \texttt{seccomp(2)} provide some degree
 % of isolation from the rest of the system~\cite{sultan2019_container_security}.
 % Unfortunately, while virtualization primitives are widely used in container deployments,
 % the use of confinement primitives is often overlooked, oversimplified, or overly
-% permissive (i.e.~misconfigured) in practice~\cite{sultan2019_container_security}.
+% permissive (i.e.\ misconfigured) in practice~\cite{sultan2019_container_security}.
 
 % Despite their name, containers do a very poor job of actually \textit{containing}
 % a running process.  The Linux kernel already supports a set of strong virtualization
@@ -47,7 +47,7 @@
 % lies in a semantic gap between the containers themselves and the confinement primitives
 % that are used to secure them. Many academics have recognized this semantic gap. Some have
 % attempted to rectify it by introducing mechanisms for automatic policy derivation based on
-% container images (e.g.~the Docker image manifest) or observed behaviours at
+% container images (e.g.\ the Docker image manifest) or observed behaviours at
 % runtime~\todo{CITE ALL EXAMPLES}. Others have attempted to introduce new layers of
 % abstraction to security policies~\todo{CITE Snap et al} or into the kernel
 % itself~\todo{CITE security namespaces}. \todo{WHY ARE THESE BAD IN ONE SENTENCE?} This
@@ -60,8 +60,8 @@
 % continually updated as the kernel evolves. Further, end-users may be reluctant to adopt
 % and out-of-tree solution, particularly in production environments with low risk-tolerance.
 % Even worse, a static security mechanism is unlikely to work well for all use
-% cases\,---\,some users (e.g.~operators of multi-tenant container clouds) would like to
-% totally isolate containers from each other, while use cases (e.g.~microservices
+% cases\,---\,some users (e.g.\ operators of multi-tenant container clouds) would like to
+% totally isolate containers from each other, while use cases (e.g.\ microservices
 % deployments) may require individual containers to communicate and cooperate with each
 % other. Thus, our solution should be practical, light-weight, and flexible such that we can
 % define a container-level policy enforcement mechanism that can be readily adopted in
@@ -308,7 +308,7 @@ programs are not Turing-complete~\cite{gregg2019_bpf}.}, memory safety, and read
 access to kernel data structures. While itself not formally verified, the \gls{ebpf} verifier
 facilitates the adoption of new \gls{ebpf} programs into production use cases, since an \gls{ebpf}
 program is far less likely to adversely impact a production system than other methods of
-extending the kernel (e.g.~kernel patches and loadable kernel modules). In fact, \gls{ebpf} is
+extending the kernel (e.g.\ kernel patches and loadable kernel modules). In fact, \gls{ebpf} is
 already being used in production at large datacenters by Facebook, Netflix, Google, and
 others to monitor server workloads for security and performance
 regressions~\cite{gregg2019_bpf}. These factors make \gls{ebpf} a promising choice for
