@@ -98,7 +98,7 @@
 \addbibresource{refs.bib}
 
 \title{A Practical, Light-Weight, and Flexible Confinement Framework in eBPF}
-\author{William P.~Findlay}
+\author{William P.\ Findlay}
 \date{August, 2021}
 
 \hyphenation{App-Armor}
@@ -132,16 +132,44 @@
 
 \chapter*{Abstract}%
 \addcontentsline{toc}{chapter}{Abstract}%
-\todo{ABSTRACT HERE}
+\begingroup
+\small
+\todo{Abstract here}
+\endgroup
 \cleardoublepage%
 
 \chapter*{Acknowledgements}%
 \addcontentsline{toc}{chapter}{Acknowledgements}%
-\todo{ACKNOWLEDGEMENTS HERE}
+\begingroup
+\small
+I would first and foremost like to thank my thesis supervisors, Dr.\ Anil Somayaji and
+Dr.\ David Barrera for their constant support, sage advice, and invaluable feedback
+(particularly on early drafts of this document). I feel confident in saying that I would
+not have reached this point in my graduate school career if not for their dedication and
+encouragement. I would also like to thank my committee, Dr.\ Lianying (Viau) Zhao and
+Dr.\ Paula Branco for taking the time to read and evaluate my work.
+
+I would also like to thank the professors and fellow members of the CCSL/CISL sister labs
+for their valuable feedback on early iterations of my work, and for providing
+a stimulating environment to learn, grow, and foster my passion for operating system security.
+
+I am indebted to the many valuable members of the BPF and Linux kernel development
+community, whose hard work and dedication to free and open source software is reflected in
+the very foundations of this research. In particular, I would like to acknowledge Alexei
+Starovoitov and Daniel Borkmann for creating eBPF, and K.P.\ Singh for his work on bringing
+LSM hook support to BPF\@. Many other members of the BPF community have proved invaluable
+sources of inspiration and guidance throughout my academic career. While they are too many
+to name here, I appreciate them all the same.
+
+Lastly, I would like to thank my friends and family for their continued and unwavering
+support throughout this endeavour (and for many more endeavours to come).
+\endgroup
 \cleardoublepage%
 
 \chapter*{Prior Publication}%
 \addcontentsline{toc}{chapter}{Prior Publication}%
+\begingroup
+\small
 A publication and pre-print have arisen as a direct result of the research in this thesis.
 While these works represent joint contributions of all authors, any sections reproduced in
 this thesis represent the sole work of the thesis author, with editorial and positioning
@@ -157,6 +185,7 @@ Fixing the Soft Underbelly of Container Security}~\cite{findlay2021_bpfcontain},
 co-authored with David Barrera and Anil Somayaji. An early draft of this work is available
 on the ArXiV pre-print database, although it differs substantially from the version
 presented in this thesis.
+\endgroup
 \cleardoublepage%
 
 % TOC
