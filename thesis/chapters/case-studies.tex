@@ -22,7 +22,8 @@ with the outside world. In this example, we assume that httpd and mysqld communi
 each other using a shared Unix domain socket, created by mysqld. We synthesize policies
 through a combination of running the programs under \texttt{strace}, finding library
 dependencies with \texttt{ldd}, and running the programs under \bpfcontain{}'s complaining
-mode.
+mode. We use the output of these tools along with \bpfcontain{}'s log output to write
+the security policies by hand.
 
 \subsubsection{\bpfbox{}}
 
@@ -327,14 +328,14 @@ performed any \gls{ipc} with httpd.
 
 \subsubsection{Simplifying the \bpfcontain{} Example}
 
-Once \bpfcontain{} has been fully integrated with Docker support, we can greatly simplify
-the above policy examples, leveraging default filesystem policy to grant access to all of
-the required files, without the need to explicitly specify rules for each file. We
-leverage a shared \texttt{/tmp} filesystem, mounted on the host, to allow both mysqld and
-httpd to access the same Unix socket. The result is an extremely simple policy that can
-express all the required interfaces in just a few lines. \Cref{lst:bpfcontain-httpd-next}
-and \Cref{lst:bpfcontain-mysqld-next} give example policies for httpd and mysqld
-respectively.
+Once \bpfcontain{} has been fully integrated with Docker support, it may become possible
+to greatly simplify the above policy examples, leveraging default filesystem policy to
+grant access to all of the required files, without the need to explicitly specify rules
+for each file. We leverage a shared \texttt{/tmp} filesystem, mounted on the host, to
+allow both mysqld and httpd to access the same Unix socket. The result is an extremely
+simple policy that can express all the required interfaces in just a few lines.
+\Cref{lst:bpfcontain-httpd-next} and \Cref{lst:bpfcontain-mysqld-next} give example
+policies for httpd and mysqld respectively.
 
 \begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A simplified \bpfcontain{} policy for Apache httpd]
   A simplified \bpfcontain{} policy for Apache httpd running in a Docker container,

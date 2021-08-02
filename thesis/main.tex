@@ -113,6 +113,12 @@
 
 \renewcommand{\lstlistlistingname}{List of Code Listings}
 
+% Custom labels for research questions
+\newlist{rqenum}{enumerate}{1}
+\setlist[rqenum]{label=\textbf{RQ\arabic*}, ref=\textbf{RQ\arabic*}}
+\crefname{research question}{Research Question}{Research Questions}
+\crefalias{rqenumi}{research question}
+
 \begin{document}
 
 % ==============================================================================
@@ -205,35 +211,35 @@ flexibility.  We also find that there is significant opportunity to improve \bpf
 \endgroup
 \cleardoublepage%
 
-\chapter*{Acknowledgements}%
-\addcontentsline{toc}{chapter}{Acknowledgements}%
-\begingroup
-\small
-\enlargethispage{2\baselineskip}
-I would first and foremost like to thank my thesis supervisors, Dr.\ Anil Somayaji and
-Dr.\ David Barrera for their constant support, sage advice, and invaluable feedback
-(particularly on early drafts of this document). I feel confident in saying that I would
-not have reached this point in my graduate school career if not for their dedication and
-encouragement. I am also grateful to my other committee members, Dr.\ Lianying (Viau) Zhao
-and Dr.\ Paula Branco for taking the time to read and evaluate my work.
+% \chapter*{Acknowledgements}%
+% \addcontentsline{toc}{chapter}{Acknowledgements}%
+% \begingroup
+% \small
+% \enlargethispage{2\baselineskip}
+% I would first and foremost like to thank my thesis supervisors, Dr.\ Anil Somayaji and
+% Dr.\ David Barrera for their constant support, sage advice, and invaluable feedback
+% (particularly on early drafts of this document). I feel confident in saying that I would
+% not have reached this point in my graduate school career if not for their dedication and
+% encouragement. I am also grateful to my other committee members, Dr.\ Lianying (Viau) Zhao
+% and Dr.\ Paula Branco for taking the time to read and evaluate my work.
 
-I would also like to thank the professors and fellow members of the CCSL/CISL sister labs
-for their valuable feedback on early iterations of my work, and for providing
-a stimulating environment to learn, grow, and foster my passion for operating system security.
+% I would also like to thank the professors and fellow members of the CCSL/CISL sister labs
+% for their valuable feedback on early iterations of my work, and for providing
+% a stimulating environment to learn, grow, and foster my passion for operating system security.
 
-I am indebted to the many valuable members of the BPF and Linux kernel development
-community, whose hard work and dedication to free and open source software is reflected in
-the very foundations of this research. In particular, I would like to acknowledge Alexei
-Starovoitov and Daniel Borkmann for creating eBPF, Andrii Nakryiko for his work on
-\textit{libbpf} and CO-RE, and K.P.\ Singh for his work on bringing LSM hook support to
-BPF\@. Many other members of the BPF community have proved invaluable sources of
-inspiration and guidance throughout my academic career. While they are too many to name
-here, I appreciate them all the same.
+% I am indebted to the many valuable members of the BPF and Linux kernel development
+% community, whose hard work and dedication to free and open source software is reflected in
+% the very foundations of this research. In particular, I would like to acknowledge Alexei
+% Starovoitov and Daniel Borkmann for creating eBPF, Andrii Nakryiko for his work on
+% \textit{libbpf} and CO-RE, and K.P.\ Singh for his work on bringing LSM hook support to
+% BPF\@. Many other members of the BPF community have proved invaluable sources of
+% inspiration and guidance throughout my academic career. While they are too many to name
+% here, I appreciate them all the same.
 
-Lastly, I would like to thank my friends and family for their continued and unwavering
-support throughout this endeavour (and for many more endeavours to come).
-\endgroup
-\cleardoublepage%
+% Lastly, I would like to thank my friends and family for their continued and unwavering
+% support throughout this endeavour (and for many more endeavours to come).
+% \endgroup
+% \cleardoublepage%
 
 \chapter*{Prior Publication}%
 \addcontentsline{toc}{chapter}{Prior Publication}%

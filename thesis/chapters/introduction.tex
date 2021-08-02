@@ -79,7 +79,7 @@ not necessarily be the case. Confinement is critically important to maintaining 
 \textit{principle of least-privilege}~\cite{schneider03_least_privilege}, a quintessential
 property of a truly secure system~\cite{van_oorschot2020_tools_jewels}. Despite playing
 a critical role in systems security, the state of confinement on Linux is ill-suited to
-meet the practical needs of end-users on many \gls{cots} operating systems.
+meet the practical needs of the end-users of many \gls{cots} operating systems.
 
 Existing Linux confinement mechanisms are complex, and often target specific use cases
 beyond simple confinement. This results in a motley collection of isolation primitives
@@ -147,18 +147,18 @@ system performance.
 
 In this thesis, we consider the following research questions.
 
-\begin{enumerate}[label=\textbf{RQ\arabic*.}]
-  \item What difficulties in the current state of Linux confinement lead to the semantic
+\begin{rqenum}
+  \item \label{rq1} What difficulties in the current state of Linux confinement lead to the semantic
         gaps between policies and the entities they are designed to lock down? How can we design
         a novel confinement mechanism to rectify these difficulties?
 
-  \item Can \gls{ebpf} be used to implement a full-featured confinement framework?
-        What would such a framework look like and how would it compare with existing confinement frameworks?
+  \item \label{rq2} Can \gls{ebpf} be used to implement a full-featured confinement framework?
+        What would such a framework look like and how could it be made to model container semantics?
 
-  \item What levels of security and performance can we expect from a confinement mechanism
+  \item \label{rq3} What levels of security and performance can we expect from a confinement mechanism
         designed around \gls{ebpf}? What improvements to \gls{ebpf} would be required for
         a complete solution?
-\end{enumerate}
+\end{rqenum}
 
 \section{Motivation}%
 \label{s:motivation}
@@ -200,13 +200,6 @@ design of container management engines. If we truly want containers to be as sec
 virtual machines, we must rethink the way we secure container deployments. Security must
 be prioritized from the ground-up, but must not get in the way of functionality. Existing
 container frameworks accomplish the second goal, but not the first.
-% Given that
-% containers offer weaker isolation guarantees than alternatives like hardware virtual
-% machines (HVMs)~\todo{CITE} or even paravirtualization~\todo{CITE}, one might be inclined
-% to assume that container security would be of paramount importance. Contrary to this
-% assumption, container management frameworks take a lax attitude towards the enforcement of
-% least-privilege, provisioning overly-permissive blanket default policies and relying on
-% a complex suite of ill-suited security mechanisms provided by the host system.
 
 Docker, for instance, applies a default AppArmor policy revoking access to only the most
 sensitive kernel interfaces like procfs and sysfs and disabling the ability to mount new
@@ -347,16 +340,18 @@ confinement. These contributions are as follows.
 
   \item We evaluate (\Cref{c:evaluation}) \bpfbox{} and \bpfcontain{} in the context of
   their performance overhead and security. Specifically, we present results from
-  benchmarks along with an informal security analysis.
+  benchmarks along with an informal security analysis. We also discuss how extensions on
+  top of \bpfbox{} and \bpfcontain{} could improve their performance and security in the
+  future.
 
-  \item We discuss how \bpfbox{} and \bpfcontain{} can be used to implement several types
-  of confinement policy (\Cref{c:case-studies}), providing policy examples along with
-  detailed comparisons therein.
+  % \item We discuss how \bpfbox{} and \bpfcontain{} can be used to implement several types
+  % of confinement policy (\Cref{c:case-studies}), providing policy examples along with
+  % detailed comparisons therein.
 
-  \item We examine (\Cref{c:discussion}) how future iterations on \bpfcontain{} can
-  further improve its confinement guarantees, performance overhead, and general utility.
-  We also discuss how both \bpfbox{} and \bpfcontain{} are useful as proofs of concept,
-  and how \gls{ebpf} might be used to implement other security mechanisms in the future.
+  % \item We examine (\Cref{c:discussion}) how future iterations on \bpfcontain{} can
+  % further improve its confinement guarantees, performance overhead, and general utility.
+  % We also discuss how both \bpfbox{} and \bpfcontain{} are useful as proofs of concept,
+  % and how \gls{ebpf} might be used to implement other security mechanisms in the future.
 \end{itemize}
 
 \section{Outline}%

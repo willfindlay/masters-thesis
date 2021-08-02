@@ -124,7 +124,7 @@ modern operating systems often enforce a policy where pages marked writable and 
 allowed to be marked executable and vice versa (this is often referred to as W$\oplus$X).
 This helps to prevent the most baroque code execution attacks. Another important
 protection mechanism employed by the operating system is \gls{aslr}, which slightly
-randomizes virtual address space mappings, making them unpredictable and thus harder for
+randomizes virtual address space mappings, making them unpredictable and thus more difficult for
 attackers to exploit consistently. A similar mechanism, \gls{kaslr}, protects the kernel.
 The \texttt{grsecruity} patch suite~\cite{grsecruity} offers additional memory protection for the
 Linux kernel, hardening the boundary between userspace and kernelspace and applying
