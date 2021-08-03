@@ -983,7 +983,7 @@ about the levels of isolation they provide.
 % machine to another, opt in to whatever is going to cross it}
 
 \textit{Containers} have emerged as a new unit of computation in recent years, providing
-a lighter-weight alternative to full hypervisor-based
+a more lightweight alternative to full hypervisor-based
 virtualization~\cite{sultan2019_container_security, eder2016_hypervisor_container}.
 Unlike virtual machines, containers run directly on the host operating system, rather than
 directly atop a hypervisor, and share the host operating system kernel with each other and
@@ -993,7 +993,7 @@ the rest of the system by way of virtualization and confinement primitives. Thes
 primitives typically include namespaces and cgroups, along with optional confinement
 mechanisms like seccomp-\gls{bpf} and Linux \gls{mac} policy. Since they directly share
 the host \gls{os} kernel and do not require a guest operating system, containers are
-significantly lighter-weight and more performant than virtual machines, but at the cost of
+significantly more lightweight and more performant than virtual machines, but at the cost of
 weaker base isolation. \Cref{fig:virt} depicts the major differences between container and
 hypervisor-based architectures.
 
@@ -1064,7 +1064,7 @@ channel, or perform a confused deputy attack~\cite{hardy1988_confused_deputy} ag
 a privileged application. The cost to mount such attacks rapidly decreases as isolation
 from the host operating system decreases.
 
-% While containers are lighter-weight than virtual machines, they are necessarily less
+% While containers are more lightweight than virtual machines, they are necessarily less
 % secure, since they share and interact directly with the host operating system kernel.
 % Although hypervisor escapes are not unheard of~\cite{dubrelle2015_hypervisor,
 % eder2016_hypervisor_container}, they are far less common than container escapes,

@@ -43,7 +43,7 @@ goal is to examine these limitations as an early motivating factor for the devel
     5.12 on a stock Arch kernel).
 
   \item \textbf{Lack of Container Semantics.}
-    Although \bpfbox{} exposes a light-weight policy language with high-level semantics to
+    Although \bpfbox{} exposes a lightweight policy language with high-level semantics to
     the user, it fails to consider container semantics, as outlined in design goal
     \ref{i:dg-suitability} in \Cref{s:cp-design}. While this marks an improvement over
     existing confinement solutions by offering a terse yet expressive policy language, it
@@ -87,7 +87,7 @@ confinement. Moreover, \bpfcontain{}'s enforcement engine employs a more nuanced
 policy that considers the relationship between processes and resources that exist within
 the context of a container. These changes from a policy and enforcement perspective enable
 \bpfcontain{} to enforce simple container-level policies while reusing the initial ideas
-from \bpfbox{}: namely, dynamic, light-weight enforcement based on \gls{ebpf}.
+from \bpfbox{}: namely, dynamic, lightweight enforcement based on \gls{ebpf}.
 
 While implementing \bpfcontain{}, opportunities arose to improve how it handles
 dependencies and manages the lifecycle of its \gls{bpf} programs and maps. Specifically,

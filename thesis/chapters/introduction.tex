@@ -63,7 +63,7 @@
 % cases\,---\,some users (e.g.\ operators of multi-tenant container clouds) would like to
 % totally isolate containers from each other, while use cases (e.g.\ microservices
 % deployments) may require individual containers to communicate and cooperate with each
-% other. Thus, our solution should be practical, light-weight, and flexible such that we can
+% other. Thus, our solution should be practical, lightweight, and flexible such that we can
 % define a container-level policy enforcement mechanism that can be readily adopted in
 % production use cases. A relatively new Linux technology,
 % \gls{ebpf}~\cite{starovoitov2014_ebpf, gregg2019_bpf}, offers the opportunity to design
@@ -79,7 +79,7 @@ not necessarily be the case. Confinement is critically important to maintaining 
 \textit{principle of least-privilege}~\cite{schneider03_least_privilege}, a quintessential
 property of a truly secure system~\cite{van_oorschot2020_tools_jewels}. Despite playing
 a critical role in systems security, the state of confinement on Linux is ill-suited to
-meet the practical needs of the end-users of many \gls{cots} operating systems.
+meet the practical needs end-users.
 
 Existing Linux confinement mechanisms are complex, and often target specific use cases
 beyond simple confinement. This results in a motley collection of isolation primitives
@@ -106,7 +106,7 @@ simplified down to their basest elements. The result is containers that \enquote
 work}, albeit operating under highly coarse-grained policies that provide little
 protection in practice~\cite{sultan2019_container_security, lin2018_container_security}.
 
-This thesis argues that the key to implementing light-weight confinement policies that
+This thesis argues that the key to implementing lightweight confinement policies that
 work well in the context of containers lies in simplifying and unifying the underlying
 confinement framework, and bridging the semantic gap between confinement policies and the
 applications or containers they are designed to protect. In the past, this may have been
@@ -179,7 +179,7 @@ Despite a steadily increasing prevalence, containers face major adoptability cha
 deployments\footnote{E.g., Cloud-Native deployments~\cite{brady2020_docker_cloud}.} where
 they are expected to outright replace virtual machines. Unlike virtual machines, which are
 abstracted away from the host and interact with a hypervisor, containers interact directly
-with the host operating system kernel. This means that, while much lighter-weight than
+with the host operating system kernel. This means that, while much more lightweight than
 hypervisor-based virtualization, containers are inherently less isolated from each other
 and from the host system in general~\cite{sultan2019_container_security,
 lin2018_container_security, mullinix2020_security_measures, bui2015_docker_analysis}.  In
@@ -269,7 +269,7 @@ forward or backward compatibility with alternative approaches.
 \label{ss:why-ebpf}
 
 An \gls{ebpf}-based confinement mechanism provides several advantages over traditional
-confinement models.  Firstly, \gls{ebpf} is \textit{light-weight}. \gls{ebpf} programs can monitor
+confinement models.  Firstly, \gls{ebpf} is \textit{lightweight}. \gls{ebpf} programs can monitor
 many aspects of system behaviour, from userspace function calls to kernelspace function
 calls, system calls, security hooks, and the networking stack. Data from these events can
 be aggregated in real time in kernelspace, providing an extensible, performant, and
@@ -308,7 +308,7 @@ regressions~\cite{gregg2019_bpf}. These factors make \gls{ebpf} a promising choi
 designing an \textit{adoptable} security mechanism.
 
 In summary, \gls{ebpf} offers unique and promising advantages for developing novel security
-mechanisms. Its light-weight execution model coupled with the flexibility to monitor and
+mechanisms. Its lightweight execution model coupled with the flexibility to monitor and
 aggregate events across userspace and kernelspace provide the ability to control and audit
 nearly any aspect of the running system. \gls{ebpf} maps, shareable across programs and between
 userspace and the kernel offer a means of aggregating data from multiple sources at

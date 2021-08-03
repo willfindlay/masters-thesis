@@ -14,7 +14,7 @@ David Barrera~\cite{findlay2020_bpfbox}.
 At a high level, \bpfbox{} is a confinement mechanism based on \gls{ebpf}. As outlined in
 \Cref{s:cp-design} of \Cref{c:confinement-problem}, our primary design goals are
 simplicity, flexibility, suitability for containerized applications, and flexibility. With
-this in mind, \bpfbox{} attempts to be as light-weight as possible, with a simple policy
+this in mind, \bpfbox{} attempts to be as lightweight as possible, with a simple policy
 language that supports optional granularity. Perhaps the most important goal of \bpfbox{}
 may be derived from the aforementioned goals: to make per-application security policy
 accessible to end-users. To achieve these goals, we leverage \gls{ebpf} for \bpfbox{}'s
@@ -30,7 +30,7 @@ per-function-call level, something which no existing process confinement mechani
 
 Since \gls{ebpf} programs may be loaded dynamically into a vanilla kernel and provide
 implicit safety guarantees thanks to the verifier, we ensure that \bpfbox{} is both
-light-weight and more adoptable than conventional solutions based in static \glspl{lsm}
+lightweight and more adoptable than conventional solutions based in static \glspl{lsm}
 like SELinux or AppArmor. Since all of \bpfbox{}'s kernelspace code is pre-verified, it is
 also significantly less likely to adversely affect a production kernel than an alternative
 solution implemented as a kernel patch or kernel module.
@@ -58,7 +58,7 @@ confinement policies while offering the ability to augment them with specific co
 Thus, the user has full control over the balance between policy expressiveness and policy
 simplicity. We expect that application authors may wish to take advantage of \bpfbox{}'s
 full expressiveness, whereas end-users may wish to overlook advanced features in favour of
-simple, light-weight confinement policy.
+simple, lightweight confinement policy.
 
 Once a policy has been written, the user places it in a pre-determined policy directory
 and loads \texttt{bpfboxd}, the \bpfbox{} daemon. The daemon compiles and loads its
@@ -671,7 +671,7 @@ confinement mechanism leveraging \gls{ebpf} for dynamically loadable policies th
 simplicity and flexibility. In particular, we outline \bpfbox{}'s architecture, the
 implementation details of its \gls{ebpf}-based policy enforcement mechanism, and the
 design of its custom policy language. Through a combination of \gls{ebpf}-based
-enforcement and a light-weight yet fine-grained policy language, \bpfbox{} represents
+enforcement and a lightweight yet fine-grained policy language, \bpfbox{} represents
 a step towards the container-specific design outlined in \Cref{s:cp-design}.  In the next
 chapter, we outline \bpfcontain{}, an iteration of \bpfbox{} that addresses a few of its
 fundamental limitations and makes a transition toward container-specific policies.
