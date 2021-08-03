@@ -17,7 +17,7 @@ simplicity, flexibility, suitability for containerized applications, and flexibi
 this in mind, \bpfbox{} attempts to be as lightweight as possible, with a simple policy
 language that supports optional granularity. Perhaps the most important goal of \bpfbox{}
 may be derived from the aforementioned goals: to make per-application security policy
-accessible to end-users. To achieve these goals, we leverage \gls{ebpf} for \bpfbox{}'s
+accessible to end users. To achieve these goals, we leverage \gls{ebpf} for \bpfbox{}'s
 kernelspace implementation and rely on a number of its intrinsic properties.
 
 In particular, we take advantage of multiple program and map types (outlined in
@@ -57,7 +57,7 @@ policy language is designed in such a way as to permit the authorship of simple
 confinement policies while offering the ability to augment them with specific context.
 Thus, the user has full control over the balance between policy expressiveness and policy
 simplicity. We expect that application authors may wish to take advantage of \bpfbox{}'s
-full expressiveness, whereas end-users may wish to overlook advanced features in favour of
+full expressiveness, whereas end users may wish to overlook advanced features in favour of
 simple, lightweight confinement policy.
 
 Once a policy has been written, the user places it in a pre-determined policy directory

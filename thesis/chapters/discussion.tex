@@ -753,12 +753,12 @@ The \textit{application-specific} approach of \bpfbox{} takes a different path\,
 existing primitives like SELinux, AppArmor, or Seccomp-bpf. The result is policies that
 are far simpler without being too coarse-grained or abstracted beyond the point of
 auditability\,---\,expressiveness without complexity. Further, application-specific
-policies afford a great deal of flexibility to the end-user; rather than authoring complex
+policies afford a great deal of flexibility to the end user; rather than authoring complex
 policies that cover the entire system, instead they may focus on the specific behaviours
 that they want their applications to exhibit. In turn, this flexibility means that
 different types of users can leverage \bpfbox{} in different ways.  Application developers
 can write fine-grained policies that enforce behaviours at the function-call-level.
-Conversely, end-users can deploy custom \bpfbox{} policies to restrict specific
+Conversely, end users can deploy custom \bpfbox{} policies to restrict specific
 behaviours, such as access to the home directory.
 
 \bpfcontain{} extends the \bpfbox{} model to be \textit{container-specific}. Like
@@ -781,7 +781,7 @@ policies mirror the process of provisioning resources in a virtual machine.
 %     \item Specifically, \bpfbox{} doesn't try to enforce policy over the entire system like AppArmor or SELinux
 %     \item Instead, we focus on ad-hoc confinement of a specific application
 %     \item This affords the user a great deal of flexibility; no need to author complex policies that cover the entire system. Instead, focus on the specific behaviours you want your application to exhibit
-%     \item In turn, this flexibility means that different types of users can leverage \bpfbox{} in different ways. Application developers can write fine-grained policies that enforce behaviours at the function-call-level. End-users can deploy custom \bpfbox{} policies to restrict specific behaviours, such as access to the home directory.
+%     \item In turn, this flexibility means that different types of users can leverage \bpfbox{} in different ways. Application developers can write fine-grained policies that enforce behaviours at the function-call-level. End users can deploy custom \bpfbox{} policies to restrict specific behaviours, such as access to the home directory.
 
 %     \item \bpfcontain{} extends the \bpfbox{} model to be \textit{container-specific}
 %     \item Like \bpfbox{}, a lot of the implicit strength behind this approach is that policies are not trying to enforce system-wide behaviour
@@ -850,8 +850,8 @@ required to achieve policy-level diversity at scale.
 
 %     \item However, security policies make good sense as a layer to introduce diversity. By diversifying security policies, we can
 %     make the exploitation targets less reliable and consistent for attackers, without necessarily impacting the usefulness of an application.
-%     For instance, one end-user of a piece of software might only need a certain subset of its functionality. In this case, their security policy
-%     might look very different from another end-user that requires a different subset of functionality. Introducing variations in security policy
+%     For instance, one end user of a piece of software might only need a certain subset of its functionality. In this case, their security policy
+%     might look very different from another end user that requires a different subset of functionality. Introducing variations in security policy
 %     for this software can confound attackers, much in the same way that source-level or binary-level variations would.
 %     \item \bpfbox{} and \bpfcontain{} are ideal security mechanisms for encouraging this kind of policy variation,
 %     because they are designed for a local administrator to tailor a security policy to precisely the set of desired functionality

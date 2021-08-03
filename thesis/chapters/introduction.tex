@@ -57,7 +57,7 @@
 
 % One approach would be to extend the container with a container-aware \gls{lsm}, but
 % maintaining out-of-tree kernel modules is challenging, as such a module would need to be
-% continually updated as the kernel evolves. Further, end-users may be reluctant to adopt
+% continually updated as the kernel evolves. Further, end users may be reluctant to adopt
 % and out-of-tree solution, particularly in production environments with low risk-tolerance.
 % Even worse, a static security mechanism is unlikely to work well for all use
 % cases\,---\,some users (e.g.\ operators of multi-tenant container clouds) would like to
@@ -79,7 +79,7 @@ not necessarily be the case. Confinement is critically important to maintaining 
 \textit{principle of least-privilege}~\cite{schneider03_least_privilege}, a quintessential
 property of a truly secure system~\cite{van_oorschot2020_tools_jewels}. Despite playing
 a critical role in systems security, the state of confinement on Linux is ill-suited to
-meet the practical needs end-users.
+meet the practical needs end users.
 
 Existing Linux confinement mechanisms are complex, and often target specific use cases
 beyond simple confinement. This results in a motley collection of isolation primitives
@@ -125,7 +125,7 @@ components of the kernel. By designing and deploying a specific set of \gls{ebpf
 programs, we can adjust the kernel's security semantics, without necessarily tying it down
 to a specific \enquote{one-size-fits-all} confinement solution. This enables us to build
 application- or container-specific policies that scale well and meet the needs of
-end-users.
+end users.
 
 To improve the status quo of confinement on Linux, we present two research prototypes,
 \bpfbox{} and its successor, \bpfcontain{}. The former is a novel application sandboxing
@@ -222,7 +222,7 @@ confinement policy and each with varying degrees of generalization. As a result,
 policies are often difficult to reason about, and thus difficult to effectively audit.
 A vulnerability in any individual mechanism or a misconfiguration in any individual policy
 opens the container or the host system itself up to attack. Blanket defaults are often
-ineffective for specific use cases and result in situations where the end-user is forced to
+ineffective for specific use cases and result in situations where the end user is forced to
 either abandon all hope of security or muddle through the configuration of multiple policy
 enforcement mechanisms.
 

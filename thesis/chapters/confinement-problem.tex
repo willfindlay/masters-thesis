@@ -98,7 +98,7 @@ a containerized process is nothing more than a host process running under one or
 the right set of confinement primitives should be able to lock a container down in much
 the same way that a hypervisor implicitly enforces isolation.  Unlike hypervisor-based
 isolation, such a policy enforced by the operating system has the potential to be more
-minimal, centralized, and accessible to end-users. Further, we can attain a high level of
+minimal, centralized, and accessible to end users. Further, we can attain a high level of
 flexibility through a software-based enforcement mechanism, unencumbered by the
 restrictions of a hardware-level interface.
 
@@ -221,7 +221,7 @@ in \Cref{s:cp-design}.
     SELinux~\cite{smalley2001_selinux} is designed for use cases beyond simple sandboxing.
     These mechanisms are designed to implement and enforce system-wide \gls{mac} policy,
     not simple process-level confinement~\cite{belair2019_leveraging}. Further, major
-    \glspl{lsm} are statically loaded and unstackable, meaning that end-users must
+    \glspl{lsm} are statically loaded and unstackable, meaning that end users must
     generally choose one major solution with little room to adjust enforcement at runtime.
 
     To implement confinement, sandboxing and containerization frameworks generally mix and
@@ -242,7 +242,7 @@ in \Cref{s:cp-design}.
     these \gls{lsm} implementations were not designed with containers in mind and thus
     do not consider container semantics in policy definition and enforcement. This lack
     of semantic awareness further complicates policy authorship for containers and
-    forces the end-user to make compromises between security and functionality.
+    forces the end user to make compromises between security and functionality.
 
     Sultan \etal~\cite{sultan2019_container_security} suggest that the container
     security community should move towards a container-specific \gls{lsm}
@@ -383,7 +383,7 @@ associated with fine-grained policy defaults.
 Container security policies are often overly-generic and ill-suited to fine-grained
 confinement. Part of the problem here is that containers in general are designed to
 \enquote{just work}. Overly fine-grained security policies may get in the way of this,
-particularly as end-user requirements vary and evolve across deployments.
+particularly as end user requirements vary and evolve across deployments.
 Docker~\cite{docker_security}, for instance, provisions an overly-permissive default
 AppArmor policy~\cite{docker_default_apparmor} designed to enforce basic protections
 against interacting with sensitive kernel parameters without impacting the functionality
@@ -392,7 +392,7 @@ of the container.
 Even worse, many container management systems operate under a fail-open approach when the
 necessary security mechanisms are not supported. This results in low-security deployments,
 often without even notifying the user that there may be such a configuration. Since the
-end-user generally doesn't even participate in the policy authorship process, they may not
+end user generally doesn't even participate in the policy authorship process, they may not
 even be aware of the level of protection that is being applied, resulting in a dangerous
 false sense of security. Docker's AppArmor policy~\cite{docker_apparmor,
 docker_default_apparmor}, for instance, is not applied when the deployment environment
@@ -413,7 +413,7 @@ administrators claim that no user data was actually compromised~\cite{newsblur}.
 \label{s:cp-design}
 
 % Unlike hypervisor-based isolation, a policy enforced by the operating system has the
-% potential to be more minimal, centralized, and accessible to end-users. The key to
+% potential to be more minimal, centralized, and accessible to end users. The key to
 % developing such an enforcement mechanism lies in defining a clear protection boundary
 % within the kernel and enforcing access across this boundary. \bpfbox{} lays the foundation
 % for such an enforcement mechanism, and \bpfcontain{} explicitly applies it to containers.
@@ -434,7 +434,7 @@ offering fine-grained control over the interface that a container exposes to the
 world.
 
 The ultimate goal of \bpfbox{} and \bpfcontain{} is to expose centralized, flexible
-policies that are simple enough for an end-user to perform ad-hoc confinement. In the case
+policies that are simple enough for an end user to perform ad-hoc confinement. In the case
 of \bpfcontain{}, this goal is further extended to promote the adoption of
 container-specific policies that isolate by default and can be extended to support
 inter-container communication and resource sharing. To guide \bpfbox{} and \bpfcontain{}
@@ -503,7 +503,7 @@ issues identified in \Cref{s:cp-issues}. They are enumerated as follows.
     % enforcement decision, beyond the state exposed by \gls{lsm} hooks.
 
     % The ultimate goal of \bpfbox{} and \bpfcontain{} is to make fine-grained confinement
-    % accessible to the end-user, without the need to rely on complex configuration,
+    % accessible to the end user, without the need to rely on complex configuration,
     % unnecessary setup, or the combination of multiple confinement primitives.
 
   \item \label{i:dg-suitability} \textbf{Suitable for Containers.}
