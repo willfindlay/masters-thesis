@@ -64,9 +64,9 @@ Mediation; and (iii) Verifiability. These properties facilitate reasoning about 
 security of modern access control mechanisms, even if they do not strictly adhere to the
 reference monitor model.
 
-\paragraph*{Tamper-Resistance}
+\paragraph*{Tamper Resistance}
 
-In order for the reference monitor to be considered \textit{tamper-resistant}, an unauthorized
+In order for the reference monitor to be considered \textit{tamper resistant}, an unauthorized
 party must not be able to alter the reference monitor's code or modify any data
 (e.g.\ memory, persistent storage) that the reference monitor relies on to enforce correct
 reference validation~\cite{anderson1972_report}. This property follows from the fact that
@@ -107,7 +107,7 @@ By partitioning memory into virtual address spaces, virtual memory forms the mos
 fundamental isolation barrier between user processes. To accomplish this goal, a hardware
 mechanism, the \gls{mmu}, translates virtual addresses to physical addresses using
 a \textit{page table} maintained by the operating system in main memory. To accelerate the
-translation of memory addresses, modern processors cache this mapping in a specialized
+translation of memory addresses, processors cache this mapping in a specialized
 cache area called the \gls{tlb}.  In Unix, each user process gets its own virtual address
 space by default, maintained in a per-process page table. Where necessary, this isolation
 may be voluntarily broken using memory sharing mechanisms provided by the \gls{os} kernel
@@ -120,25 +120,26 @@ this end, the \gls{cpu} \gls{isa} generally defines memory protection bits that 
 to physical pages and enforced in the \gls{mmu}. For instance, individual pages can be
 marked as readable, writable, and/or executable depending on how the memory is to be used.
 How these protections are used is generally up to the operating system; for instance,
-modern operating systems often enforce a policy where pages marked writable and not
+modern operating systems often enforce a policy where pages marked writable are not
 allowed to be marked executable and vice versa (this is often referred to as W$\oplus$X).
-This helps to prevent the most baroque code execution attacks. Another important
+This helps to prevent basic buffer overflow attacks. Another important
 protection mechanism employed by the operating system is \gls{aslr}, which slightly
 randomizes virtual address space mappings, making them unpredictable and thus more difficult for
 attackers to exploit consistently. A similar mechanism, \gls{kaslr}, protects the kernel.
 The \texttt{grsecruity} patch suite~\cite{grsecruity} offers additional memory protection for the
 Linux kernel, hardening the boundary between userspace and kernelspace and applying
-additional mitigations to prevent return-oriented programming attacks.
+additional mitigations to prevent return oriented programming attacks.
 
 Additional protections are afforded by \textit{memory protection rings}, a concept first
 introduced by Multics~\cite{vyssotsky1965_multics, corbato1965_multics} in the mid-1960s.
 In the original design, 64 protection rings were defined in hardware, numbered from 0--63.
 A task running in a higher-numbered protection ring would be unable to access any memory
 marked with a lower-numbered protection ring, effectively isolating sensitive code and
-data from unprivileged tasks. Modern \glspl{cpu} carry forward this notion of protection rings,
-although a typical modern processor only defines \textit{four} protection rings rather
-than 64. Modern \gls{os}s, including Linux, generally only use \textit{two} of these
-rings, ring 0 and ring 3 for kernelspace and userspace respectively. \Cref{fig:rings}
+data from unprivileged tasks. Modern \glspl{cpu} carry forward this notion of protection
+rings, although a typical modern processor only defines far fewer protection rings in
+practice. For instance, x86 only implements four protection rings in total. Modern
+\gls{os}s, including Linux, generally only use \textit{two} of these rings, ring 0 and
+ring 3 (on x86 processors) for kernelspace and userspace respectively.  \Cref{fig:rings}
 depicts this design. Lee \etal~\cite{lee2018_lotr} have proposed using the remaining two
 rings for finer-grained isolation on x86.
 
@@ -146,11 +147,11 @@ rings for finer-grained isolation on x86.
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/rings.pdf}
   \caption[Protection rings on modern \glsentryshortpl{cpu}]{
-    A visualization of protection rings on modern \glsentryshortpl{cpu}. Ring 3 contains
+    A visualization of protection rings on x86 \glsentryshortpl{cpu}. Ring 3 contains
     \textit{userspace}, the address space of ordinary applications that run in user mode.
     Ring 0 contains \textit{kernselspace}, the kernel's address space. Code running in
     ring 0 is said to run in \textit{supervisor mode}. Rings 1--2 are generally unused by
-    \glsentryfull{cots} operating systems.  Modern \glsentryshortpl{cpu} often implement \enquote{lower}
+    \glsentryfull{cots} operating systems. \glsentryshortpl{cpu} often implement \enquote{lower}
     rings (-1, -2, etc.) by virtualizing ring 0 in firmware. These are typically reserved
     for the hypervisor and other hardware-backed features like Intel's System Management
     Mode~\cite{tereshkin2009_introducing}.
@@ -263,8 +264,8 @@ jaeger2008_os_security}.
 
 To alleviate concerns with discretionary access control, systems often take the approach
 of assigning a unique user and/or group to a specific application. Such applications are
-typically security-sensitive, such as a privileged daemon or network-facing service. This
-technique achieves a dual-purpose: firstly, the application can lock down any resources it
+typically security sensitive, such as a privileged daemon or network-facing service. This
+technique achieves a dual purpose: firstly, the application can lock down any resources it
 owns, simply by restricting any access to its own \gls{uid}; secondly, the resulting
 process no longer needs to run under the same \gls{uid} as its parent. This effectively
 limits the amount of outside resources that the application can access (so long as
@@ -464,7 +465,7 @@ of the Flask security model were hugely influential in the design and implementa
 subsequent \gls{mac} enforcement mechanisms, most notably
 SELinux~\cite{smalley2001_selinux, loscocco2001_selinux}.
 
-The basic notion behind flask is straight-forward; the security architecture is divided
+The basic notion behind flask is straightforward; the security architecture is divided
 into a security server, responsible for storing security policy, and a object manager that
 serves requests to userspace applications. When an application requests a resource, the
 object manager queries security policy from the security server and decides whether or not
@@ -624,13 +625,13 @@ necessarily conform to the same semantics as the underlying system
 calls~\cite{wright2002_lsm}.
 
 Related to this notion of system call filtering are \textit{capabilities}\footnote{Here,
-the term \enquote{capabilities} is a disparate term from \enquote{POSIX capabilities,} covered in
-\Cref{ss:dac}.}, which guard access to a particular reference, associating privileges with
-a handle to a given object on the system. For instance, the \texttt{open(2)} system call
-returns a \textit{file descriptor}, which constitutes a reference to a particular
-filesystem object. A capability associated with this file descriptor would then restrict
-subsequent operations on the file descriptor, effectively restricting access to the
-underlying file.
+the term \enquote{capabilities} is a disparate term from \enquote{POSIX capabilities,}
+covered in \Cref{ss:dac}.}, which guard access to a particular reference, associating
+privileges with a handle to a given object on the system. For instance, the
+\texttt{open(2)} system call returns a \textit{file descriptor}, which constitutes
+a reference to a particular filesystem object. A capability associated with this file
+descriptor would then allow specific operations on the file descriptor, applying
+a default-deny policy to all other operations.
 
 \subsubsection*{System Call Tracing}
 \label{sss:ptrace}
@@ -673,13 +674,13 @@ Provos calls \textit{privilege elevation}. The notion behind privilege elevation
 allow a program to escalate its privileges selectively for specific system call access
 patterns, preventing the need for coarse-grained privilege escalation such as setuid root.
 
-Forrest, Somayaji, and Hofmeyr~\cite{forrest1996_sense_of_self} implement an intrusion
-detection system, pH (process Homeostasis), based on system call sequences, although it
-does not rely on ptrace and analyzes system call sequences instead of individual call
-patterns. Rather than as a confinement solution, pH was strictly designed as a behavioural
-anomaly detection system, although this approaches confinement as profile accuracy
-improves.  Findlay~\cite{findlay2020_ebph} (the author of this thesis) later ported pH to
-use \gls{ebpf} to analyze system call sequences.
+Somayaji and Forrest~\cite{somayaji2000_ph} implement an intrusion detection system, pH
+(process Homeostasis), based on system call sequences, although it does not rely on ptrace
+and analyzes system call sequences instead of individual call patterns. Rather than as
+a confinement solution, pH was strictly designed as a behavioural anomaly detection
+system, although this approaches confinement as profile accuracy improves.
+Findlay~\cite{findlay2020_ebph} (the author of this thesis) later ported pH to use
+\gls{ebpf} to analyze system call sequences.
 
 \subsubsection*{OpenBSD Pledge and Unveil}
 \label{sss:pledge}
@@ -737,7 +738,7 @@ correlate system call numbers with the specific target architecture, the resulti
 may allow and deny incorrect system calls, resulting in broken policies that break
 applications in the best case and expose security vulnerabilities in the worst case.
 
-Another innate problem with seccomp arises due to its fine-granularity. Paradoxically,
+Another innate problem with seccomp arises due to its fine granularity. Paradoxically,
 avoiding system call categorization can expose vulnerabilities, due to system call
 equivalence classes. For instance, the \texttt{openat(2)} system call can perform the same
 functionality as the \texttt{open(2)} system call, with slightly different \gls{api} semantics.
@@ -849,7 +850,7 @@ prevent unwanted behaviour.
 \subsubsection*{Chroots and Chroot Jails}
 
 To virtualize the filesystem, Unix has classically supported the \texttt{chroot(2)} system
-call~\cite{mcfearin2011_chroot_jails}, used to change the filesystem root (\texttt{'/'})
+call~\cite{mcfearin2011_chroot_jails}, used to change the filesystem root (\enquote{\texttt{/}})
 to some directory, specified as an argument. From the process' point of view, this
 directory becomes its new filesystem root. However, chroot suffers from several issues
 that render it totally ineffective as a security mechanism. Chroot escapes, path
@@ -1080,10 +1081,10 @@ from the host operating system decreases.
   \includegraphics[width=0.8\linewidth]{figs/background/container_security.pdf}
   \caption[A sample threat model for container security]{
     A sample threat model for container security.
-    (A) A container process attacks the host kernel directly.
-    (B) A container process attacks another container process, passing through the host kernel's reference monitor.
-    (C) A container process attacks a (privileged) host process, passing through the host kernel's reference monitor.
-    (D) A host process attacks a container, passing through the host kernel's reference monitor.
+    \textbf{(A)} A container process attacks the host kernel directly.
+    \textbf{(B)} A container process attacks another container process, passing through the host kernel's reference monitor.
+    \textbf{(C)} A container process attacks a (privileged) host process, passing through the host kernel's reference monitor.
+    \textbf{(D)} A host process attacks a container, passing through the host kernel's reference monitor.
   }%
   \label{fig:containersec}
 \end{figure}

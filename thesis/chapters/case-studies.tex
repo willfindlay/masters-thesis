@@ -56,12 +56,17 @@ for suexec (e.g.\ which scripts it is allowed to run).
 }, label={lst:bpfbox-apache}]
     #![profile "/bin/httpd"]
 
-    /* Allow IP and Unix socket operations, and taint when they occur */
-    #[allow]
-    #[taint] {
+    /* Allow IP and Unix socket operations, and taint when
+     * sending or receiving */
+    #[allow] {
       net(inet, any)
       net(inet6, any)
       net(unix, any)
+    }
+    #[taint] {
+      net(inet, send|recv)
+      net(inet6, send|recv)
+      net(unix, send|recv)
     }
 
     #[allow] {
@@ -122,36 +127,40 @@ enabling mysqld to read important configuration files, log events, create and mo
 setup phase for mysqld occurs while the process is untainted, thus allowing us to
 eliminate rules for any shared libraries loaded before the process becomes tainted.
 
-\clearpage
-
 \begin{lstlisting}[language=bpfbox, gobble=4, float=false, caption={[A \bpfbox{} policy for MySQL]
   A \bpfbox{} policy for MySQL.
   %\todo{Describe this}
 }, label={lst:bpfbox-mysql}]
     #![profile "/bin/mysqld"]
 
-    /* Allow Unix socket operations, and taint when they occur */
-    #[allow]
-    #[taint] {
+    /* Allow Unix socket operations, and taint when
+     * sending or receiving. Also allow creating and
+     * binding inet and inet6 sockets (necessary to
+     * pass assertion checks) */
+    #[allow] {
       net(unix, any)
+      net(inet, create|bind)
+      net(inet6, create|bind)
     }
+    #[taint]
+    net(unix, send|recv)
 
     #[allow] {
       /* Allows kill(2) to check for process existence
        * and to send fatal signals */
       signal("/bin/mysqld", check|fatal)
 
+      /* /dev/null and /dev/urandom */
+      fs("/dev/null", getattr|read|write)
+      fs("/dev/urandom", getattr|read)
+
       /* Write to logs */
       fs("/var/log/mysqld/*log", getattr|read|append)
       fs("/var/log/mysqld", getattr|read|write)
 
-      /* Access to /var/lib/mysqld */
-      fs("/var/lib/mysqld", read|write|getattr)
-      fs("/var/lib/mysqld/**", read|write|getattr|rm)
-
-      /* Access to /usr/share/mysql */
-      fs("/usr/share/mysql", read|write|getattr)
-      fs("/usr/share/mysql/**", read|write|getattr|rm)
+      /* Access to /var/lib/mysql */
+      fs("/var/lib/mysql", read|write|getattr)
+      fs("/var/lib/mysql/**", read|write|getattr|rm)
 
       /* Create PID file and socket */
       fs("/run/mysqld", getattr|read|write)
@@ -160,16 +169,12 @@ eliminate rules for any shared libraries loaded before the process becomes taint
       /* Read configuration */
       fs("/etc/mysql", read|getattr)
       fs("/etc/mysql/**", read|getattr)
-      fs("/etc/localtime", read|getattr)
       fs("/usr/share/zoneinfo", read|getattr)
       fs("/usr/share/zoneinfo/**", read|getattr)
 
-      /* Read hostname information */
-      fs("/etc/resolv.conf", read|getattr)
-      fs("/etc/host*", read|getattr)
-
       /* Shared libraries loaded at runtime */
       fs("/var/lib/mysql/plugin/*.so", getattr|read|exec)
+      fs("/usr/lib/libnss_files-*.*.so", getattr|read|exec)
     }
 \end{lstlisting}
 
@@ -201,73 +206,77 @@ we use a capability rule to grant access to the \texttt{CAP\_NET\_BIND\_SERVICE}
 allowing httpd to bind to privileged ports. Since \bpfbox{} does not support capability rules,
 there is no equivalent to this rule in the \bpfbox{} policy.
 
-\begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A \bpfcontain{} policy for Apache httpd]
+\begin{lstlisting}[language=yaml, gobble=2, float=false, caption={[A \bpfcontain{} policy for Apache httpd]
   A \bpfcontain{} policy for Apache httpd.
   %\todo{Describe this}
 }, label={lst:bpfcontain-apache}]
-    name: httpd
-    defaultTaint: false
+  name: httpd
+  defaultTaint: false
 
-    allow:
-      # Access to log files
-      file: {pathname: /var/log/httpd, access: rw}
-      file: {pathname: /var/log/httpd/*log, access: ra}
+  allow:
+    # /dev/urandom, /dev/random, /dev/null
+    - dev: random
+    - dev: null
 
-      # Create pidfile, delete or modify an existing pid file if necessary
-      file: {pathname: /run/httpd, access: rw}
-      file: {pathname: /run/httpd/**, access: rwd}
+    # Access to log files
+    - file: {pathname: /var/log/httpd, access: rw}
+    - file: {pathname: /var/log/httpd/*log, access: ra}
 
-      # Read configuration
-      file: {pathname: /usr/share/httpd/**, access: r}
-      file: {pathname: /etc/httpd, access: r}
-      file: {pathname: /etc/httpd/conf/**, access: r}
-      file: {pathname: /usr/share/zoneinfo/**, access: r}
+    # Create pidfile, delete or modify an existing pid file if necessary
+    - file: {pathname: /run/httpd, access: rw}
+    - file: {pathname: /run/httpd/**/*, access: rwd}
 
-      # Serve files
-      file: {pathname: /srv, access: r}
-      file: {pathname: /srv/html, access: r}
-      file: {pathname: /srv/html/**, access: r}
+    # Read configuration
+    - file: {pathname: /usr/share/httpd/**/*, access: r}
+    - file: {pathname: /etc/httpd, access: r}
+    - file: {pathname: /etc/httpd/conf/**/*, access: r}
+    - file: {pathname: /usr/share/zoneinfo/**/*, access: r}
 
-      # Read hostname information
-      file: {pathname: /etc/resolv.conf, access: r}
-      file: {pathname: /etc/host*, access: r}
+    # Serve files
+    - file: {pathname: /srv, access: r}
+    - file: {pathname: /srv/html, access: r}
+    - file: {pathname: /srv/html/**, access: r}
 
-      # Shared libraries loaded at runtime
-      file: {pathname: /usr/lib/httpd/modules/*.so, access: mr}
-      file: {pathname: /usr/lib/libnss*.so.*, access: mr}
-      file: {pathname: /usr/lib/libgcc_s.so.*, access: mr}
+    # Read hostname information
+    - file: {pathname: /etc/resolv.conf, access: r}
+    - file: {pathname: /etc/host*, access: r}
 
-      # Execute suexec and python
-      file: {pathname: /usr/bin/suexec, access: rx}
-      file: {pathname: /usr/bin/python, access: rx}
+    # Shared libraries loaded at runtime
+    - file: {pathname: /usr/lib/httpd/modules/*.so, access: mr}
+    - file: {pathname: /usr/lib/libnss*.so.*, access: mr}
+    - file: {pathname: /usr/lib/libgcc_s.so.*, access: mr}
 
-      # Shared libraries required for suexec and python
-      # This is unfortunately required since BPFContain currently
-      # has no notion of untainting like BPFBox
-      file: {pathname: /usr/lib/libpython*.so.*, access: mr}
-      file: {pathname: /usr/lib/libc.so.*, access: mr}
-      file: {pathname: /usr/lib/libpthread.so.*, access: mr}
-      file: {pathname: /usr/lib/libdl.so.*, access: mr}
-      file: {pathname: /usr/lib/libutil.so.*, access: mr}
-      file: {pathname: /usr/lib/libm.so.*, access: mr}
-      file: {pathname: /usr/lib64/ld-linux-x86-64.so.*, access: mr}
+    # Execute suexec and python
+    - file: {pathname: /usr/bin/suexec, access: rx}
+    - file: {pathname: /usr/bin/python, access: rx}
 
-      # Allow ipc with mysql
-      ipc: mysqld
+    # Shared libraries required for suexec and python
+    # This is unfortunately required since BPFContain currently
+    # has no notion of untainting like BPFBox
+    - file: {pathname: /usr/lib/libpython*.so.*, access: mr}
+    - file: {pathname: /usr/lib/libc.so.*, access: mr}
+    - file: {pathname: /usr/lib/libpthread.so.*, access: mr}
+    - file: {pathname: /usr/lib/libdl.so.*, access: mr}
+    - file: {pathname: /usr/lib/libutil.so.*, access: mr}
+    - file: {pathname: /usr/lib/libm.so.*, access: mr}
+    - file: {pathname: /usr/lib64/ld-linux-x86-64.so.*, access: mr}
 
-      # Allow sending signals to existing httpd instances
-      ipc: httpd
+    # Allow ipc with mysql
+    - ipc: mysqld
 
-      # Bind to privileged ports
-      capability: [netbindservice]
+    # Allow sending signals to existing httpd instances
+    - ipc: httpd
 
-      # Use networking
-      net: [server, send, recv]
+    # Bind to privileged ports, change uid and gid
+    - capability: [netbindservice, setuid, setgid]
 
-    taint:
-      # Taint when performing any ipc or networking
-      net: any
-      ipc: mysqld
+    # Use networking
+    - net: [server, send, recv]
+
+  taint:
+    # Taint when performing any ipc or networking
+    - net: [send, recv]
+    - ipc: mysqld
 \end{lstlisting}
 
 The mysqld policy for \bpfcontain{} (\Cref{lst:bpfcontain-mysql}) also shares many
@@ -275,7 +284,8 @@ similarities with the \bpfbox{} version.  In particular, we define equivalent fi
 rules to enable the mysqld to access all of the files it requires for normal operation. We
 define an \gls{ipc} rule, granting mutual \gls{ipc} access to the httpd policy, and
 enabling the two to communicate with each other. We taint the container once it has
-performed any \gls{ipc} with httpd.
+performed any \gls{ipc} with httpd. We enable the creation of new network sockets
+in order to pass assertion checks, but otherwise explicitly deny any network access.
 
 \begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A \bpfcontain{} policy for MySQL]
   A \bpfcontain{} policy for MySQL.
@@ -286,44 +296,46 @@ performed any \gls{ipc} with httpd.
 
     allow:
       # Access to log files
-      file: {pathname: /var/log/mysqld, access: rw}
-      file: {pathname: /var/log/mysqld/*log, access: ra}
+      - file: {pathname: /var/log/mysqld, access: rw}
+      - file: {pathname: /var/log/mysqld/*log, access: ra}
 
       # Access to /var/lib/mysql
-      file: {pathname: /var/lib/mysqld, access: rw}
-      file: {pathname: /var/lib/mysqld/**, access: rwd}
-
-      # Access to /etc/mysql
-      file: {pathname: /etc/mysql, access: rw}
-      file: {pathname: /etc/mysql/**, access: rwd}
+      - file: {pathname: /var/lib/mysql, access: rw}
+      - file: {pathname: /var/lib/mysql/**/*, access: rwd}
 
       # Create pidfile and socket
-      file: {pathname: /run/mysqld, access: rw}
-      file: {pathname: /run/mysqld/**, access: rwd}
+      - file: {pathname: /run/mysqld, access: rw}
+      - file: {pathname: /run/mysqld/**/*, access: rwd}
 
       # Read configuration
-      file: {pathname: /etc/mysql, access: r}
-      file: {pathname: /etc/mysql, access: r}
-      file: {pathname: /etc/localtime, access: r}
-      file: {pathname: /usr/share/zoneinfo, access: r}
-      file: {pathname: /usr/share/zoneinfo/**, access: r}
-
-      # Read hostname information
-      file: {pathname: /etc/resolv.conf, access: r}
-      file: {pathname: /etc/host*, access: r}
+      - file: {pathname: /etc/mysql, access: r}
+      - file: {pathname: /etc/mysql/**/*, access: r}
+      - file: {pathname: /usr/share/zoneinfo, access: r}
+      - file: {pathname: /usr/share/zoneinfo/**/*, access: r}
 
       # Shared libraries loaded at runtime
-      file: {pathname: /var/lib/mysql/plugin/*.so, access: mr}
+      - file: {pathname: /var/lib/mysql/plugin/*.so, access: mr}
+      - file: {pathname: /usr/lib/libnss_files-*.*.so, access: mr}
 
       # Allow ipc with httpd
-      ipc: httpd
+      - ipc: httpd
 
       # Allow sending signals to existing mysqld instances
-      ipc: mysqld
+      - ipc: mysqld
+
+      # Allow mysqld to create a new network socket
+      # (Necessary to pass assertions)
+      - net: server
 
     taint:
-      # Taint when performing any ipc
-      ipc: httpd
+      # Taint when performing ipc with httpd
+      - ipc: httpd
+      # Taint when sending or receiving any network traffic
+      - net: [send, recv]
+
+    deny:
+      # Explicitly deny sending or receiving any network traffic
+      - net: [send, recv]
 \end{lstlisting}
 
 \subsubsection{Simplifying the \bpfcontain{} Example}
@@ -348,13 +360,16 @@ policies for httpd and mysqld respectively.
     allow:
       # Grant access to global /tmp filesystem, mounted as a Docker volume
       # This is where the mysqld Unix socket will go
-      fs: {pathname: /tmp, access: rw}
+      - fs: {pathname: /tmp, access: r}
+      # /dev/urandom, /dev/random, /dev/null
+      - dev: random
+      - dev: null
       # Allow network access
-      net: [server, send, recv]
+      - net: [server, send, recv]
       # Allow ipc access with mysqld
-      ipc: mysqld-container
-      # Bind to privileged ports
-      capability: [netbindservice]
+      - ipc: mysqld-container
+      # Bind to privileged ports, change uid and gid
+      - capability: [netbindservice, setuid, setgid]
 \end{lstlisting}
 
 \begin{lstlisting}[language=yaml, gobble=4, float=false, caption={[A simplified \bpfcontain{} policy for MySQL]
@@ -368,9 +383,15 @@ policies for httpd and mysqld respectively.
     allow:
       # Grant access to global /tmp filesystem, mounted as a Docker volume
       # This is where the mysqld Unix socket will go
-      fs: {pathname: /tmp, access: rw}
+      - fs: {pathname: /tmp, access: rw}
+      # Allow mysqld to create a new network socket
+      # (Necessary to pass assertions)
+      - net: server
       # Allow ipc access with httpd
-      ipc: httpd-container
+      - ipc: httpd-container
+    deny:
+      # Explicitly deny sending or receiving any network traffic
+      - net: [send, recv]
 \end{lstlisting}
 
 
@@ -587,23 +608,23 @@ same level of expressiveness.
 
     allow:
       # Grant access to the entire root filesystem
-      fs: {pathname: /, access: any}
+      - fs: {pathname: /, access: any}
       # Grant access to tempfs
-      fs: {pathname: /tmp, access: any}
+      - fs: {pathname: /tmp, access: any}
       # Grant read/write access to /proc/sys/kernel/shm*
-      file: {pathname: /proc/sys/kernel/shm*, access: rw}
+      - file: {pathname: /proc/sys/kernel/shm*, access: rw}
 
       # Grant access to the terminal, /dev/null, /dev/random, and /dev/urandom
-      device: terminal
-      device: null
-      device: random
+      - device: terminal
+      - device: null
+      - device: random
 
       # Grant access to the entire networking stack
-      net: any
+      - net: any
 
       # Enable Docker default capabilities
       # All other capabilities are denied
-      capability:
+      - capability:
         - chown
         - dacoverride
         - fsetid
@@ -640,8 +661,7 @@ filesystem. We include another rule to enable similar access on the temporary fi
 Despite the coarse granularity of these filesystem rules, \bpfcontain{} maintains
 a critical advantage over \bpfbox{} and the original Docker policy. Due to its
 container-specific policy defaults, we can achieve Docker's fine-grained protection over
-procfs and sysfs for free. Thus, \bpfcontain{} entirely obviates the need to specify such
-rules in the policy.
+procfs and sysfs without the need to specify it in the security policy.
 
 As with the procfs and sysfs policy, \bpfcontain{} also includes sensible defaults for
 \gls{ipc} and ptrace access. In particular, processes running within the same container
@@ -722,16 +742,16 @@ semantics as \bpfcontain{} does.
 
     allow:
       # Specify full path and access for volume mounts from the host
-      file: {pathname: /path/to/volume/mount, access: rw}
+      - file: {pathname: /path/to/volume/mount, access: rw}
       # Repeat for other volume mounts as required...
 
       # If the container requires networking
       # We could also define finer-grained access by replacing the "any"
       # keyword with specific socket operations
-      net: any
+      - net: any
 
       # If the container requires any capabilities
-      capability: [dacoverride, dacreadsearch, netbindservice] # etc.
+      - capability: [dacoverride, dacreadsearch, netbindservice] # etc.
 
       # Further extensions to the policy as required...
 \end{lstlisting}

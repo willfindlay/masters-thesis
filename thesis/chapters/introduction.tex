@@ -128,7 +128,7 @@ application- or container-specific policies that scale well and meet the needs o
 end users.
 
 To improve the status quo of confinement on Linux, we present two research prototypes,
-\bpfbox{} and its successor, \bpfcontain{}. The former is a novel application sandboxing
+\bpfbox{} and its successor \bpfcontain{}. The former is a novel application sandboxing
 framework, and the latter extends that framework to work well in the context of container
 security. Both research systems are implemented using \gls{ebpf}, the first such systems
 of their kind. In this thesis, we present a motivating re-framing of the confinement
@@ -198,13 +198,13 @@ fact that containers run directly on the host operating system and share a singl
 with other native processes, security is generally treated as an afterthought in the
 design of container management engines. If we truly want containers to be as secure as
 virtual machines, we must rethink the way we secure container deployments. Security must
-be prioritized from the ground-up, but must not get in the way of functionality. Existing
-container frameworks accomplish the second goal, but not the first.
+be prioritized from the ground up but must not get in the way of functionality. Existing
+container frameworks accomplish the second goal but not the first.
 
 Docker, for instance, applies a default AppArmor policy revoking access to only the most
 sensitive kernel interfaces like procfs and sysfs and disabling the ability to mount new
-filesystem.  Beyond these basic controls, the container has full permission to access all
-filesystem and resources, has access to several POSIX capabilities, and may unmount any
+filesystems. Beyond these basic controls, the container has full permission to access all
+filesystem resources, has access to several POSIX capabilities, and may unmount any
 filesystem~\cite{docker_apparmor, docker_default_apparmor}. Even worse, a kernel that does
 not support AppArmor or that is not properly configured is left totally bereft of this
 protection to begin with. Docker complements its default AppArmor profile with a set of
@@ -219,7 +219,7 @@ and seccomp policies or outright disabling protections altogether with the
 Docker is but the most prominent example among many. In general, all existing container
 management frameworks rely on a patchwork of isolation mechanisms, each enforcing its own
 confinement policy and each with varying degrees of generalization. As a result, these
-policies are often difficult to reason about, and thus difficult to effectively audit.
+policies are often difficult to reason about, and thus are difficult to effectively audit.
 A vulnerability in any individual mechanism or a misconfiguration in any individual policy
 opens the container or the host system itself up to attack. Blanket defaults are often
 ineffective for specific use cases and result in situations where the end user is forced to
@@ -276,7 +276,7 @@ be aggregated in real time in kernelspace, providing an extensible, performant, 
 flexible framework for modelling relationships and enforcing policy decisions based on
 these relationships.  A single security mechanism based on \gls{ebpf} can combine the advantages
 of several disparate mechanisms that would ordinarily need to be combined together to
-provide full protection. This property precisely mirrors the way container security is
+provide full protection. This notion is the antithesis of the way container security is
 currently done on Linux. Rather than combining namespaces, cgroups, seccomp, and mandatory
 access control together, \gls{ebpf} provides the opportunity to design a single framework
 providing the advantages of each.
@@ -293,11 +293,11 @@ abstraction. In the context of container security, this is a particularly import
 as containers are traditionally a \textit{userspace} concept, glued together with various
 abstractions provided by the kernel.
 
-\textit{Production-safety} is a third advantage provided by \gls{ebpf}. All \gls{ebpf} programs go
+\textit{Production safety} is a third advantage provided by \gls{ebpf}. All \gls{ebpf} programs go
 through a verification process before they are loaded into the kernel. The \gls{ebpf} verifier
 analyzes the program, asserting that it conforms to a number of safety requirements, such
 as program termination\footnote{This property is enforceable due to the fact that \gls{ebpf}
-programs are not Turing-complete~\cite{gregg2019_bpf}.}, memory safety, and read-only
+programs are not Turing complete~\cite{gregg2019_bpf}.}, memory safety, and read-only
 access to kernel data structures. While itself not formally verified, the \gls{ebpf} verifier
 facilitates the adoption of new \gls{ebpf} programs into production use cases, since an \gls{ebpf}
 program is far less likely to adversely impact a production system than other methods of

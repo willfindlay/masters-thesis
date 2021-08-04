@@ -662,21 +662,21 @@ in~\Cref{c:discussion}). \Cref{lst:bpfcontain-policy-example} depicts an example
 
     allow:
       # Perform send/recv operations as a client
-      net: [client, send, recv]
+      - net: [client, send, recv]
       # Grant read and append access to /etc/passwd
-      file: {pathname: /etc/passwd, access: ra}
+      - file: {pathname: /etc/passwd, access: ra}
       # Grant read-only access to /etc/shadow
-      file: {pathname: /etc/shadow, access: r}
+      - file: {pathname: /etc/shadow, access: r}
       # Grant read and append access to any immediate child of /var/log/mylogin
-      file: {pathname: /var/log/mylogin/*, access: ra}
+      - file: {pathname: /var/log/mylogin/*, access: ra}
       # Grant read and execute access to bash
-      file: {pathname: /bin/bash, access: rx}
+      - file: {pathname: /bin/bash, access: rx}
       # Grant read/write access to the TTY
-      dev: terminal
+      - dev: terminal
 
     taint:
       # Taint after performing any network operation
-      net: any
+      - net: any
 \end{lstlisting}
 
 \subsection{File and Filesystem Rules}
