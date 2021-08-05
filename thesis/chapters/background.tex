@@ -728,15 +728,18 @@ and \texttt{exit(2)} to enable self-termination. Using any other system call wou
 in an immediate SIGKILL delivered from the kernel, forcefully ending the offending
 process.
 
-Later, seccomp was extended to enable processes to define custom allowlists, denylists,
-and enforcement actions using classic \gls{bpf} filters~\cite{edge2015_seccomp}. This new
-incarnation was dubbed seccomp-bpf. While allowing for much finer-grained confinement
-policy than pledge and unveil, seccomp-bpf has its own limitations which can result in
-ineffective (and possibly dangerous) policies. In seccomp-bpf, filters are defined over
-system call numbers and (optionally) arguments. Unless the developer takes great care to
-correlate system call numbers with the specific target architecture, the resulting policy
-may allow and deny incorrect system calls, resulting in broken policies that break
-applications in the best case and expose security vulnerabilities in the worst case.
+Later, seccomp was extended to enable processes to define custom
+allowlists\footnote{Allowlist and denylist are the new politically correct terms (in
+addition to being more semantically meaningful) for whitelist and blacklist
+respectively.}, denylists, and enforcement actions using classic \gls{bpf}
+filters~\cite{edge2015_seccomp}. This new incarnation was dubbed seccomp-bpf.  While
+allowing for much finer-grained confinement policy than pledge and unveil, seccomp-bpf has
+its own limitations which can result in ineffective (and possibly dangerous) policies. In
+seccomp-bpf, filters are defined over system call numbers and (optionally) arguments.
+Unless the developer takes great care to correlate system call numbers with the specific
+target architecture, the resulting policy may allow and deny incorrect system calls,
+resulting in broken policies that break applications in the best case and expose security
+vulnerabilities in the worst case.
 
 Another innate problem with seccomp arises due to its fine granularity. Paradoxically,
 avoiding system call categorization can expose vulnerabilities, due to system call
@@ -765,10 +768,10 @@ top of Unix file descriptors, the canonical reference to files and file-like obj
 as network sockets and character devices. Capsicum adds an unforgeable access token to
 each file descriptor, granting the corresponding process specific access rights over that
 file descriptor. Whereas alternatives like seccomp-bpf~\cite{seccomp} and
-pledge~\cite{pledge} restrict access at the system-call-level, capsicum restricts access
+pledge~\cite{pledge} restrict access at the system-call-level, Capsicum restricts access
 at the resource-level and enforces this access within the system call layer.
 
-To confine processes, capsicum exposes a special \texttt{cap\_enter(2)} system call which
+To confine processes, Capsicum exposes a special \texttt{cap\_enter(2)} system call which
 causes a process to enter \textit{capability mode}. A process in capability mode no longer
 has access to global namespaces (e.g.\ the \gls{pid} namespace) and may only make a subset of
 system calls which do not directly access these global namespaces. Other system calls are
@@ -1399,7 +1402,7 @@ language\footnote{Other languages may eventually be used to write \gls{ebpf} pro
 well.  For instance, an experimental Rust \gls{ebpf} target has recently been merged into
 the Rust compiler~\cite{decina2021_bpf_rust}. The important distinction here is that the
 set of all possible \gls{ebpf} programs is a strict subset of the set of all possible
-programs.} using the LLVM toolchain.Programs can be loaded and attached to system events
+programs.} using the LLVM toolchain. Programs can be loaded and attached to system events
 using the \texttt{bpf(2)} system call, at which point control passes to the \gls{ebpf}
 verifier, which checks the programs to make sure they satisfy a set of safety
 constraints~\cite{starovoitov2014_ebpf, gregg2019_bpf}.
@@ -1409,8 +1412,8 @@ instructions and must not call into any kernel functions outside of the allowlis
 helpers. The program is also constrained to a 512 byte stack size; any additional memory
 required by the program must come from an \gls{ebpf} map (c.f.\ \Cref{ss:bpf-maps-bg}). For
 safety, memory accesses into allocated buffers must be properly bounds checked, pointers
-must be null-checked before dereferencing, and any access to external memory
-(e.g.\ belonging to userspace programs or to the kernel itself) must be read-only. Since
+must be null checked before dereferencing, and any access to external memory
+(e.g.\ belonging to userspace programs or to the kernel itself) must be read only. Since
 \gls{ebpf} programs must provably terminate, no back-edges are permitted in their control
 flow and all loops must be bounded by some fixed constant $i$ iterations.
 
@@ -1432,7 +1435,7 @@ sleepable versions of some \gls{ebpf} program types~\cite{starovoitov2020_sleepa
 Once loaded into the kernel, \gls{ebpf} programs are represented as \gls{bpf} objects, each with its
 own reference count. Loading a \gls{bpf} program and attaching it to a system event increments
 the reference count, while detaching and unloading the program decrements the reference
-count. The kernel also exposes a special filesystem, \textit{bpffs} , which allows \gls{bpf}
+count. The kernel also exposes a special filesystem, \textit{bpffs}, which allows \gls{bpf}
 programs to be pinned. This also increments the reference count, allowing an attached
 program to outlive its controlling process (i.e.\ the process that loaded and attached
 it)~\cite{gregg2019_bpf}.
@@ -1440,8 +1443,8 @@ it)~\cite{gregg2019_bpf}.
 \subsubsection*{Working with the Verifier}
 
 In practice, the restrictions imposed by the verifier mean that \gls{ebpf} programs are not
-\textit{Turing-complete}~\cite{gregg2019_bpf}.  This property is required, given that the
-halting problem (i.e.\ the decidability of program termination) is known not to be solvable
+\textit{Turing complete}~\cite{gregg2019_bpf}.  This property is required, given that the
+halting problem (i.e.\ the decidability of program termination) is known to be unsolvable
 for Turing-complete programs. This notion of Turing-incompleteness means that the set of
 all possible \gls{ebpf} programs is a strict subset of the set of all possible C programs. While
 these limitations help to ensure program safety, they also naturally restrict some
@@ -1474,13 +1477,13 @@ types and their properties.
 
 \begingroup\small
 \begin{longtable}[c]{lp{4.2in}}
-\caption[A selection of relevant eBPF program types for \bpfbox{} and \bpfcontain{}]{A selection of relevant \gls{ebpf} program types for \bpfbox{} and \bpfcontain{}.}%
+\caption[A selection of relevant eBPF program types for \bpfbox{} and \bpfcontain{}~\cite{gregg2019_bpf}]{A selection of relevant \gls{ebpf} program types for \bpfbox{} and \bpfcontain{}.}%
 \label{tab:program-types}\\
   \toprule
   Program Type & Description\\
   \midrule
   \textit{\gls{lsm} Probes}    & \gls{lsm} probes~\cite{singh2019_krsi} attach to the kernel's \gls{lsm} hooks and can be used to audit security events and make policy decisions.\\
-  \textit{Raw Tracepoints}     & Raw tracepoint programs attach to a stable tracing interface exposed by the Linux kernel. Tracepoints are considered a stable \gls{api}, but are more limiting than alternatives such as Kprobes or Fentry probes.\\
+  \textit{Raw Tracepoints}     & Raw tracepoint programs attach to a stable tracing interface exposed by the Linux kernel. Tracepoints are considered a stable \gls{api} but are more limiting than alternatives such as Kprobes or Fentry probes.\\
   \textit{Kprobes/Kretprobes}  & Kprobe programs can attach to any kernel function, by replacing the function with a trap into the \gls{bpf} program. The \gls{bpf} program has read-only access to the function arguments. Kretprobes work in the same way, but handle function returns instead of function calls.\\
   \textit{Fentry/Fexit Probes} & A more efficient version of Kprobes and Kretprobes that directly trampolines into the \gls{bpf} program instead of trapping. These programs can also be used to modify the return value of specifically allowlisted kernel functions (e.g.\ system call implementations).\\
   \textit{Uprobes/Uretprobes}  & The userspace equivalent of Kprobes and Kretprobes.\\
@@ -1497,7 +1500,7 @@ events. Introduced by KP Singh in his \gls{krsi}
 patch~\cite{singh2019_krsi}, \gls{lsm} probes define a canonical framework for attaching \gls{ebpf}
 programs to the Linux kernel's \gls{lsm} security hooks (c.f.\ \Cref{ss:mac}). Unlike
 traditional \gls{lsm}s which are implemented as static kernel modules, \gls{lsm} probes are
-\textit{dynamically attachable}, meaning that \gls{mac} and audit policy can be adjusted at
+\textit{dynamically attachable}, meaning that access control and audit policy can be adjusted at
 runtime, simply by loading a new \gls{ebpf} program.  \Cref{fig:bpf-lsm} depicts how \gls{lsm} probes
 integrate with the \gls{lsm} framework.
 
@@ -1508,7 +1511,6 @@ integrate with the \gls{lsm} framework.
   \label{fig:bpf-lsm}
 \end{figure}
 
-As with other \gls{lsm}s, \gls{lsm} probes implement a form of mandatory access control.
 Each \gls{lsm} probe can be attached to one or more \gls{lsm} hooks defined in the kernel.
 When the hook fires (i.e.\ when a task requests a privileged operation form the kernel),
 every attached probe fires as part of the normal \gls{lsm} pipeline. The body of the
@@ -1537,22 +1539,21 @@ a particularly attractive target for developing new security solutions.
 \label{ss:bpf-maps-bg}
 
 \gls{ebpf} maps serve as both a runtime data store for \gls{ebpf} programs and the
-canonical method of communication between \gls{ebpf} programs and other \gls{ebpf}
-programs, and \gls{ebpf} programs and userspace applications. Like \gls{ebpf} programs,
-maps can be pinned to \textit{bpffs} to increment their reference count in the kernel.
-Concurrent access to \gls{ebpf} maps from within kernelspace is protected by an implicit
-RCU lock, and a spinlock concurrency primitive is exposed via a helper function to guard
-map accesses between kernelspace and userspace.  From the \gls{ebpf} side, maps can be
-accessed using a set of provided helper functions.  Userspace applications can access maps
-using the \texttt{bpf(2)} system call or through direct memory-mapping (only available for
-arrays) via \texttt{mmap(2)~\cite{gregg2019_bpf}}. While many \gls{ebpf} maps are designed
-to be generic, others are highly specialized for specific use cases. \bpfcontain{} and
-\bpfbox{} make use of several \gls{ebpf} map types, which are summarized in
-\Cref{tab:map-types}.
+canonical method of communication between different \gls{ebpf} programs and userspace
+applications. Like \gls{ebpf} programs, maps can be pinned to \textit{bpffs} to increment
+their reference count in the kernel.  Concurrent access to \gls{ebpf} maps from within
+kernelspace is protected by an implicit RCU lock, and a spinlock concurrency primitive is
+exposed via a helper function to guard map accesses between kernelspace and userspace.
+From the \gls{ebpf} side, maps can be accessed using a set of provided helper functions.
+Userspace applications can access maps using the \texttt{bpf(2)} system call or through
+direct memory mapping (only available for arrays) via
+\texttt{mmap(2)~\cite{gregg2019_bpf}}. While many \gls{ebpf} maps are designed to be
+generic, others are highly specialized for specific use cases. \bpfcontain{} and \bpfbox{}
+make use of several \gls{ebpf} map types (see \Cref{tab:map-types}.
 
 \begingroup\footnotesize
 \begin{longtable}[c]{lp{3.9in}}
-\caption[A selection of relevant eBPF map types for \bpfbox{} and \bpfcontain{}]{A selection of relevant \gls{ebpf} map types for \bpfbox{} and \bpfcontain{}.}%
+\caption[A selection of relevant eBPF map types for \bpfbox{} and \bpfcontain{}~\cite{gregg2019_bpf}]{A selection of relevant \gls{ebpf} map types for \bpfbox{} and \bpfcontain{}.}%
 \label{tab:map-types}\\
   \toprule
   Map Type & Description\\
@@ -1561,20 +1562,20 @@ to be generic, others are highly specialized for specific use cases. \bpfcontain
   \textit{\gls{bpf} Array}             & A fixed-size array with integer indices. Values can be arbitrary data structures.\\
   \textit{\gls{bpf} Array/Map of Maps} & A \gls{bpf} array or map that stores handles into \textit{other maps}.\\
   \textit{\gls{bpf} Per-\glsentryshort{cpu} Array/Map} & Like a \gls{bpf} hashmap or \gls{bpf} array but with a separate copy per logical \glsentryshort{cpu}\@. This enables concurrent access across \glsentryshortpl{cpu}, but without synchronization.\\
-  \textit{\gls{bpf} Local Storage}     & A dummy \gls{bpf} map that provides a handle into local storage for a given kernel data structure. For instance, task local storage provides storage per-task-struct. Values can be arbitrary data structures.\\
+  \textit{\gls{bpf} Local Storage}     & A dummy \gls{bpf} map that provides a handle into local storage for a given kernel data structure. For instance, task local storage provides storage per task struct. Values can be arbitrary data structures.\\
   \textit{\gls{bpf} Ringbuf}           & A concurrent circular buffer that passes event handles from kernelspace to userspace. To communicate, \gls{ebpf} programs submit events and userspace applications poll events.\\
   \bottomrule
 \end{longtable}
 \endgroup
 
-\subsection{Userspace Front-Ends}%
+\subsection{Userspace Front Ends}%
 \label{ss:bpf-userspace}
 
 Although \gls{ebpf} programs and maps can exist on their own after being pinned to
 \textit{bpffs}, the more common approach is to manage their lifetime using a controlling
 process. Userspace applications implementing such a controlling process typically use an
 \gls{ebpf} front-end framework to facilitate loading and interacting with programs and maps.
-A number of such front-ends exist~\cite{gobpf, bcc, libbpf, libbpf-rs, libbpfgo,
+A number of such front ends exist~\cite{gobpf, bcc, libbpf, libbpf-rs, libbpfgo,
 cilium-ebpf, redbpf}, some more practical than others.
 \textit{bcc}~\cite{bcc} was the first \gls{ebpf} framework to offer high-level userspace tooling
 around \gls{ebpf}, providing an LLVM backend for compiling \gls{ebpf} programs and a Python library
@@ -1586,20 +1587,19 @@ bypasses libbpf entirely, providing fully native \gls{ebpf} bindings for Rust an
 
 \subsubsection*{Libbpf and BPF CO-RE}%
 
-Among the myriad of userspace front-ends available for \gls{ebpf}, libbpf stands out as the only
+Among the myriad of userspace front ends available for \gls{ebpf}, libbpf stands out as the only
 one with official upstream support from the Linux kernel. Recent improvements to libbpf
 have solidified its position as the dominant framework. In particular, libbpf supports
 a new way of compiling and loading \gls{bpf} programs into the kernel, \gls{bpf}
 \gls{core}~\cite{gregg2020_core, nakryiko2020_core}. \gls{bpf} \gls{core} uses \gls{btf}
 debugging information exposed by the kernel, along with load-time relocation logic to
-support loading the same compiled \gls{ebpf} bytecode across multiple target kernels. The
-precise technical details of how \gls{core} works are beyond the scope of this thesis.
+support loading the same compiled \gls{ebpf} bytecode across multiple target kernels.
 
 With libbpf and \gls{core}, \gls{ebpf} programs can now be compiled once and run on any target kernel
 that supports the required \gls{bpf} features. This provides a powerful advantage over other
 \gls{ebpf} frameworks and even alternatives to \gls{ebpf}, such as loadable kernel modules. A \gls{core}
 program that runs on one kernel will be guaranteed to run on another of the same version
-or higher, barring any \gls{api} incompatibilities like changes in a hooker function signature.
+or higher, barring any \gls{api} incompatibilities like changes in a hooked function signature.
 Such incompatibilities can be resolved with the use of built-in kernel configuration
 checks.
 
@@ -1673,7 +1673,7 @@ At a first approximation, \gls{ebpf} differs from kernel modules in the followin
   \begin{tabular}{lccccccp{4.8em}}
   \toprule
                        & \rot{45}{Loadable at Runtime} & \rot{45}{Verified Safety}
-                       & \rot{45}{Easy Abstractions}   & \rot{45}{Rich Data Structures}
+                       & \rot{45}{Easy Abstractions}   & \rot{45}{Cross-Boundary Data Structures}
                        & \rot{45}{Turing Complete}     & \rot{45}{Complex Functionality} & \\
   \midrule
   \glsentryshort{ebpf} & \fullc  & \fullc  & \fullc  & \fullc  & \emptyc & \halfc  & \\
@@ -1683,12 +1683,12 @@ At a first approximation, \gls{ebpf} differs from kernel modules in the followin
   \end{tabular}
 \end{table}
 
-In summary, \gls{ebpf} is useful for observability use cases, or cases in which the
-functional requirements of the kernel code are not expected to be complex or might be
-expected to change frequently. \gls{ebpf} programs and maps are particularly good at
-separation of concerns, composability, and modularity. \gls{ebpf} maps facilitate easy
-communication between kernelspace and userspace, and provide the ability to build
-relationships between data from different program types. Kernel modules should be
-preferred for the implementation of more complex kernel functionality, such as device
-drivers. \Cref{tab:ebpf-comparison} presents a summary comparison of \gls{ebpf}, kernel
-modules, and kernel patches as a means of running custom code in the kernel.
+\Cref{tab:ebpf-comparison} presents a summary comparison of \gls{ebpf}, kernel modules,
+and kernel patches as a means of running custom code in the kernel.  In summary,
+\gls{ebpf} is useful for observability use cases, or cases in which the functional
+requirements of the kernel code are not expected to be complex or might be expected to
+change frequently. \gls{ebpf} programs and maps are particularly good at separation of
+concerns, composability, and modularity. \gls{ebpf} maps facilitate easy communication
+between kernelspace and userspace, and provide the ability to build relationships between
+data from different program types. Kernel modules should be preferred for the
+implementation of more complex kernel functionality, such as device drivers.

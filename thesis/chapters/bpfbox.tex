@@ -13,12 +13,14 @@ David Barrera~\cite{findlay2020_bpfbox}.
 
 At a high level, \bpfbox{} is a confinement mechanism based on \gls{ebpf}. As outlined in
 \Cref{s:cp-design} of \Cref{c:confinement-problem}, our primary design goals are
-simplicity, flexibility, suitability for containerized applications, and flexibility. With
-this in mind, \bpfbox{} attempts to be as lightweight as possible, with a simple policy
-language that supports optional granularity. Perhaps the most important goal of \bpfbox{}
-may be derived from the aforementioned goals: to make per-application security policy
-accessible to end users. To achieve these goals, we leverage \gls{ebpf} for \bpfbox{}'s
-kernelspace implementation and rely on a number of its intrinsic properties.
+simplicity, flexibility, and suitability for containerized applications\footnote{While
+\bpfbox{} marks a step toward achieving this goal, \bpfcontain{} (\Cref{c:bpfcontain}) is far
+better suited to container-level confinement.}. With this in mind, \bpfbox{} attempts to
+be as lightweight as possible, with a simple policy language that supports optional
+granularity. Perhaps the most important goal of \bpfbox{} may be derived from the
+aforementioned goals: to make per-application security policy accessible to end users. To
+achieve these goals, we leverage \gls{ebpf} for \bpfbox{}'s kernelspace implementation and
+rely on a number of its intrinsic properties.
 
 In particular, we take advantage of multiple program and map types (outlined in
 \Cref{ss:bpfbox-architecture}). This design enables us to trace multiple aspects of system
@@ -113,6 +115,7 @@ be subsequently loaded into kernelspace through \gls{bpf} maps.
 is encouraged to revisit \Cref{ss:bpf-programs-bg,ss:bpf-maps-bg} in \Cref{c:background},
 where necessary, for clarification on specific program and map types.
 
+\paragraph*{Maps:}
 \begin{itemize}
   \item \bpfbox{} uses \textbf{\green{Hashmaps}} to store runtime state, share state
   between its \gls{bpf} programs, and communicate with the userspace daemon. In
@@ -134,14 +137,17 @@ where necessary, for clarification on specific program and map types.
   % various categories of access. Each map encodes an access vector and policy ID pair that
   % is mapped to the corresponding enforcement decision. At runtime, \bpfbox{} queries these
   % maps before making an enforcement decision on a specific access pattern.
+\end{itemize}
 
+\paragraph*{Programs:}
+\begin{itemize}
   \item \textbf{\purple{Tracepoints}} enable \bpfbox{} to track the state of a process from the
   point where it forks or executes a new binary to when it exits. \bpfbox{} stores
   per-process state from its tracepoints in \textit{state maps} for later use.
 
   \item \textbf{\purple{\gls{lsm} Probes}} enforce policy by attaching to \gls{lsm} hooks in the
   kernel. These hooks are called by kernel functions such as system call implementations
-  and trigger the corresponding \gls{bpf} program, which enforces a policy decision on the
+  and trigger the corresponding \gls{bpf} program, which then enforces a policy decision on the
   target application. To enforce policy, \bpfbox{}'s \gls{lsm} probes query \textit{policy
   maps} and \textit{state maps}.
 
@@ -225,16 +231,16 @@ takes these factors together to come to a policy decision.
 %%     \label{fig:bpfbox-enforcement}
 %% \end{figure}
 
-\bpfbox{} can optionally augment the information provided by the \gls{lsm} hooks themselves with
-additional context obtained by instrumenting other aspects of process behaviour. For
-instance, profiles may optionally define \textit{function contexts} which determine the
-validity of specified rules; a rule could specify that a certain filesystem access must
-occur within a call to the function \texttt{foo()} or that it must be audited within
-a call to the function \texttt{bar()}. The ability to combine various aspects of system
-behaviour, both in kernelspace and in userspace, is a key advantage of an \gls{ebpf}-based
-solution over traditional techniques. This allows for the creation of extremely
-fine-grained policies at the discretion of the policy author. The mechanisms by which this
-is accomplished are discussed further in \Cref{ss:bpfbox-state}.
+The ability to combine various aspects of system behaviour, both in kernelspace and in
+userspace, is a key advantage of an \gls{ebpf}-based solution over traditional techniques.
+\bpfbox{} uses this capability to optionally augment the information provided by the
+\gls{lsm} hooks themselves with additional context obtained by instrumenting other aspects
+of process behaviour. For instance, profiles may optionally define \textit{function
+contexts} which determine the validity of specified rules; a rule could specify that
+a certain filesystem access must occur within a call to the function \texttt{foo()} or
+that it must be audited within a call to the function \texttt{bar()}. This allows for the
+creation of extremely fine-grained policies at the discretion of the policy author. The
+mechanisms by which this is accomplished are discussed further in \Cref{ss:bpfbox-state}.
 
 Due to \bpfbox{}'s strict resolution of filesystem objects at policy load time, a problem
 arises when dealing with applications that read or write temporary files on disk or create
@@ -353,11 +359,11 @@ kernelspace function calls for policy enforcement.
 \end{figure}
 
 This approach is subject to a few inherent limitations.  Firstly, compile-time
-optimizations such as function in-lining can invalidate the probe by removing the
+optimizations such as function inlining can invalidate the probe by removing the
 corresponding symbol in the target object file. Secondly, a recursive call that is not
 tail-optimized will break enforcement by prematurely signalling to \bpfbox{} that
 a process has exited a given function context.  The first limitation may be trivially
-worked around by hinting to the compiler that a given function should not be in-lined;
+worked around by hinting to the compiler that a given function should not be inlined;
 although this sacrifices some application transparency and incurs a slight performance
 penalty, the potential security benefits from such a fine-grained policy are arguably
 worth the trade-off.  The second limitation \textit{could} be worked around by maintaining
@@ -378,7 +384,7 @@ Linux 5.8. The \gls{ebpf} ringbuf map implements an efficient ring buffer that i
 across all \glspl{cpu}. This new map type comes with a number of optimizations for fast
 reads and writes and in-order guarantees for asynchronous events across multiple
 \glspl{cpu}, allowing per-event data to be efficiently shared with userspace in near
-real-time.
+real time.
 
 In userspace, the \bpfbox{} daemon uses \texttt{mmap(2)} to map the corresponding memory
 region and polls for new data at regular intervals. As events are consumed in userspace

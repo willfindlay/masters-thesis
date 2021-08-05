@@ -49,7 +49,7 @@ attacker.
     Comparing the isolation and perceived security of containers and
     \glsentryshortpl{vm}. A boundary defined in hardware is often considered more rigid,
     whereas a software defined boundary is generally considered more malleable, and thus
-    weaker. However, this need not be the case. The goal of this thesis is to reposition
+    weaker. However, this need not be the case. A goal of this thesis is to reposition
     containers to be as secure, if not more secure, than hypervisor-based virtualization.
   }%
   \label{fig:container-hvm-security}
@@ -81,15 +81,15 @@ In the case of virtual machines, security is an emergent phenomenon. The implici
 isolation provided by a virtual machine is purely a function of the semantic gap between
 guest operating system, virtualized hardware, and physical hardware. Here, security is
 intrinsically tied to functionality. Administrators poke holes in this isolation all the
-time, through shared filesystems, virtual network interfaces, and the like. From there, it
-is up to the administrator to use conventional \gls{os} security mechanisms
-(c.f.\ \Cref{s:process-security-model,s:security-extensions} in \Cref{c:background}) such
-as filesystem access controls and network firewalls to lock down the exposed interface.
-A clear pattern emerges: first provision the resource, then secure it, just as in an
-ordinary operating system (after all, a guest operating system \textit{is} just an
-operating system). The end result of this process is a combination of implicit isolation
-and additional \gls{os}-level security mechanisms: a form of \textit{policy through
-mechanism}.
+time through shared filesystems, virtual network interfaces, and other virtual device
+drivers. From there, it is up to the administrator to use conventional \gls{os} security
+mechanisms (c.f.\ \Cref{s:process-security-model,s:security-extensions} in
+\Cref{c:background}) such as filesystem access controls and network firewalls to lock down
+the exposed interfaces.  A clear pattern emerges: first provision the resource, then secure
+it, just as in an ordinary operating system (after all, a guest operating system
+\textit{is} just an operating system). The end result of this process is a combination of
+implicit isolation and additional \gls{os}-level security mechanisms: a form of
+\textit{policy through mechanism}.
 
 The central argument of this thesis is that there is no fundamental reason why containers
 cannot be as\,---\,if not more\,---\,secure than virtual machines.  While it is true that
@@ -205,7 +205,7 @@ in \Cref{s:cp-design}.
     Namespaces~\cite{biederman2006_namespaces, linux_namespaces} were designed to
     virtualize resources; they do not provide confinement by themselves. To truly confine
     a process using namespaces, we need a way to account for namespace escapes.
-    Cgroups~\cite{cgroups}, similarly, were designed to virtualize the availability of
+    Cgroups~\cite{cgroups} similarly, were designed to virtualize the availability of
     quantifiable resources, not to directly confine. Unix
     \gls{dac}~\cite{jaeger2008_os_security, van_oorschot2020_tools_jewels} is far too
     coarse-grained and easy to bypass to be directly useful for confinement. POSIX
@@ -232,7 +232,9 @@ in \Cref{s:cp-design}.
     confinement. In the case of Snap, high-level abstractions in policy definition can
     simplify the process of policy authorship to a certain extent, but simple policies
     are still compiled down into thousands of lines of policy soup, spanning multiple
-    confinement mechanisms.
+    confinement mechanisms. FreeBSD Jails and Solaris Zones take an alternate approach,
+    enforcing a rigid protection boundary around the container, but with little flexibility
+    for policy customization.
 
   \item \label{i:problem-unsuitability} \textbf{Unsuitability for Containers.}
     Existing Linux \gls{dac} and \gls{mac} is unsuitable for containers.
@@ -274,14 +276,15 @@ in \Cref{s:cp-design}.
     In order to truly solve these fundamental issues, we need kernel support for new
     primitives. Unfortunately, this begets yet another fundamental issue: adding new
     solutions directly to the kernel is difficult, particularly from an adoptability
-    standpoint. New kernel code can introduce bugs and security vulnerabilities, and needs
+    standpoint. New kernel code can introduce bugs and security vulnerabilities. It needs
     to be thoroughly tested before it can be considered production ready. Paradoxically,
     the potential to introduce new security vulnerabilities can make the use of such novel
     primitives \textit{less} secure. Similarly, kernel bugs can introduce availability
-    concerns in production systems, even when such bugs are not security-critical. For
+    concerns in production systems, even when such bugs are not security critical. For
     these reasons, industry managers may be reluctant to adopt new, out-of-tree solutions
     based on loadable kernel modules, for example~\cite{gregg2019_bpf}.
 
+    \todo{Anil's comment: What changes? Are Solaris Zones not enough?}
     Another adoptability concern arises when we consider \textit{container-specific}
     confinement~\cite{sultan2019_container_security, sun2018_security_namespace} as an
     end-goal.  To date, the definition of precisely what a container is has been more or
@@ -303,7 +306,7 @@ in \Cref{s:cp-design}.
 
 This section examines and critiques the way Linux container technologies apply confinement
 primitives to lock down container deployments. We focus primarily on Docker as a case
-study, however these principles in general apply to the majority of container management
+study; however, these principles in general apply to the majority of container management
 frameworks.
 
 In general, Linux containers have three broad goals. However, these goals are neither
@@ -380,8 +383,7 @@ associated with fine-grained policy defaults.
 % configurations, beyond simply disabling them altogether, is difficult and
 % error-prone~\cite{lin2018_container_security}.
 
-Container security policies are often overly-generic and ill-suited to fine-grained
-confinement. Part of the problem here is that containers in general are designed to
+Part of the problem in confining containers is that, in general, they are designed to
 \enquote{just work}. Overly fine-grained security policies may get in the way of this,
 particularly as end user requirements vary and evolve across deployments.
 Docker~\cite{docker_security}, for instance, provisions an overly-permissive default
@@ -404,8 +406,7 @@ a more permissive policy, possibly without the user's knowledge.
 Docker~\cite{docker_security} applies a dangerously permissive \texttt{iptables} policy
 that can transparently expose a container to an external network, even overriding existing
 deny rules. This overly-permissive network policy was the direct cause of a recent data
-breach at NewsBlur~\cite{newsblur}, a news aggregation website, although NewsBlur
-administrators claim that no user data was actually compromised~\cite{newsblur}.
+breach at NewsBlur~\cite{newsblur}, a news aggregation website.
 
 
 
@@ -624,10 +625,11 @@ is expanded to operate at the container level. Like \bpfbox{}, \bpfcontain{} int
 system calls using \gls{ebpf} programs attached to \gls{lsm} hooks, but these programs
 account for the state of an individual container, including properties like a process'
 container membership and whether a given resource is part of a container-local namespace.
-In effect, this means that, unlike \bpfbox{}, \bpfcontain{} defines a clear protection
-boundary around the container itself; access to resources \textit{within} the container is
-considered default-allow, whereas resources \textit{outside}  of the container or
-operations that can affect global system state are considered default-deny.
+Whereas \bpfbox{} defines its protection boundary around the process, \bpfcontain{}
+defines a protection boundary around the container itself; access to resources
+\textit{within} the container is considered default-allow, whereas resources
+\textit{outside}  of the container or operations that can affect global system state are
+considered default-deny.
 
 % When designing a policy language and policy enforcement engine, there are a few trade-offs
 % to consider that can directly impact the security, usability, readability, and
@@ -662,7 +664,7 @@ operations that can affect global system state are considered default-deny.
 \subsection{The Adversary and Attack Vectors}
 
 We consider a privileged remote adversary with root-level access under conventional Unix
-discretionary access controls.  Further, as assume that the adversary has already achieved
+discretionary access controls.  Further, we assume that the adversary has already achieved
 local code execution at the process level. This means that the adversary is capable of
 running arbitrary code in the context of a given process or container and can perform
 arbitrary interactions with the kernel's reference monitor; these interactions may be

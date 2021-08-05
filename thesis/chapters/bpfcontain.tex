@@ -96,7 +96,7 @@ we architect \bpfcontain{} based on Rust, libbpf-rs~\cite{libbpf-rs}, and \gls{b
 introduced by \gls{bpf} program compilation and the dependency overhead from LLVM and
 kernel headers. Further, \gls{core} enables \bpfcontain{} to work seamlessly across
 multiple kernel versions and configurations. These changes improve the adoptability of
-\bpfcontain{}, particularly in containerized environments, wherein heavy-weight
+\bpfcontain{}, particularly in containerized environments, wherein heavyweight
 dependencies can critically impact deployments.
 
 \Cref{tab:bpfcontain-comparison} offers a high-level comparison between the properties and
@@ -150,7 +150,7 @@ As a container-specific confinement solution, \bpfcontain{} has a number of impo
 design goals, some of which are shared with \bpfbox{}. First, we seek to design a simple
 yet flexible policy language that supports ad-hoc confinement use cases, enabling an
 end user to write a custom confinement policy to suit their needs. We extend this goal by
-seeking to make the policy language and enforcement engine \textit{container-specific}.
+seeking to make the policy language and enforcement engine \textit{container specific}.
 This means that \bpfcontain{} policies should conform to container semantics and work in
 tandem with container virtualization primitives to improve policy enforcement and further
 simplify the underlying policies. An implicit sub-goal of container-specific policy is to
@@ -174,7 +174,7 @@ programs and maps into the kernel, which then enforce policy.
 hooks in the kernel. Like \bpfbox{}, \bpfcontain{} leverages the
 \gls{krsi}~\cite{singh2019_krsi} \gls{lsm} programs introduced in Linux 5.7 for this
 purpose. Unlike \bpfbox{}, \bpfcontain{} generates \gls{bpf} bytecode at
-\textit{compile-time} rather than at runtime. The bytecode is then embedded directly in
+\textit{compile time} rather than at runtime. The bytecode is then embedded directly in
 \bpfcontain{}'s binary object file, where it can subsequently be loaded into the kernel at
 runtime. This has the benefit of eliminating initial compile-time overhead and supporting
 cross-architecture deployments using \gls{bpf} \gls{core}.
@@ -246,20 +246,22 @@ equivalent.}~\cite{libbpf-rs} to load its \gls{ebpf} programs and maps into the 
 This results in a number of advantages, which we discuss in more detail in the following
 section.
 
-\bpfcontain{}'s kernelspace components are implemented in \gls{ebpf}. \gls{ebpf} programs
-trace container lifecycle and enforce policy, while \gls{ebpf} maps store policy and pass
-intermediary state between program invocations. This architecture is similar in spirit to
-the design of \bpfbox{}, but with a few fundamental differences. Firstly, rather than
-using the LLVM toolchain to compile programs at runtime, \bpfcontain{} pre-compiles and
-embeds the \gls{bpf} object code into its binary object file. Using \gls{bpf}
-\gls{core}~\cite{nakryiko2020_core}, these programs can then be dynamically loaded into
-any supported kernel, regardless of the underlying configuration or architectural details.
+\bpfcontain{}'s kernelspace \gls{ebpf} programs trace container lifecycle and enforce
+policy, while \gls{ebpf} maps store policy and pass intermediary state between program
+invocations. This architecture is similar in spirit to the design of \bpfbox{}, but with
+a few fundamental differences. Rather than using the LLVM toolchain to compile
+programs at runtime, \bpfcontain{} pre-compiles and embeds the \gls{bpf} object code into
+its binary object file. Using \gls{bpf} \gls{core}~\cite{nakryiko2020_core}, these
+programs can then be dynamically loaded into any supported kernel, regardless of the
+underlying configuration or architectural details.
 
 \bpfcontain{} leverages several \gls{bpf} program and map types to implement container
 tracing and confinement. While many of the major program types are shared with \bpfbox{},
-there are a few distinct differences (c.f.\ \Cref{ss:bpfbox-architecture} of
-\Cref{c:bpfbox}). We enumerate these differences as follows. Map types are outlined in
-\textbf{\green{green}} and program types are outlined in \textbf{\purple{purple}}.
+there are a few distinct differences (c.f.\ \Cref{ss:bpfbox-architecture}). We enumerate
+these differences as follows. Map types are outlined in \textbf{\green{green}} and program
+types are outlined in \textbf{\purple{purple}}.
+
+\paragraph*{Maps:}
 \begin{itemize}
   \item \bpfcontain{} replaces many of \bpfbox{}'s \textbf{\green{Hash Maps}},
   particularly those used to track process state, with equivalent \textbf{\green{Local
@@ -269,7 +271,10 @@ there are a few distinct differences (c.f.\ \Cref{ss:bpfbox-architecture} of
   is a dynamically-allocated and garbage-collected per-structure storage blob.
   \bpfcontain{} leverages these for more memory-efficient storage of per-task and
   per-inode state.
+\end{itemize}
 
+\paragraph*{Programs:}
+\begin{itemize}
   \item \bpfcontain{} replaces the use of scheduler \textbf{\purple{Tracepoints}} with
   equivalent \textbf{\purple{\gls{lsm} Probes}} that expose the same information. This
   reduces potential overhead from multiple \gls{bpf} program invocations on the same code
@@ -281,6 +286,7 @@ there are a few distinct differences (c.f.\ \Cref{ss:bpfbox-architecture} of
   making them far more efficient than kprobes.
 \end{itemize}
 
+\todo{Ask Anil what he means here}
 Aside from the aforementioned differences, \bpfcontain{} uses the same \gls{bpf} program
 and map types as \bpfbox{}. However, the underlying implementation details of each
 \gls{bpf} program will be quite different from \bpfbox{}, as \bpfcontain{} is dealing with
@@ -297,15 +303,15 @@ avoid constraining the user to one specific language syntax. In particular, we w
 avoid another domain-specific language, as learning the policy language could be a barrier
 to entry for new users. A domain-specific policy language also presents issues when making
 changes to or adding new features to the policy language specification, as the parser and
-lexer must both be modified, along with underlying rule representation, and enforcement
-engine. Instead, we elect to decouple the policy language from the policy specification,
+lexer must both be modified, along with underlying rule representation and enforcement
+engine. Instead, we elected to decouple the policy language from the policy specification,
 using Serde~\cite{serde}, a data serialization and deserialization crate for Rust.
 
 Serde leverages Rust's powerful type system and procedural macros to derive serialization
 and deserialization logic for vanilla Rust structs and enums. Rust crates that consume
 Serde's \gls{api} can then use the automatically generated logic for serialization and
 deserialization. This design enables a plug-and-play relationship between a data schema,
-defined as a Rust data structure and any data serialization language supported through the
+defined as a Rust data structure, and any data serialization language supported through the
 Rust crates ecosystem. \bpfcontain{} uses Serde to automatically generate the accompanying
 deserialization logic for a \texttt{Policy} struct and several \texttt{Rule} structs, one
 for each supported rule type. \Cref{lst:bpfcontain-serde} depicts a simplified example of
@@ -314,7 +320,7 @@ how this works.
 \begin{lstlisting}[language=Rust, gobble=2, caption={[A simplified example of \bpfcontain{}'s policy deserialization logic]
   A simplified example of \bpfcontain{}'s policy deserialization logic. Policy rules are
   specified declaratively using Rust structs and the corresponding deserialization logic
-  is automatically generated by the Serde crate, using a simple decorator macro.
+  is automatically generated by the Serde crate using a simple decorator macro.
 },
 label={lst:bpfcontain-serde}]
   use serde::Deserialize;
@@ -375,10 +381,10 @@ define a boundary around the container). In particular, default access to resour
 determined based on whether that resource exists within the context of a container.
 Resources within the container, such as \gls{ipc} handles into container processes or
 filesystems belonging to the container's user namespace mount are considered
-default-allow. Conversely, resources outside of the container, such as external files or
-processes, are considered default-deny. Similarly, access is also denied to any operating
+default allow. Conversely, resources outside of the container, such as external files or
+processes, are considered default deny. Similarly, access is also denied to any operating
 system interfaces that could affect global system state, such as character devices, kernel
-modules, \gls{ebpf}, special filesystems, and the like. Exceptions to these defaults may
+modules, \gls{ebpf}, and some special filesystems. Exceptions to these defaults may
 be explicitly defined in the policy file as required. \Cref{ss:bpfcontain-default}
 examines the implementation of \bpfcontain{}'s default policy in more detail.
 
@@ -389,7 +395,7 @@ policy language supported by \bpfcontain{}'s policy deserializer, as documented 
 updates to policy files, and triggers a reload of the corresponding policy when a file
 changes. To load a policy, the daemon deserializes the policy file into a Rust data
 structure consisting of a series of policy rules and accompanying metadata. It then
-encodes this policy structure into a series of resource IDs and access vectors, and loads
+encodes this policy structure into a series of resource IDs and access vectors and loads
 these into the correct policy maps in the kernel using the \texttt{bpf(2)} system call.
 Once a policy has been loaded into the kernel, \bpfcontain{}'s \gls{ebpf} programs can
 begin enforcing it.
@@ -399,7 +405,7 @@ which wraps the target executable. This wrapper's only purpose is to enable
 \bpfcontain{}'s \gls{ebpf} programs to associate its process group with the correct policy
 in the kernel.  This is done by invoking a stub function, traced by a \gls{usdt} probe.
 When the probe fires, it reads the policy ID, passed as an argument to the stub, along
-with other information such as the task's \gls{pid} and namespace membership, taken from
+with other information such as the task's \gls{pid} and namespace membership taken from
 its task struct in the kernel. The probe then updates a global process state map with this
 information. Subsequent \gls{ebpf} programs use this information when making enforcement
 decisions and when managing the container's state. \Cref{ss:bpfcontain-state} describes
@@ -745,7 +751,7 @@ keywords.
 access pattern according to the device's semantics.  For instance
 \lstinline[language=yaml]|dev: terminal| enables read and write access on
 \texttt{/dev/tty} to support standard input and output to the terminal. Likewise,
-\lstinline[language=yaml]|dev: random| grants read-only access to \texttt{/dev/random} and
+\lstinline[language=yaml]|dev: random| grants read only access to \texttt{/dev/random} and
 \texttt{/dev/urandom}. When loading a device rule into the kernel, \bpfcontain{} resolves
 the device's major and minor number pair and maps it to the corresponding access pattern.
 
