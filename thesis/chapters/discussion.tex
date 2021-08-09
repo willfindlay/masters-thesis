@@ -1,5 +1,5 @@
 This chapter discusses the relevance of \bpfbox{} and \bpfcontain{}, positioning them as
-novel extensions on top of the existing confinement literature. We also examine
+novel extensions to the existing confinement literature. We also examine
 limitations of both research systems and present opportunities for future work. Namely, we
 propose ways to address current limitations, improve the \gls{ebpf} ecosystem for
 confinement use cases, add features to \bpfbox{} and \bpfcontain{}, and conduct further
@@ -38,9 +38,9 @@ research on the usability of both systems.
 \section{Research Questions Revisited}%
 \label{s:disc-rqs}
 
-In \Cref{s:intro-rqs}, we proposed three research questions as topics of intellectual
-curiosity for this thesis. In this section, we revisit these research questions and
-discuss how the various chapters in this document answer them.
+In \Cref{s:intro-rqs}, we proposed three research questions for this thesis. In this
+section, we revisit these research questions and discuss how the various chapters in this
+document answer them.
 
 \subsection{Answering RQ1}%
 \label{ss:disc-rq1}
@@ -53,13 +53,13 @@ might give rise to semantic gaps between security policies and the entities they
 designed to lock down. It also asks what design goals a novel confinement mechanism would
 need to satisfy in order to rectify these difficulties.
 
-In \Cref{c:confinement-problem}, we present a novel framing of the
-confinement problem, illustrating that semantic gaps arise due to inherent complexities
-and inter-dependence relationships that form between disparate confinement primitives.  In
-light of this characterization, we identify a particular gap in container-level
-confinement that could be filled by a novel confinement mechanism that focuses on
-container semantics. We use the insights outlined in this chapter to inform a set of
-design goals and threat model for a novel confinement mechanism.
+In \Cref{c:confinement-problem}, we present a novel framing of the confinement problem,
+illustrating that semantic gaps arise due to inherent complexities and inter-dependence
+relationships that form between disparate confinement primitives.  In light of this
+characterization, we identify a particular gap in container-level confinement that could
+be filled by a novel confinement mechanism that focuses on container semantics. We use the
+insights outlined in this chapter to inform a threat model and a set of design goals for
+a novel confinement mechanism.
 
 \subsection{Answering RQ2}%
 \label{ss:disc-rq2}
@@ -72,11 +72,11 @@ semantics.
 
 In \Cref{c:bpfbox} and \Cref{c:bpfcontain}, we answer this research question by presenting
 the design and implementation of two confinement mechanisms based on \gls{ebpf}, \bpfbox{}
-and \bpfcontain{}. The former is designed to sandbox user processes, while the latter is
+and \bpfcontain{}. The former is designed to sandbox user processes while the latter is
 designed to confine containers by accounting for container semantics in its policy
 enforcement engine. We present a design pattern for encoding a security policy into
 \gls{ebpf} maps and show that this policy can be augmented with information about
-system state, gathered by \gls{ebpf} programs at runtime.
+system state gathered by \gls{ebpf} programs at runtime.
 
 We find that \gls{ebpf} offers numerous advantages when designing a novel confinement
 mechanism. In particular, \gls{ebpf} programs used for enforcement can be safely and
@@ -103,7 +103,7 @@ compare the performance overhead of \bpfbox{} and \bpfcontain{} with AppArmor.  
 that, while \bpfbox{} and \bpfcontain{} perform comparatively worse in some
 micro-benchmarks, their worst-case overhead is significantly lower than that of AppArmor.
 Moreover, the results of the macro-benchmarks indicate that this additional overhead
-shouldn't significantly slow down complex workloads in practice. Furthermore, we
+is far more modest for computationally complex workloads. Furthermore, we
 hypothesize that it may be possible to optimize \bpfcontain{} in the future.
 
 \Cref{c:evaluation} also presents an informal security analysis which indicates that
@@ -116,9 +116,9 @@ presents example confinement policies for three distinct use cases, examining ho
 Finally, we identify some key limitations of \gls{ebpf} that could be addressed to further
 strengthen an \gls{ebpf}-based confinement mechanism. Namely, we highlight the need for
 new \gls{ebpf} helper functions to deal with pathname semantics in security policies.  We
-also address the need for a formal evaluation of \gls{ebpf} in terms of its security and
-tamper resistance. We leave such an evaluation as a promising topic for future work
-(c.f.~\Cref{ss:disc-guarantees}).
+also address the need for a formal evaluation of \bpfbox{}, \bpfcontain{}, and \gls{ebpf}
+itself in terms of their security and tamper resistance. We leave such an evaluation as
+a promising topic for future work (c.f.~\Cref{ss:disc-guarantees}).
 
 % \section{Contributions}%
 % \label{s:disc-contributions}
@@ -190,7 +190,7 @@ through extensions to the policy enforcement mechanism or future improvements to
 
 It is challenging to refer to files from \gls{ebpf}. In the kernel, files are generally uniquely
 described by an \textit{inode} structure, which in turn maps to one or more pathnames via
-a \textit{file} structure. Each inode belongs to a distinct filesystem, and is uniquely
+a \textit{file} structure. Each inode belongs to a distinct filesystem and is uniquely
 enumerated within that filesystem by an inode number.  In \bpfbox{} and \bpfcontain{}, we
 uniquely identify inodes using a combination of their inode number and the unique device
 identifier of the filesystem on which the inode resides. While this is an effective
@@ -202,7 +202,7 @@ the most part, userspace does not deal in inode-level semantics\,---\,instead, w
 \textit{pathnames}, a string that describes the path required to move from the filesystem
 root to a given file. Indeed, the \bpfbox{} and \bpfcontain{} policy languages use
 pathnames rather than inodes to refer to files. Unfortunately, this creates an undesired
-dichotomy between the user-facing components of \bpfbox{} and \bpfcontain{}, and the
+dichotomy between the user-facing components of \bpfbox{} and \bpfcontain{} and the
 kernelspace implementation.  To resolve this dichotomy, we translate the pathnames into
 inode and device pairs at policy load-time. This is a workaround and is subject to several
 fundamental limitations. In particular, referring to a pathname that doesn't yet exist
@@ -290,7 +290,7 @@ limitation, \bpfbox{} and \bpfcontain{} tailor policy map size to the number of 
 will be loaded into the kernel. While this approach is effective, it would be better to
 have the ability to dynamically grow policy maps at runtime. This would enable \bpfbox{}
 and \bpfcontain{} to support loading arbitrary length policies at runtime, and even
-runtime policy generation, without over-fitting map sizes.
+runtime policy generation, without excessively large map sizes.
 
 As with string helpers in the previous section, the primary bottleneck preventing
 dynamically-sized maps is the adoption of sleepable \gls{bpf}. Alexei Starovoitov expects
@@ -391,12 +391,17 @@ side.
 The performance results presented in \Cref{c:evaluation} indicate that \bpfbox{} and
 \bpfcontain{} have higher overhead than AppArmor in the OSBench micro-benchmarks.
 However, this is not indicative of their performance in the general case. In fact,
-\bpfbox{} and \bpfcontain{} perform competitively with AppArmor in the macro-benchmarks,
-suggesting that the overhead of individual system calls is outweighed by the computational
-complexity of an instrumented application and the synchronous delays introduced by
-blocking system calls on I/O. Moreover, neither \bpfbox{} nor \bpfcontain{} has been
-deliberately optimized, suggesting that there may be opportunities to improve performance
-in the future.
+\bpfbox{} and \bpfcontain{} perform competitively with AppArmor in the kernel compilation
+macro-benchmarks, with similar overhead in the \textbf{Passive} and \textbf{Allow} test
+cases and significantly better overhead in the \textbf{Complaining case}. This suggests
+that the overhead of individual system calls is outweighed by the computational complexity
+of an instrumented application and the synchronous delays introduced by blocking system
+calls on I/O. These findings are further reflected when comparing the geometric means of
+each test configuration. While AppArmor performs better in the Apache web server
+benchmark, this is likely due to the fact that it does not properly enforce its network
+policy on modern Linux kernels (see \Cref{s:eval-performance}). Moreover, neither
+\bpfbox{} nor \bpfcontain{} has been deliberately optimized, suggesting that there may be
+opportunities to improve performance in the future.
 
 In addition to considering potential improvements to their base overhead, we must also
 consider the additional flexibility provided by an \gls{ebpf}-based confinement mechanism.
@@ -436,7 +441,7 @@ module.
 
 In \Cref{c:evaluation}, we presented a detailed security analysis of the \bpfbox{} and
 \bpfcontain{} designs.  However, this informal analysis is weak evidence for the actual
-security guarantees of these research prototypes.  In the future, we plan to conduct
+security guarantees of these research prototypes.  In the future, we could conduct
 a formal security evaluation of \bpfcontain{}, measuring its ability to confine
 a container using a dedicated security test suite. Such a test suite would involve
 a combination of existing (vulnerable) container images and accompanying CVEs. We would
@@ -454,13 +459,13 @@ verify the security of \bpfcontain{}'s \gls{ebpf} programs and maps to show that
 a confined adversary cannot tamper with them.
 
 Another important aspect underpinning the security of solutions like \bpfbox{} and
-\bpfcontain{} is the security of \gls{ebpf} itself, as well as the \gls{krsi} \gls{lsm}
+\bpfcontain{} is the security of \gls{ebpf} itself as well as the \gls{krsi} \gls{lsm}
 programs and the underlying \gls{lsm} hooks themselves. To date, no formal analysis exists
 to verify any of these components. It may not be possible to formally verify that
-\gls{lsm} hooks provide complete mediation, due to the complexity of the Linux
+\gls{lsm} hooks provide complete mediation due to the complexity of the Linux
 kernel~\cite{jaeger2008_os_security}. However, due to the simplicity of \gls{ebpf} and
 \gls{krsi}, it could be feasible to formally verify their security guarantees within the
-context of an unverified kernel. We leave such formal analysis of \gls{ebpf} to future
+context of an unverified kernel. We leave such formal analysis to future
 work.
 
 % \todo{talk about fundamental limitations of \gls{ebpf} as a security mechanism, how we depend on the kernel}
@@ -474,7 +479,7 @@ work.
 
 This section discusses opportunities for future work and potential research directions.
 We specifically examine opportunities to further evaluate the effectiveness of \bpfbox{}
-and \bpfcontain{}, as well as potential extensions that can improve \bpfcontain{}'s
+and \bpfcontain{} as well as potential extensions that can improve \bpfcontain{}'s
 container-specific policies. We also consider potential avenues for implementing automatic
 policy generation in \bpfcontain{}.
 % This section discusses opportunities for future work, both in terms of directly extending
@@ -495,10 +500,10 @@ prototypes could benefit from a user study. A user study could offer numerous in
 into how users interact with the policy languages, whether the resulting enforcement
 actions meet expectations, and how each system compares with equivalents like SELinux or
 AppArmor from a usability perspective. Such insights could be used to inform design
-directions for future iterations of the policy language, or to establish a stronger basis
+directions for future iterations of the policy language or to establish a stronger basis
 for comparison between \bpfbox{}, \bpfcontain{}, and alternative confinement mechanisms.
 
-User studies have proven lucrative for gleaning insights about prior work in the
+User studies have proven useful for gleaning insights about prior work in the
 confinement space. Schreuders \etal~\cite{schreuders2012_towards} conducted a user study
 examining the usability of their FBAC-LSM security module, AppArmor, and SELinux, to
 establish a basis for comparison between alternative policy schemes. Their work revealed
@@ -638,7 +643,7 @@ the main goals of \bpfbox{} and \bpfcontain{} is to eliminate the need to recomb
 existing policy mechanisms. Therefore, it would be best if we could incorporate
 finer-grained network policy into future iterations. Such a network policy is possible to
 enforce using \gls{ebpf}; rather than \gls{lsm} probes, we would leverage another program
-type, \texttt{TC\_CLSACT}, finer-grained network filtering on individual packets.
+type, \texttt{TC\_CLSACT}, that enables finer-grained network filtering on individual packets.
 
 The \texttt{TC\_CLSACT} (short for Traffic Control, Classifier and Action) program type is
 a socket filter that can discriminate between network traffic at the protocol-level by
@@ -703,11 +708,11 @@ in turn.
 
 \begin{enumerate}
   \item We could extend \bpfcontain{}'s \gls{ebpf} programs with the ability to
-  automatically generate policy in real time. This approach is similar in spirit to
-  signature-based anomaly detection, establishing a normal behavioural profile for
-  a container during a training phase, and enforcing security policy once a normal profile
+  automatically generate policy in real time. This approach is similar to
+  anomaly detection, establishing a normal behavioural profile for
+  a container during a training phase and enforcing security policy once a normal profile
   has been established. Implementing such profile generation would require minimal changes
-  to \bpfcontain{}'s existing enforcement mechanism, although further investigation is
+  to \bpfcontain{}'s existing enforcement mechanisms, although further investigation is
   required to determine the correct approach for minimizing false positives and false
   negatives in policy generation.
 
@@ -731,7 +736,7 @@ In this section, we discuss how \bpfbox{} and \bpfcontain{} improve upon the sta
 confinement, with a particular emphasis on how their unique properties encourage
 application- and container-specific confinement, and promote local policy variation. We
 also examine how their implementation as \gls{ebpf}-based security solutions positions
-them as highly adoptable alternatives to traditional kernel security mechanisms, with the
+them as highly adoptable alternatives to traditional kernel security mechanisms with the
 potential to drive further innovation going forward.
 
 \subsection{Application-Specific and Container-Specific Policies}
@@ -743,7 +748,7 @@ SELinux~\cite{smalley2001_selinux} or AppArmor~\cite{cowan2000_apparmor}, \bpfbo
 \bpfcontain{} focus on application-specific and container-specific confinement
 respectively. The former enables lightweight, ad-hoc confinement of individual Linux
 processes, while the latter extends this model to work with container semantics.  This
-represents a stark contrast over existing work in the confinement space, which generally
+represents a stark contrast over existing work in the confinement space which generally
 focuses on reusing existing primitives designed for global enforcement.  Rather than
 outright simple policies, these confinement frameworks compile down into hundreds or even
 thousands of lines of policy for the underlying confinement primitive.
@@ -752,16 +757,15 @@ The \textit{application-specific} approach of \bpfbox{} takes a different path\,
 \bpfbox{} policy directly applies to the \bpfbox{} enforcement engine, without relying on
 existing primitives like SELinux, AppArmor, or Seccomp-bpf. The result is policies that
 are far simpler without being too coarse-grained or abstracted beyond the point of
-auditability\,---\,expressiveness without complexity. Further, application-specific
-policies afford a great deal of flexibility to the end user; rather than authoring complex
-policies that cover the entire system, instead they may focus on the specific behaviours
-that they want their applications to exhibit. In turn, this flexibility means that
-different types of users can leverage \bpfbox{} in different ways.  Application developers
-can write fine-grained policies that enforce behaviours at the function-call-level.
-Conversely, end users can deploy custom \bpfbox{} policies to restrict specific
-behaviours, such as access to the home directory.
+auditability. Further, application-specific policies afford a great deal of flexibility to
+the end user; rather than authoring complex policies that cover the entire system, instead
+they may focus on the specific behaviours that they want their applications to exhibit. In
+turn, this flexibility means that different types of users can leverage \bpfbox{} in
+different ways.  Application developers can write fine-grained policies that enforce
+behaviours at the function-call-level.  Conversely, end users can deploy custom \bpfbox{}
+policies to restrict specific behaviours, such as access to the home directory.
 
-\bpfcontain{} extends the \bpfbox{} model to be \textit{container-specific}. Like
+\bpfcontain{} extends the \bpfbox{} model to be \textit{container specific}. Like
 \bpfbox{}, much of the implicit strength inherent in this model is that it does not rely
 on existing primitives and does not attempt to enforce policy over the entire system.
 Instead, we focus on individual containers, identifying the specific \gls{os} interfaces
@@ -830,7 +834,7 @@ only need to serve static webpages. Each configuration could use a different sec
 policy, based on the needs of the local deployment. A natural diversity arises as an
 emergent property of this model when scaled up over thousands of deployments across
 thousands of applications.  Since \bpfbox{} and \bpfcontain{} policies are so simple yet
-so flexible, they naturally encourage precisely the soft of local policy variations
+so flexible, they naturally encourage precisely the sort of local policy variations
 required to achieve policy-level diversity at scale.
 
 
@@ -869,7 +873,7 @@ verified for safety and correctness before being loaded into the kernel. An
 over traditional security solutions.
 
 \begin{enumerate}
-  \item \textbf{\gls{ebpf} is already widely-used in production Linux environments.} At
+  \item \textbf{\gls{ebpf} is already widely used in production Linux environments.} At
   the time of writing this thesis, major software companies like Facebook, Netflix, and
   Google~\cite{gregg2019_bpf} already use \gls{ebpf} in production servers for performance
   and security monitoring, the implementation of L4 routing and load balancing algorithms,

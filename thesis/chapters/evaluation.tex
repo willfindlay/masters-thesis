@@ -11,7 +11,7 @@ outlined in \Cref{s:cp-threat-model}.
 
 This section presents a performance evaluation of \bpfbox{} and \bpfcontain{}, measuring
 their performance overhead using a variety of micro- and macro-benchmarking tests. In
-particular, we leverage the Phoronix Test Suite~\cite{phoronix} to measure overhead across
+particular, we use the Phoronix Test Suite~\cite{phoronix} to measure overhead across
 a variety of computational tasks, workloads, and kernel interfaces. Each of these
 benchmarks exercises a different subset of \bpfbox{} and \bpfcontain{}'s enforcement
 engine, providing an approximation of their impact on the overall system. We also measure
@@ -90,7 +90,7 @@ environment more consistent and eliminating as many external factors as possible
 \end{table}
 
 To measure the performance overhead of \bpfbox{} and \bpfcontain{} (compared with the base
-system and with AppArmor) we leverage the Phoronix Test Suite~\cite{phoronix}, a popular
+system and with AppArmor) we use the Phoronix Test Suite~\cite{phoronix}, a popular
 cross-platform benchmarking framework that has seen wide use for measuring system
 performance. The Phoronix framework comprises a number of open source test suites, each
 targeting a different aspect of system behaviour. For the purposes of this thesis, we
@@ -170,10 +170,10 @@ This section presents the results of the OSBench micro-benchmarks (\Cref{fig:osb
 \Crefrange{tab:phoronix-create-files}{tab:phoronix-memory-allocations}), the kernel
 compilation (\Cref{fig:phoronix-kernel} and \Cref{tab:phoronix-kernel-compilation}) and
 Apache web server (\Cref{fig:phoronix-apache} and \Cref{tab:phoronix-apache})
-macro-benchmarks. We find that \bpfbox{} and \bpfcontain{} perform competitively with
-AppArmor in many common use cases cases, with \bpfcontain{} experiencing performance
-degradations in some cases. Also, we discuss how future optimizations to \bpfcontain{} and
-the \gls{krsi} framework can greatly improve its performance overhead in practice.
+macro-benchmarks. We find that \bpfbox{} and \bpfcontain{} incur modest overhead in many
+common use cases cases, with \bpfcontain{} experiencing performance degradations in some
+cases. Also, we discuss how future optimizations to \bpfcontain{} and the \gls{krsi}
+framework could greatly improve its performance overhead in practice.
 
 \begin{figure}[htp]
   \centering
@@ -735,14 +735,14 @@ the original \bpfbox{} design.
 Correct mediation of file and filesystem accesses is critical to ensure that an adversary
 is confined. Files define the canonical persistent data store in modern \gls{cots}
 operating systems, including Linux. Depending on the nature of the file, the information
-stored within may be confidential, security-sensitive, or otherwise critical to normal
+stored within may be confidential, security sensitive, or otherwise critical to normal
 system operation. Attacker modification of persistent files is often the first step in
 mounting a Confused Deputy attack~\cite{hardy1988_confused_deputy} for privilege
 escalation, along with other classes of attack such as data corruption, information
 disclosure, and memory safety attacks.
 
-Under the Unix model, special files and filesystems define an entrypoint into kernel
-interfaces, many of which are security-sensitive. For example, character devices expose an
+Under the Unix model, special files and filesystems define an entry point into kernel
+interfaces, many of which are security sensitive. For example, character devices expose an
 interface into device drivers, while special filesystems like \texttt{sysfs} and
 \texttt{securityfs} expose behavioural parameters and export sensitive information such as
 the system memory map. Limiting access to these files is of paramount importance, since
@@ -757,10 +757,10 @@ allowed operations on a specific filesystem object (e.g.\ an inode).
 
 \subsubsection{\bpfbox{}}
 
-To confine a process' access to the filesystem, \bpfbox{} supports \enquote{file} rules
+To confine a process's access to the filesystem, \bpfbox{} supports \enquote{file} rules
 (c.f.\ \Cref{ss:bpfbox-filesystem-rules}), which take a pathname and corresponding access
 vector. This access vector encodes the specific file operations that a process can perform
-on the file. Since \bpfbox{} policies are default-deny, an adversary running under
+on the file. Since \bpfbox{} policies are default deny, an adversary running under
 a \bpfbox{} confinement policy should be unable to perform an operation $Op_i$ on any file
 $F_j$ unless this operation is explicitly covered under a file rule. For the purposes of
 confinement, \bpfbox{} treats all files equally, regardless of whether the file is
@@ -824,7 +824,7 @@ and the system, potentially resulting in spurious policy decisions on device acc
 fix this problem, a future version of \bpfcontain{} will resolve device numbers using
 a pathname at runtime.
 
-Rather than being outright default-deny, \bpfcontain{} uses heuristics to determine the
+Rather than being outright default deny, \bpfcontain{} uses heuristics to determine the
 appropriate default policy action on system objects. In the case of regular files,
 \bpfcontain{} checks to see whether the filesystem superblock is a part of the container's
 user namespace (provided that namespace is not the global namespace). If it is, the
@@ -832,7 +832,7 @@ filesystem was mounted within the context of the container, and so it is safe to
 access. Otherwise, access is denied. Since special files and filesystems can be
 significantly more dangerous, \bpfcontain{} assumes a default-deny policy instead. This
 strategy allows \bpfcontain{} to (under certain conditions) relax requirements on policy
-authors, without sacrificing security.
+authors without sacrificing security.
 
 \subsection{POSIX Capabilities and Privileged System Calls}
 
@@ -841,7 +841,7 @@ override discretionary access controls and access certain privileged kernel inte
 Although these cannot be used to override mandatory access controls (such as those
 enforced by \bpfbox{} and \bpfcontain{}), they still provide a means of limiting the power
 of the root user. This becomes particularly evident in the case of privileged kernel
-interfaces, which can affect global system state or enable an attacker to load untrusted
+interfaces which can affect global system state or enable an attacker to load untrusted
 code into the kernel.
 
 \subsubsection{\bpfbox{}}
@@ -856,7 +856,7 @@ a confined process, as well as any system calls that could load code into the ke
 The current version of \bpfbox{} does not perform any access validation on mounting
 filesystems, which could potentially allow an attacker to modify the global filesystem
 hierarchy or interfere with the operation of other processes. This weakness was fixed in
-\bpfcontain{}, with the additional instrumentation of the \texttt{sb\_mount} \gls{lsm}
+\bpfcontain{} with the additional instrumentation of the \texttt{sb\_mount} \gls{lsm}
 hook.
 
 \subsubsection{\bpfcontain{}}
@@ -893,7 +893,7 @@ This provides improved security over traditional \gls{lsm}-based approaches, as 
 \subsection{Networking}
 
 Access to the kernel's networking stack enables an adversary to connect to remote hosts,
-potentially enabling the exfiltration of sensitive data or providing an entrypoint for
+potentially enabling the exfiltration of sensitive data or providing an entry point for
 additional attacks. A network socket could also be used by an attacker to bypass
 inter-process communication checks (i.e.\ two processes could communicate over the network
 instead of using canonical \gls{ipc} mechanisms provided by the kernel). Thus, securing
@@ -906,7 +906,7 @@ the kernel's networking stack is critically important for ensuring confinement.
 
 \bpfbox{} secures the network stack at the socket layer, defining \enquote{network} rules
 that map address families to a set of allowed socket operations. Since \bpfbox{} is
-default-deny, a policy without any network rules will implicitly cause any socket
+default deny, a policy without any network rules will implicitly cause any socket
 operations to be denied by default, thus preventing the process from accessing the network
 stack. Using a network operation as a taint rule enables \bpfbox{} to start enforcing
 a stricter policy once a process has started communicating with the outside world,
@@ -914,12 +914,13 @@ improving security in the case where a remote adversary wants to interact with a
 or exfiltrate sensitive information.
 
 The \bpfbox{} prototype presented in this thesis does not support defining more advanced
-network policy at the protocol-level (e.g.\ filtering network traffic by \gls{ip} addresses
+network policy at the protocol level (e.g.\ filtering network traffic by \gls{ip} addresses
 and port numbers). This means that \bpfbox{} cannot discriminate between network traffic
 according to its source and destination, potentially enabling network-based attacks for
-software that requires a network connection to function.  Adding support for more advanced
-network policy is currently a topic for future work in \bpfcontain{}, and should greatly
-improve the granularity of network policy.
+software that requires a network connection to function.
+% Adding support for more advanced
+% network policy is currently a topic for future work in \bpfcontain{}, and should greatly
+% improve the granularity of network policy.
 
 \subsubsection{\bpfcontain{}}
 
@@ -943,7 +944,7 @@ Inter-process communication mechanisms enable processes to communicate with each
 sending data back and forth, sending signals to each other, or sharing resources such as
 open file descriptors. Without a secure \gls{ipc} policy, an adversary may be able to
 trivially escape confinement by establishing a communication channel with an unconfined
-process, or sharing information or resources between two processes running under
+process or sharing information or resources between two processes running under
 a different confinement policy. Thus, securing \gls{ipc} communication is essential to
 ensuring that confinement guarantees hold.
 
@@ -963,10 +964,9 @@ with Unix domain sockets. Named pipes are covered under \bpfbox{}'s file policy.
 The \bpfbox{} prototype presented in this thesis does not provide a way to control which
 process is at the other end of a Unix socket, resulting in potential security
 vulnerabilities when a confined process is able to establish a socket connection with an
-unconfined process. \bpfcontain{} later rectified this shortcoming.  Another weakness in
-\bpfbox{}'s current \gls{ipc} policy is that it does not provision rules for restricting
-access to System V \gls{ipc} objects. \bpfcontain{} fixed this hole in confinement by
-introducing additional \gls{lsm} programs to enforce System V \gls{ipc} access.
+unconfined process. Another weakness in \bpfbox{}'s current \gls{ipc} policy is that it
+does not provision rules for restricting access to System V \gls{ipc} objects.
+\bpfcontain{} addresses these shortcomings as explained below.
 
 \subsubsection{\bpfcontain{}}
 
@@ -1000,19 +1000,27 @@ to its default ptrace enforcement.
 In this chapter, we have evaluated the performance and security of the \bpfbox{} and
 \bpfcontain{} research prototypes. We conduct a series of benchmarking tests to evaluate
 performance in comparison to the base system and AppArmor, a widely-used \gls{lsm} that
-has been upstreamed in the Linux kernel. We find that \bpfbox{} and \bpfcontain{} are able
-to perform as well as or worse than AppArmor in the majority of tests, and that they can
+has been upstreamed in the Linux kernel. We find that \bpfbox{} and \bpfcontain{} exhibit
+modest percent overhead over AppArmor in the majority of tests, and that they can
 outperform AppArmor under specific circumstances. While \bpfcontain{} introduces
 additional performance overhead on top of the original \bpfbox{} design, this comes with
 additional flexibility, improved security, and a more nuanced default policy. Since
-\bpfbox{} and \bpfcontain{} are kernel-agnostic, we can update them without updating the
+\bpfbox{} and \bpfcontain{} are kernel agnostic, we can update them without updating the
 host kernel, enabling bugs to be fixed like userspace programs. Further, we argue that
 \bpfcontain{} can be significantly optimized in the future, enabling future iterations on
 the design to perform more competitively with existing \glspl{lsm}.
 
-An informal security analysis reveals that \bpfbox{} and \bpfcontain{} provide adequate and
-strong protection guarantees respectively. \bpfcontain{} resolves many of the issues that
-existed in the original \bpfbox{} design, while simultaneously simplifying the resulting
-policy language. Further iterations on the \bpfcontain{} design will continue to improve
-its enforcement model and solve additional weaknesses, such as its coarse-grained network
-policy and reliance on inode translation at policy load time.
+An informal security analysis reveals that \bpfbox{} and \bpfcontain{} found limitations
+in \bpfbox{} that were later addressed in \bpfcontain{}, such as a lack of support for
+capability-level policy and limited support for restricting access to \gls{ipc} objects.
+\bpfcontain{} resolves the majority of \bpfbox{}'s limitations while simultaneously
+simplifying the policy language. While \bpfcontain{} also has limitations with respect to
+device-level policy and coarse-grained network policy, these can be addressed in future
+work (see \Cref{c:discussion}).
+
+
+% . \bpfcontain{} resolves many of the issues that
+% existed in the original \bpfbox{} design, while simultaneously simplifying the resulting
+% policy language. Further iterations on the \bpfcontain{} design will continue to improve
+% its enforcement model and solve additional weaknesses, such as its coarse-grained network
+% policy and reliance on inode translation at policy load time.

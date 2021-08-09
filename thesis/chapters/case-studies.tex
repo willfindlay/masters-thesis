@@ -1,8 +1,9 @@
-In this chapter, we examine specific case studies, applying \bpfbox{} and \bpfcontain{}
-policies to solve realistic problems. In particular, we examine the default Docker policy
-and a more complex example confining a web server and database. We also provide an example
-of how \bpfcontain{} can be used to apply basic confinement to an untrusted container. To
-offer a basis for comparison, we contrast presented policies with some available
+In this chapter, we examine specific case studies, where we apply \bpfbox{} and
+\bpfcontain{} policies to solve realistic problems. We examine how \bpfbox{} and
+\bpfcontain{} can be used to confine a webserver and database and how they can implement
+the default Docker confinement policy.  We also discuss how future extensions to
+\bpfcontain{} could enable it to confine an untrusted container with a minimal policy file.
+To offer a basis for comparison, we contrast presented policies with some available
 equivalents and discuss how the semantics of the policy language and enforcement engine
 can impact the resulting policy file.
 
@@ -14,12 +15,12 @@ can impact the resulting policy file.
 \section{Confining a Web Server and Database}
 
 We first examine a practical use case: confining a simple web server and database
-deployment. In particular, we focus on the Apache httpd web server and the MySQL data base
+deployment. In particular, we focus on the Apache httpd web server and the MySQL database
 management system. These two pieces of software are often used together (e.g.\ as part of
 the LAMP stack~\cite{lamp}) and provide a good example of how we can define specific
-policy exceptions to allow two processes or containers to communicate with each other, and
+policy exceptions to allow two processes or containers to communicate with each other and
 with the outside world. In this example, we assume that httpd and mysqld communicate with
-each other using a shared Unix domain socket, created by mysqld. We synthesize policies
+each other using a shared Unix domain socket created by mysqld. We synthesize policies
 through a combination of running the programs under \texttt{strace}, finding library
 dependencies with \texttt{ldd}, and running the programs under \bpfcontain{}'s complaining
 mode. We use the output of these tools along with \bpfcontain{}'s log output to write
@@ -28,13 +29,13 @@ the security policies by hand.
 \subsubsection{\bpfbox{}}
 
 In \bpfbox{}, we define two profiles: one for httpd, and one for mysqld.
-\Cref{lst:bpfbox-apache} depicts the httpd policy, while \Cref{lst:bpfbox-mysql} depicts
-the mysqld policy. These policies are simplified examples, but provide a representative
+\Cref{lst:bpfbox-apache} depicts the httpd policy while \Cref{lst:bpfbox-mysql} depicts
+the mysqld policy. These policies are simplified examples but provide a representative
 idea of what it's like to confine a complex application down to its basest functionality.
 
 The httpd policy (\Cref{lst:bpfbox-apache}) defines allow and taint rules for three
 categories of socket access: \texttt{inet}, \texttt{inet6}, and \texttt{unix}. These
-categories cover IPv4 and IPv6 network access, as well as \gls{ipc} over a Unix domain
+categories cover IPv4 and IPv6 network access as well as \gls{ipc} over a Unix domain
 socket. This Unix domain socket is what httpd will use to communicate with the database.
 By defining these network rules as both allow and taint, we indicate that default-deny
 enforcement should begin only \textit{after} the Apache daemon has begun interacting with
@@ -120,7 +121,7 @@ for suexec (e.g.\ which scripts it is allowed to run).
 
 The \bpfbox{} policy for mysqld works in much the same way as the policy for httpd. Major
 differences include disabling all socket access except to Unix domain sockets. This
-ensures that the database is not exposed to the outside world, but still enables is to
+ensures that the database is not exposed to the outside world but still enables is to
 communicate with httpd over its Unix socket. Like with httpd, we define specific rules
 enabling mysqld to read important configuration files, log events, create and modify its
 \gls{pid} file and Unix socket, and load some shared libraries at runtime. The entire
@@ -180,7 +181,7 @@ eliminate rules for any shared libraries loaded before the process becomes taint
 
 \subsubsection{\bpfcontain{}}
 
-In \bpfcontain{}, we once again define a policy for httpd and a policy for mysqld.  These
+In \bpfcontain{} we once again define a policy for httpd and a policy for mysqld.  These
 policies are depicted in \Cref{lst:bpfcontain-apache} and \Cref{lst:bpfcontain-mysql}
 respectively. These policies are largely similar to the \bpfbox{} policies, with a few
 minor differences that can be attributed to \bpfcontain{}'s nuanced policy defaults and
@@ -201,10 +202,11 @@ means that we must still specify access to shared libraries that will be loaded 
 Aside from the aforementioned differences, the per-file policy is more or less the same as
 \bpfbox{}. To enable \gls{ipc} between the httpd and mysql, we define an \gls{ipc} allow
 rule that lists the mysqld policy. We also enable socket networking using a network allow
-rule and enable signalling of existing instances of httpd with a signal rule. Finally,
-we use a capability rule to grant access to the \texttt{CAP\_NET\_BIND\_SERVICE} capability,
-allowing httpd to bind to privileged ports. Since \bpfbox{} does not support capability rules,
-there is no equivalent to this rule in the \bpfbox{} policy.
+rule and enable signalling of existing instances of httpd with a signal rule. Finally, we
+use a capability rule to grant access to the \texttt{CAP\_NET\_BIND\_SERVICE} capability,
+allowing httpd to bind to privileged ports. Since \bpfbox{} does not support capability
+rules, there is no equivalent to this rule in the \bpfbox{} policy, meaning that POSIX
+capabilities would effectively be unrestricted.
 
 \begin{lstlisting}[language=yaml, gobble=2, float=false, caption={[A \bpfcontain{} policy for Apache httpd]
   A \bpfcontain{} policy for Apache httpd.
@@ -405,7 +407,7 @@ altogether.}, this includes a default AppArmor policy template~\cite{docker_appa
 docker_default_apparmor}, a default Seccomp-bpf profile, and a set of POSIX capabilities
 which are dropped at runtime~\cite{docker_security}.
 
-Docker's policy defaults are highly coarse-grained, with an emphasis on practical security
+Docker's policy defaults are highly coarse grained, with an emphasis on practical security
 while ensuring that the vast majority of container configurations will \enquote{just
 work,} out of the box. This affords a practical opportunity to examine how \bpfbox{} and
 \bpfcontain{} policies compare with the default Docker policy. \Cref{tab:docker-default}
@@ -577,7 +579,7 @@ Although the \bpfbox{} policy depicted in \Cref{lst:bpfbox-docker-default} does 
 map to the precise Docker default policy, it gets very close in most respects, aside from
 filesystem policy. Under \bpfbox{}, filesystem policy is necessarily finer-grained, as it
 does not support the ability to specify coarse-grained access to all files on the system.
-Despite these challenges, the end-result is a functional (and, in some aspects, more
+Despite these challenges, the end result is a functional (and, in some aspects, more
 secure) alternative to the default Docker policy.
 
 \subsubsection{\bpfcontain{}}
@@ -644,9 +646,9 @@ same level of expressiveness.
 Compared with \bpfbox{}, the \bpfcontain{} version of Docker's default policy is
 significantly simpler and fits more cleanly with Docker's AppArmor policy. This
 improvement is a direct result of a number of critical differences between \bpfbox{} and
-\bpfcontain{}. Whereas \bpfbox{} was designed for fine-grained, process-level confinement,
+\bpfcontain{}. Whereas \bpfbox{} was designed for fine grained process-level confinement,
 \bpfcontain{} was directly designed with containers in mind. Since \bpfcontain{} policies
-are designed to be container-specific, they are far more appropriate for a use case
+are designed to be container specific, they are far more appropriate for a use case
 centered around the confinement of containers. In particular, \bpfcontain{} incorporates
 container semantics into its default policy enforcement, greatly simplifying the resulting
 policy.  Further, changes to \bpfcontain{}'s policy language, including the introduction
@@ -655,7 +657,7 @@ more closely match the original Docker AppArmor policy.
 
 To match Docker's default allow policy on filesystem access, the \bpfcontain{} policy
 includes a rule to enable any file operation on files within the root filesystem and
-tempfs.  As with \bpfbox{}, the point here is to match Docker's default policy, without
+tempfs.  As with \bpfbox{}, the point here is to match Docker's default policy without
 considering the security implications of granting full access to the entire root
 filesystem. We include another rule to enable similar access on the temporary filesystem.
 Despite the coarse granularity of these filesystem rules, \bpfcontain{} maintains
@@ -694,7 +696,7 @@ The resulting \bpfcontain{} policy implements a strict superset of Docker's defa
 confinement policy, despite being significantly simpler, and more centralized.  Since
 \bpfcontain{} directly models the relationship between containerized processes and their
 resources, we can achieve significant portions of Docker's default policy for free. In
-many cases, this default enforcement is actually finer-grained than the Docker defaults.
+many cases, this default enforcement is actually finer grained than the Docker defaults.
 In order to achieve the same coarse granularity as the Docker policy, we adjust the
 \bpfcontain{} policy by incorporating a few additional allow rules, granting access to
 specific filesystems, the networking stack, and POSIX capabilities.
@@ -702,9 +704,9 @@ specific filesystems, the networking stack, and POSIX capabilities.
 \section{Confining an Untrusted Container}
 
 We now examine perhaps the most obvious and practical use case for \bpfcontain{}:
-confining and untrusted container. For instance, consider a new container image, freshly
+confining an untrusted container. For instance, consider a new container image, freshly
 downloaded from Docker Hub, to be used during application development or testing.  We
-assume that the system administrator does not trust this container image, and wishes to
+assume that the system administrator does not trust this container image and wishes to
 confine the resulting container, preventing it from damaging the rest of the system,
 leaking information, or performing other potentially unwanted actions. For this purpose,
 we leverage an extremely simple \bpfcontain{} policy (essentially the canonical
@@ -771,7 +773,7 @@ While the \bpfcontain{} default policy should be sufficient for simple use cases
 advanced container images may require some slight modification, introducing a few allow
 rules to define exceptions in \bpfcontain{}'s protection boundary. For instance, suppose
 the container image requires a docker volume to be mounted at runtime. To support this use
-case, we define a file rule, specifying the system path to the volume mount and the
+case, we define a file rule specifying the system path to the volume mount and the
 corresponding access pattern, such as \texttt{rw} for read and write access. All other
 accesses to the host filesystem remain denied. If the container requires access to the
 networking stack, we similarly define a net rule.  Capability rules can be used to allow
