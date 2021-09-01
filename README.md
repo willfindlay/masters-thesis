@@ -12,6 +12,8 @@ to as many people as possible.
 
 This work is licensed under a
 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
+You are free to redistribute, copy, modify, and otherwise use this work as you see fit, provided
+that this use is strictly **non-commercial** and provided that you credit the author.
 
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
 
