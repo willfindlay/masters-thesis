@@ -1,7 +1,6 @@
 # William Findlay's MCS Thesis
 
 [![Build Thesis](https://github.com/willfindlay/masters-thesis/actions/workflows/compile.yml/badge.svg)](https://github.com/willfindlay/masters-thesis/actions/workflows/compile.yml)
-
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 
 This repository contains the files required to build a copy of my Master's Thesis. This
