@@ -1,0 +1,8 @@
+10-15 slides might be ideal
+    Move things into backup in case questions come up
+Contribution + Conclusions are main thing
+Future scope, deployment
+
+Link the beginning goals back to the conclusion
+
+Change scale on graphs

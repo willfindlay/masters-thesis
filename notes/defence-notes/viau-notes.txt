@@ -1,0 +1,79 @@
+How do you define confinement?
+P91
+behavioural restrictions -> concerning outside resources -> protection boundary
+P44 FreeBSD Jails and Solaris Zones, Chroot
+(iv) the host attacking a container.??
+P51: "Resource starvation attacks are also considered out of scope." cgroups?
+P42: Taint-tracking's relationship with confinement. What about Information Flow Tracking
+Iago attacks
+define process-level security
+P48: definition of virtualization: aggregation vs seggregation
+P50: Figure 2.5
+"without sacricing forward or backward compatibility with alternative approaches"
+POSIX capabilities: isn't orthogonal? breakdown of root?
+P40: you use caps to refer to MAC approaches
+CHERI: hardware, memory safety, lacking OS semantics
+P18: grsecruity
+P83: Anil?
+P24: existence off malware
+P28: addition so supporting
+P30: a object manager
+P53: (i) a containerized attacking the
+P57: decisions could then used to make
+P173: take steps protect itself
+P78: "there is no fundamental reason why containers cannot be as|if not more|secure than virtual machines"
+Attack surface?
+"we run each test at least eleven times, until a standard deviation of at most 2% of the mean is achieved"
+Why not fixed? SD also a metric?
+How containter context/boundaries/semantics are idenfified? ad-hoc or heuristic, container engine specific? Figure 5.2 (Docker integration) ContainerID
+P133: "In particular, default access to resources is determined based on whether that resource exists within the context of a container."
+"Rather than combining xxx"
+OCI Specication and Docker Integration
+IPC: provided that they belong to the same container
+Default Policy Default-Deny Container Boundary
+
+Micro-benchmarking: type: app's perspective vs BPFBox's perspective
+Another baseline for quick check: academic
+negative overhead: check measurement error?
+events throughput? P109: "polls for new data at regular intervals"
+Phoronix Test Suite: other choices?
+
+
+
+
+
+
+Improvement to eBPF itself?
+policy-level diversity: more explanation?
+
+P84: Container goals: decreasing prioritization, confinement as the last?
+In RQ1: gaps between policies and entities. So proposing a mechanism? "policy enforcement mechanism"
+
+
+pathname-based: check at runtime vs load time. Otherwise matching inode still TOCTOU?
+Usability, e.g., links changed
+
+policy enforcement vs. authorization
+Clarify: root-level, privileged
+
+porting/adoption effort: recompile
+
+
+P104: attempts that do not directly come from BPFBox itself. How to
+
+Network Rules: protocols (wrong footnote?)
+
+
+
+
+
+P6: A vulnerability in any individual mechanism or a misconguration
+in any individual policy opens the container or the host system itself up to attack.
+
+not merely process -> process group
+
+modern kernels dynamically allocate their major and minor number
+
+Minor:
+"discretionary access controls" refers to
+start talking about eBPF before definition

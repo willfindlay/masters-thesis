@@ -1,7 +1,0 @@
-(Effective GID (Group ID))
-
-Docker is designed to just work first, not lock things down
-Docker for development tools is nice, Docker for deployment not so much
-
-Remove Type I and Type II hypervisor, change diagram to have dashed
-Owning the host OS means owning the whole system, nothing else really matters

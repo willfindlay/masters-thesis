@@ -1,0 +1,68 @@
+Key Changes
+ - define confinement early
+ - explain geometric mean
+ - clarify 2% STDEV/11+ runs
+ - explain performance oddities
+ - compare overhead with academic security efforts (quote stats)
+ - virtualization: aggregation & segregation
+ - remove virtualization less secure than container confinement
+ - clarify forward & backward compatibility
+ - (discuss how to break it)
+ - use latexspand and latexdiff to make pdf with changes marked
+ 
+
+Paula
+-----
+ - add definition of confinement early in thesis
+ - different attack models?  discuss limits
+    - clarify the specific attacks addressed, and not addressed
+ - (asked about security of containers vs VMs)
+ - policy through mechanism vs policy through exception
+    - clarification?
+ - challenges when implementing?
+ - implementation language alternatives?
+ - why geometric mean?  Table 6.10, explain meaning
+
+
+Lianying
+--------
+ - also, def of confinement should be earlier
+   - boundary & confinement explanation
+   - how different from CFI
+   - iago attack?
+ - your definition of confinement is same as reference model,
+   too generic
+   - address bpfbox vs bpfcontain
+ - resource bounds, really out of scope or just a limitation?  (cgroups)?
+ - clarify what you mean by process level (confinement, virtualization, isolation)
+    - discuss where attacks come from?
+ - virtualization can be aggregation, not just segregation, should explain
+   - p. 50, fig 25
+   - clarify type 1 vs type 2 hypervisors
+ - explain hardware primitives, not understanding OS semantics?
+ - minor editorial issues (left in todo, typos)
+ - no benchmarks for application, clarify you didn't measure application
+   (event logging?)
+ - negative values imply problems with experimental apparatus?  Error bars?
+    - how much variance?
+    - how many trials, was it ever more than 11?
+ - clarify, best to talk to container engine to find boundary, using ad-hoc methods now
+ - forward and backwards compatibility? clarify what you mean
+ - explain difference in attack surface, VM vs system calls
+ - compare with overhead of academic security efforts?  just quote their numbers, no need to generate again
+ 
+Anil
+----
+ - mention precedence for negative overhead
+ - explain complexity of bpfcontain when discussing performance vs bpfbox
+
+Open round
+-----
+ - Paula: how would you do a more rigorous formal evaluation?  strategy?
+ - Paula: summary of novelty?  vision of the future?
+ - Paula: how would you attack bpfbox/bpfcontain?
+    - discuss input validation
+    
+ - Lianying: order of priorities surprising for containers
+     - but wasn't always the case, eg solaris zones
+ 
