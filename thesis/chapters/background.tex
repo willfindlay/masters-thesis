@@ -1,15 +1,33 @@
 This chapter presents technical background information required to understand this thesis
 and discusses related work from the perspective of industry and academia.
-\Cref{s:process-security-model} presents technical background on historical models for
-process-level confinement, with a particular emphasis on Multics, Unix, and Unix
-derivatives.  \Cref{s:security-extensions} focuses on subsequent extensions to the Unix
-security model and covers related work in the confinement space. \Cref{s:virtualization}
-examines process-level virtualization technologies in Unix-like operating systems.
+\Cref{s:confinement-definition} provides a scoping definition of the term
+\textit{confinement} in the context of this thesis. \Cref{s:process-security-model}
+presents technical background on historical models for process-level confinement, with
+a particular emphasis on Multics, Unix, and Unix derivatives.
+\Cref{s:security-extensions} focuses on subsequent extensions to the Unix security model
+and covers related work in the confinement space. \Cref{s:virtualization} examines
+process-level virtualization technologies in Unix-like operating systems.
 \Cref{s:containers-bg} discusses the differences between hypervisor- and container-based
 virtualization, container security, and presents related work in the container security
 space. Finally, \Cref{s:ebpf-bg} presents a detailed history of \glsentryshort{ebpf},
 describes its architectural components and features, and discusses use cases in security
 and beyond.
+
+\section{A Scoping Definition of Confinement}%
+\label{s:confinement-definition}
+
+Before discussing the design and implementation of a novel confinement framework, it is
+critical to understand precisely what we mean by the term \textit{confinement}. This
+section provides a scoping definition of confinement that will inform later discussion on
+the design and implementation of \bpfbox{} and \bpfcontain{} as well as provide some
+context for the selection of related work presented later in this chapter.
+
+\todo{Definition of confinement goes here, probably in just one or two paragraphs}
+
+\bpfbox{} and \bpfcontain{} focus on process-level and container-level confinement
+respectively. We define process-level confinement as confinement which targets the process
+as a unit of computation and security. Similarly, container-level confinement targets the
+container as a unit of computation and security.
 
 \section{Classic Unix Process Security Model}%
 \label{s:process-security-model}
