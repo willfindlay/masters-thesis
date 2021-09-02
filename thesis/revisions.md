@@ -15,7 +15,7 @@
 
 - [x] clarify 2% STDEV/11+ runs
 
-- [ ] explain performance oddities
+- [x] explain performance oddities
   - put this in its own subsection: "Performance Degradation in BPFContain"
   - discuss the fact that BPFContain deals in a higher level of abstraction than BPFBox
   - BPFBox is basically a thin wrapper over LSM hooks

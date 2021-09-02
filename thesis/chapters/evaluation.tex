@@ -682,6 +682,23 @@ results could indicate that \bpfbox{} and \bpfcontain{} might perform favourably
 to alternative \glspl{lsm} like SELinux, although further investigation is needed in order
 to establish a direct comparison.
 
+\paragraph*{Performance Degradation from \bpfbox{} to \bpfcontain{}}
+Many of the benchmarks presented in this section indicate that \bpfcontain{} performs
+\textit{worse} than \bpfbox{}. The reasons for this performance degradation are manifold.
+While \bpfcontain{}'s Rust userspace implementation may be more efficient than \bpfbox{},
+the vast majority of performance overhead occurs in the \textit{kernelspace} code paths.
+In the kernel, total overhead is a function of the number of \gls{ebpf} programs
+instrumented on a given code path and the time complexity of these programs. In general,
+\bpfcontain{} instruments more \gls{ebpf} programs than \bpfbox{}. Moreover, \bpfbox{} is
+a thin wrapper on top of \gls{lsm} hooks, whereas \bpfcontain{} deals in higher-level
+confinement semantics. This additional layer of abstraction greatly increases the
+complexity of the underlying \gls{ebpf} code, which in turn increases the likelihood of
+performance-critical programming errors. We hypothesize that it may be possible to
+optimize \bpfcontain{} such that its overhead is more in line with \bpfbox{}.
+
+\paragraph*{Comparing Overhead With Other Academic Proposals}
+\todo{Raid the bibliography and compare overhead here}
+
 \section{Security Analysis}%
 \label{s:eval-security}
 
