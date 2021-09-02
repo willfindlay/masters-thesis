@@ -7,7 +7,6 @@
     - either need to make this match or completely replace it with our definition in the background
   - Viau: definition is too generic, same as reference monitor.
           should explicitly contrast bpfbox and bpfcontain.
-  - TODO: probably just remove CHERI capabilities from our discussion
 
 - [x] explain geometric mean
   - evaluation.tex line 675 (in the middle of this paragraph)

@@ -72,7 +72,7 @@ oneside,
 \RequirePackage{setspace}
 \doublespacing \AfterTOCHead{\singlespacing}
 
-\recalctypearea 
+\recalctypearea
 
 \addtokomafont{disposition}{\rmfamily}
 
@@ -144,7 +144,7 @@ oneside,
 
 \renewcommand*{\titlepagestyle}{plain}
 
-\frontmatter 
+\frontmatter
 
 \vspace*{6em}
 \begin{center}
@@ -187,7 +187,7 @@ solutions.  We also find that there is significant opportunity to improve \bpfbo
 \bpfcontain{} and to introduce future security mechanisms based on eBPF\@.
 
 \endgroup
-\cleardoublepage 
+\cleardoublepage
 
 
 
@@ -215,7 +215,7 @@ co-authored with David Barrera and Anil Somayaji. An early draft of this work is
 on the ArXiV pre-print database, although it differs substantially from the version
 presented in this thesis.
 \endgroup
-\cleardoublepage 
+\cleardoublepage
 
 \begingroup
 \hypersetup{linkcolor=black}
@@ -227,7 +227,7 @@ presented in this thesis.
 \end{singlespace}
 \endgroup
 
-\mainmatter 
+\mainmatter
 
 
 
@@ -535,7 +535,7 @@ and provides a detailed comparison, highlighting the strengths and weaknesses of
 \Cref{c:discussion} concludes with a high-level discussion on \bpfbox{} and \bpfcontain{},
 including limitations and opportunities for future work.
 
- 
+
 \chapter{Background and Related Work}\label{c:background}
 This chapter presents technical background information required to understand this thesis
 and discusses related work from the perspective of industry and academia.
@@ -816,7 +816,7 @@ Although discretionary access control provides a convenient and intuitive user-c
 model for object ownership and permissions, it makes some dangerous assumptions about
 security that can totally invalidate the model in
 practice~\cite{shu2016_security_isolation_study}. In particular, \gls{dac} assumes that all
-processes are benign and contain no exploitable vulnerabilities. The mere existence off
+processes are benign and contain no exploitable vulnerabilities. The mere existence of
 malware and exploitable vulnerabilities (e.g.\ memory safety vulnerabilities) immediately
 invalidates this assumption. For instance, consider an honest but vulnerable piece of
 software running under a given \gls{uid} $X$. An attacker exploiting a vulnerability in
@@ -2118,7 +2118,7 @@ concerns, composability, and modularity. \gls{ebpf} maps facilitate easy communi
 between kernelspace and userspace, and provide the ability to build relationships between
 data from different program types. Kernel modules should be preferred for the
 implementation of more complex kernel functionality, such as device drivers.
- 
+
 \chapter{The Confinement Problem}\label{c:confinement-problem}
 \begin{comment}
   What is the original framing of the problem? It almost doesn't make sense to frame it as a system-wide problem. Because a process is useless if it's totally isolated from the rest of the system. Make processes isolated and poke some holes in this isolation.
@@ -2669,7 +2669,7 @@ for what it means to confine an adversary. The next two chapters, \Cref{c:bpfbox
 \Cref{c:bpfcontain}, present the design and implementation of \bpfbox{} an \bpfcontain{}
 in detail and outline the intellectual journey from a prototype sandboxing mechanism to
 a container-specific confinement solution.
- 
+
 \chapter{\bpfbox: A Prototype Process Confinement Mechanism}\label{c:bpfbox}
 This chapter presents the design and implementation of \bpfbox{}, an initial research
 prototype of an \gls{ebpf}-based confinement framework. \bpfbox{} is the first
@@ -3308,7 +3308,7 @@ a step towards the container-specific design outlined in \Cref{s:cp-design}.  In
 chapter, we outline \bpfcontain{}, an iteration of \bpfbox{} that addresses a few of its
 fundamental limitations and makes a transition toward container-specific policies.
 
- 
+
 \chapter{\bpfcontain: Extending \bpfbox{} to Model Containers}\label{c:bpfcontain}
 In this chapter, we present \bpfcontain{}, an iteration on the original \bpfbox{} system
 presented in \Cref{c:bpfbox}. \bpfcontain{} is a superset of \bpfbox. In particular, it is
@@ -4244,7 +4244,7 @@ enforcement engine without sacrificing adoptability or tying the kernel down to 
 definition of a container. \bpfcontain{} uses these container-level semantics to define
 a clear protection boundary around containers and provides a simple policy language for
 defining exceptions to this protection boundary.
- 
+
 \chapter{Evaluation}\label{c:evaluation}
 This chapter presents an evaluation of \bpfbox{} and \bpfcontain{} in terms of their
 performance and security. \Cref{s:eval-performance} presents the methodology and results
@@ -4463,7 +4463,7 @@ Base & --- &   42.21 &  1.22 &       --- \\
 \bottomrule
 \end{tabular}
 \end{table}
- 
+
 
 In the \textbf{Passive} case, \bpfbox{} and \bpfcontain{}'s high performance overhead can
 be attributed to the fact that they each invoke multiple \gls{bpf} programs over multiple
@@ -4531,7 +4531,7 @@ Base & --- &  38.65 &  0.36 &      --- \\
 \bottomrule
 \end{tabular}
 \end{table}
- 
+
 \FloatBarrier
 
 
@@ -4574,7 +4574,7 @@ Base & --- &  20.18 &  0.19 &      --- \\
 \bottomrule
 \end{tabular}
 \end{table}
- 
+
 
 \subsubsection{OSBench Program Launching}
 
@@ -4625,7 +4625,7 @@ Base & --- &  61.67 &  0.20 &      --- \\
 \bottomrule
 \end{tabular}
 \end{table}
- 
+
 
 \subsubsection{OSBench Memory Allocations}
 
@@ -4664,7 +4664,7 @@ Base & --- &  117.17 &  0.67 &      --- \\
 \bottomrule
 \end{tabular}
 \end{table}
- 
+
 
 
 
@@ -4709,7 +4709,7 @@ Base & --- &  235.32 &  1.96 &      --- \\
 \bottomrule
 \end{tabular}
 \end{table}
- 
+
 \begin{table}[ht!]
 \centering
 \footnotesize
@@ -4736,7 +4736,7 @@ Base & --- &  20576.49 &  281.94 &      --- \\
 \bottomrule
 \end{tabular}
 \end{table}
- 
+
 
 \begin{figure}[htp]
   \centering
@@ -5180,7 +5180,7 @@ device-level policy and coarse-grained network policy, these can be addressed in
 work (see \Cref{c:discussion}).
 
 
- 
+
 \chapter{Case Studies}\label{c:case-studies}
 In this chapter, we examine specific case studies, where we apply \bpfbox{} and
 \bpfcontain{} policies to solve realistic problems. We examine how \bpfbox{} and
@@ -5959,7 +5959,7 @@ and untainting semantics prove advantageous for complex deployments on the host 
 Future iterations on \bpfcontain{}'s default policy can greatly simplify existing
 container-specific policy semantics, shortening long and complex policies down to just
 a few lines.
- 
+
 \chapter{Discussion and Concluding Remarks}\label{c:discussion}
 This chapter discusses the relevance of \bpfbox{} and \bpfcontain{}, positioning them as
 novel extensions to the existing confinement literature. We also examine
@@ -6556,7 +6556,7 @@ of system behaviour. Such a solution would encompass the capabilities of \bpfbox
 filtering, software hot patches, and beyond. In the short term, improvements on top of the
 \gls{ebpf} ecosystem as well as \bpfbox{} and \bpfcontain{} can make incremental progress
 towards realizing this goal.
- 
+
 
 
 \cleardoublepage \printbibliography[heading=bibintoc]

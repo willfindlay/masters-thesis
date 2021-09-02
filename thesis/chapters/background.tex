@@ -447,8 +447,9 @@ capabilities defined by Dennis and Van Horn, POSIX capabilities are not associat
 any given system object. Dennis and Van Horn's capabilities more closely resemble that of
 the access matrix introduced by Anderson~\cite{anderson1972_report} and similar mechanisms
 have been implemented in other systems such as FreeBSD's
-Capsicum~\cite{watson2010_capsicum} and the CHERI architecture~\cite{watson2015_cheri,
-davis2019_cheriabi}. These are discussed in more detail in \Cref{ss:syscall-filtering}.
+Capsicum~\cite{watson2010_capsicum}. These are discussed in more detail in
+\Cref{ss:syscall-filtering}.
+%and the CHERI architecture~\cite{watson2015_cheri, davis2019_cheriabi}.
 
 \subsection{Mandatory Access Control}%
 \label{ss:mac}
@@ -775,7 +776,7 @@ functionality, although the usability of these solutions remains somewhat questi
 particularly given the many pitfalls of seccomp-bpf policy
 authorship~\cite{anderson2017_comparison}.
 
-\subsubsection*{FreeBSD Capsicum and CHERI Capabilities}
+\subsubsection*{FreeBSD Capsicum}
 \label{sss:capsicum}
 
 Unlike the system call filters presented earlier in this section, FreeBSD's
@@ -799,13 +800,13 @@ information)~\cite{watson2010_capsicum}. The end-result is an expressive and fin
 self-confinement framework for FreeBSD applications, which comes at a small usability cost
 compared with coarser-grained alternatives like \texttt{pledge(2)}~\cite{pledge}.
 
-In 2015, Watson \etal~designed CHERI~\cite{watson2015_cheri} as an extension to the MIPS
-\gls{isa} enabling the capability-based protection of memory pages. Under CHERI, the
-operating system kernel and userspace runtime extend the traditional memory model with
-capabilities using the CHERI \gls{isa}. This enables generic capability-based protection at
-the level of memory pages. While powerful, this extension requires dedicated hardware
-support. Watson \etal~implemented their prototype on an \gls{fpga}~\cite{watson2015_cheri}
-and later extended the FreeBSD \gls{abi} to work with CHERI capabilities~\cite{davis2019_cheriabi}.
+% In 2015, Watson \etal~designed CHERI~\cite{watson2015_cheri} as an extension to the MIPS
+% \gls{isa} enabling the capability-based protection of memory pages. Under CHERI, the
+% operating system kernel and userspace runtime extend the traditional memory model with
+% capabilities using the CHERI \gls{isa}. This enables generic capability-based protection at
+% the level of memory pages. While powerful, this extension requires dedicated hardware
+% support. Watson \etal~implemented their prototype on an \gls{fpga}~\cite{watson2015_cheri}
+% and later extended the FreeBSD \gls{abi} to work with CHERI capabilities~\cite{davis2019_cheriabi}.
 
 
 
@@ -860,13 +861,13 @@ runtimes, such as the Java Virtual Machine~\cite{chin2009_efficient}.
 \section{Process-Level Virtualization}%
 \label{s:virtualization}
 
-We now step away from \textit{confinement} to focus on process-level
-\textit{virtualization} primitives employed in Unix-like operating systems. Whereas
-confinement primitives have the goal of restricting a process' behaviour, virtualization
-primitives instead limit the process' ability to see the world around it. This property
-should not be confused with \textit{isolation}. True isolation requires a mixture of both
-virtualization and confinement mechanisms to restrict access to system resources and
-prevent unwanted behaviour.
+% We now step away from \textit{confinement} to focus on process-level
+% \textit{virtualization} primitives employed in Unix-like operating systems. Whereas
+% confinement primitives have the goal of restricting a process' behaviour, virtualization
+% primitives instead limit the process' ability to see the world around it. This property
+% should not be confused with \textit{isolation}. True isolation requires a mixture of both
+% virtualization and confinement mechanisms to restrict access to system resources and
+% prevent unwanted behaviour.
 
 \subsubsection*{Chroots and Chroot Jails}
 
@@ -1046,7 +1047,8 @@ hypervisor-based architectures.
     \gls{os} itself. They share the underlying operating system kernel and resources,
     requiring no guest \gls{os}. A hypervisor \textbf{(b)} virtualizes and controls the
     underlying hardware directly, but requires full guest operating systems on top of the
-    virtualization layer.
+    virtualization layer. Note that a guest operating system may run directly on top of
+    the hypervisor or on top of a host operating system.
   }%
   \label{fig:virt}
 \end{figure}
@@ -1133,7 +1135,15 @@ firmware (e.g.~a side channel attack on cache memory) to leak information about 
 process (containerized or otherwise). Such attacks can totally bypass the operating
 system's reference monitor and generally require trusted computing technologies or
 hardware/software co-design to mitigate. As such, they are out of scope for this thesis.
-Resource starvation attacks are also considered out of scope.
+
+Resource starvation attacks constitute another important threat in container security. In
+such an attack, a malicious container greedily consumes system resources, limiting their
+availability for benign processes. Linux cgroups, when properly configured, can mostly
+defeat such attacks, although some researchers argue that such protection can be
+misleading or incomplete in practice~\cite{gao2019_houdini}. While resource starvation
+attacks are currently considered out of scope for this thesis, future iterations of
+\bpfcontain{} may work cooperatively with the kernel's cgroup mechanism to provide more
+complete protection.
 
 % \todo{Add a bulleted list of container escapes}
 % \begin{inprogress}
