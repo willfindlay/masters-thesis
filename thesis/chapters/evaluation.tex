@@ -127,15 +127,14 @@ $$
   \text{Percent Overhead} = \frac{\left(\bar{x}_{test} - \bar{x}_{base}\right)}{|\bar{x}_{base}|} \times 100
 $$
 
-To ensure statistically valid results, we run each test at least eleven times, until
-a standard deviation of at most $2\%$ of the mean is achieved. The standard deviation
-bound is a sensible default enforced by the Phoronix Test Suite to ensure statistically
-valid results. We also discard the first run of each test to control for initial I/O
-transients. In the end, no additional trials were necessary, as we were able to achieve
-under $2\%$ standard deviation for all test configurations. For reproducibility, we make
-the benchmarking repository publicly available\footnote{Benchmarking tests are available:
+To increase the accuracy of results, we run each test for a total of eleven runs. We
+discard the first run of each test to control for initial I/O transients (e.g.~file
+caching), leaving ten valid runs in total for each test. This same strategy is repeated
+for each experimental configuration, as shown in \Cref{fig:configuration}. For
+reproducibility, we make the benchmarking repository publicly
+available\footnote{Benchmarking tests are available:
 \url{https://github.com/willfindlay/bpfcontain-benchmarks}}, including all results and
-related scripts.
+scripts.
 
 % \begin{inprogress}
 %   \begin{itemize}
