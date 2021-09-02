@@ -9,7 +9,7 @@
           should explicitly contrast bpfbox and bpfcontain.
   - TODO: probably just remove CHERI capabilities from our discussion
 
-- [ ] explain geometric mean
+- [x] explain geometric mean
   - evaluation.tex line 675 (in the middle of this paragraph)
   - evaluation.tex line 634 (tab:phoronix-geometric)
 

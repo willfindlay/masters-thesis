@@ -628,9 +628,9 @@ I/O and Apache web server tests.
   \centering
   \footnotesize
   \caption[Geometric means of Phoronix benchmarking results]{
-    Geometric means of Phoronix benchmarking results, as provided by the Phoronix Test
-    Suite. These are indicative of overall performance across all tests. For test case,
-    percent change from the base results are also given. Higher values are better.
+    Geometric means of all Phoronix test results. The geometric means provide an aggregate
+    summary of normalized results across all tests. Higher values are better. Percent
+    overhead is given in relation to the base result.
   }%
   \label{tab:phoronix-geometric}
   \begin{tabular}{llrr}
@@ -648,29 +648,30 @@ I/O and Apache web server tests.
              & \bpfcontain{} & 5.763          & 7.61\% \\
              & AppArmor      & 6.086          & 2.35\% \\
    \cline{1-4}
-   Complaining  & \bpfbox{}     & 5.823          & 6.65\% \\
+   Complaining  & \bpfbox{}  & 5.823          & 6.65\% \\
              & \bpfcontain{} & 5.693          & 8.74\% \\
              & AppArmor      & 4.962          & 20.46\% \\
   \bottomrule
   \end{tabular}
 \end{table}
 
-While \bpfbox{} and \bpfcontain{} are not as efficient as AppArmor in the \textbf{Passive}
-and \textbf{Allow} test cases, the additional performance overhead comes with an increase
-in flexibility and system observability afforded by an \gls{ebpf} implementation as
-opposed to a traditional Linux Security Module.  Moreover, \bpfcontain{} extends
-\bpfbox{}'s original enforcement model, adding new rule categories and enforcement
-defaults. While these enhancements may be the cause of some additional performance
-overhead, we hypothesize that the majority of \bpfcontain{}'s performance overhead is due to
-sub-optimal memory allocations and data structure access patterns, which can be optimized
-in the future.
+% While \bpfbox{} and \bpfcontain{} are not as efficient as AppArmor in the \textbf{Passive}
+% and \textbf{Allow} test cases, the additional performance overhead comes with an increase
+% in flexibility and system observability afforded by an \gls{ebpf} implementation as
+% opposed to a traditional Linux Security Module. Moreover, \bpfcontain{} extends
+% \bpfbox{}'s original enforcement model, adding new rule categories and enforcement
+% defaults. While these enhancements may be the cause of some additional performance
+% overhead, we hypothesize that the majority of \bpfcontain{}'s performance overhead is due to
+% sub-optimal memory allocations and data structure access patterns, which can be optimized
+% in the future.
 
 Despite under-performing in the \textbf{Passive} and \textbf{Allow} cases, both \bpfbox{}
 and \bpfcontain{} significantly outperform AppArmor in the \textbf{Complaining} test case,
-due to a more efficient event logging mechanism. \Cref{tab:phoronix-geometric} shows the
-geometric mean of all tests for each test case, indicating that \bpfbox{} and
-\bpfcontain{} exhibit an average performance penalty of under $9\%$ in practice, while
-AppArmor can exhibit overheads of up to $20\%$ in the worst case.
+due to a more efficient event logging mechanism. Taking the geometric mean
+(\Cref{tab:phoronix-geometric}) of normalized test results provides an indication of
+overall performance across all test cases. Results from the geometric mean indicate that
+BPFBox and BPFContain incur under 9\% overhead in all test cases, while AppArmor exhibits
+over 20\% overhead in the \textbf{Complaining} case.
 
 Although the results presented in this section indicate a comparative performance with
 AppArmor, many other widely-adopted \glspl{lsm} can perform significantly worse than
