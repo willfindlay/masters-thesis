@@ -36,3 +36,12 @@ $(diff_pdf): $(diff_tex)
 
 .PHONY: diff
 diff: $(diff_pdf)
+
+.PHONY: clean
+clean:
+	latexmk -C
+	pushd diffs; latexmk -C; popd
+
+.PHONY: mrproper
+mrproper: clean
+	git clean -Xf
