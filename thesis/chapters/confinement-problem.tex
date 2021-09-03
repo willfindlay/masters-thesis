@@ -34,7 +34,7 @@ con\-tain\-er-based virtualization~\cite{sultan2019_container_security,
 eder2016_hypervisor_container} (see \Cref{fig:container-hvm-security}). Intuitively, this
 makes sense.  Containers run directly on the host operating system, whereas a virtual
 machine runs on top of a hypervisor, separated by at least one layer of indirection from
-the host system.  However, this intuition does not strictly stand up to scrutiny.
+the host system. However, this intuition does not strictly stand up to scrutiny.
 A virtual machine running on top of a hypervisor makes requests to the hypervisor's
 \gls{api} (via hypercalls), in much the same way as a container running on a host
 operating system makes requests to the kernel's \gls{api} (via system calls).
@@ -91,30 +91,19 @@ it, just as in an ordinary operating system (after all, a guest operating system
 implicit isolation and additional \gls{os}-level security mechanisms: a form of
 \textit{policy through mechanism}.
 
-The central argument of this thesis is that there is no fundamental reason why containers
-cannot be as\,---\,if not more\,---\,secure than virtual machines.  While it is true that
-a containerized process is nothing more than a host process running under one or more
-\gls{os}-level virtualization primitives, an operating system that provides and enforces
-the right set of confinement primitives should be able to lock a container down in much
-the same way that a hypervisor implicitly enforces isolation.  Unlike hypervisor-based
-isolation, such a policy enforced by the operating system has the potential to be more
-minimal, centralized, and accessible to end users. Further, we can attain a high level of
-flexibility through a software-based enforcement mechanism, unencumbered by the
-restrictions of a hardware-level interface.
-
-The key to developing such an enforcement mechanism lies in defining a clear protection
-boundary within the kernel and enforcing access across this boundary. Rather than
-\textit{policy through mechanism}, this would be \textit{policy through exception}. Under
-this model, the operating system enforces a clear protection boundary around the
-container, and security policy then defines exceptions in this boundary, exposing
-a minimal interface to the outside world.  Such an interface has the potential to be
-\textit{far more minimal}  than that of a virtual machine, by taking advantage of the
-fine-grained semantics exposed by the operating system.
+The central argument of this thesis is that container security can be greatly
+improved by provisioning the operating system with the right set of confinement primitives.
+In particular, such primitives should enable the definition of a security boundary
+around the container similar in spirit to the implicit boundary that exists around a
+virtual machine. A policy author could then define exceptions to this security boundary
+to expose specific container interfaces to the outside world and vice versa. In order
+to define such a protection boundary, our confinement mechanism would need to be
+container aware, incorporating container-specific semantics into policy enforcement.
 
 However, the above depiction of container security does not match the current reality.
 Existing container runtimes simply reuse confinement primitives exposed by the operating
 system, combining multiple \gls{os}-level security mechanisms to secure specific system
-resources.  This approach is neither simple nor unified, and results in increasingly
+resources. This approach is neither simple nor unified, and results in increasingly
 complex and verbose policies, inundated with the technical baggage associated with locking
 down an entire operating system. Yet it is hard to fault the designers of container
 runtimes for this design choice; a container runtime's job is to run containers, not to
@@ -131,6 +120,25 @@ issues underlying the current state-of-the-art in Linux confinement and containe
 security. To that end, \Cref{s:cp-issues} outlines three main issues with current Linux
 confinement primitives and \Cref{s:cp-containers} examines and critiques how container
 runtimes apply these primitives in practice.
+
+% While it is true that
+% a containerized process is nothing more than a host process running under one or more
+% \gls{os}-level virtualization primitives, an operating system that provides and enforces
+% the right set of confinement primitives should be able to lock a container down in much
+% the same way that a hypervisor implicitly enforces isolation.  Unlike hypervisor-based
+% isolation, such a policy enforced by the operating system has the potential to be more
+% minimal, centralized, and accessible to end users. Further, we can attain a high level of
+% flexibility through a software-based enforcement mechanism, unencumbered by the
+% restrictions of a hardware-level interface.
+
+% The key to developing such an enforcement mechanism lies in defining a clear protection
+% boundary within the kernel and enforcing access across this boundary. Rather than
+% \textit{policy through mechanism}, this would be \textit{policy through exception}. Under
+% this model, the operating system enforces a clear protection boundary around the
+% container, and security policy then defines exceptions in this boundary, exposing
+% a minimal interface to the outside world.  Such an interface has the potential to be
+% \textit{far more minimal}  than that of a virtual machine, by taking advantage of the
+% fine-grained semantics exposed by the operating system.
 
 % The primary difference between the two is where and how the security boundary is
 % defined.  In the case of containers, the boundary is defined in software, by \gls{os}
