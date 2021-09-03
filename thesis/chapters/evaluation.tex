@@ -1010,6 +1010,66 @@ denied. Since ptrace is an extremely powerful interface (effectively giving the 
 total control over the tracee), \bpfcontain{} defines no policy rules to make exceptions
 to its default ptrace enforcement.
 
+\subsection{Breaking \bpfbox{} and \bpfcontain{}}
+
+The confinement guarantees provided by \bpfbox{} and \bpfcontain{} are only useful to the
+extent that they can reliably confine an adversary under out threat model. Thus, we must
+carefully consider how adversary could potentially modify, bypass, or otherwise break our
+confinement mechanism. To that end, this section enumerates a few ways in which an
+adversary could potentially try to invalidate \bpfbox{} and \bpfcontain{}'s confinement.
+
+\paragraph*{Killing the Privileged Daemon}
+Both \bpfbox{} and \bpfcontain{} rely on a privileged userspace daemon to manage their
+\gls{ebpf} programs and maps and to log security events in userspace. The most obvious way
+to interfere with the daemon is to simply force it to exit, for instance by delivering an
+uncatchable \texttt{SIGKILL} signal via the \texttt{kill(2)} system call. Recall that our
+threat model (presented in \Cref{s:cp-threat-model}) provisions the adversary with root
+privileges under the Unix \gls{dac} model, meaning that the delivery of such a signal would
+succeed under normal circumstances.
+
+\bpfbox{} and \bpfcontain{} mitigate this threat in a few ways. First, they pin their
+\gls{lsm} programs and maps in the kernel, incrementing their reference count and
+preventing them from being unloaded when the daemon erroneously exits. As a further
+mitigation, both \bpfbox{} and \bpfcontain{} instrument \gls{lsm} programs on signal
+delivery, preventing a confined process from delivering any signals to the daemon (or any
+other unauthorized recipient).
+
+\paragraph*{Tampering with Programs and Maps}
+Recall that \bpfbox{} and \bpfcontain{} enforce confinement policy using a combination of
+\gls{ebpf} programs to make policy decisions and \gls{ebpf} maps to store confinement
+policy and system state. These \gls{ebpf} objects thus present a clear target for an
+adversary who wishes to tamper with our confinement mechanism. To mitigate this threat,
+\bpfbox{} and \bpfcontain{} prevent an adversary from loading, modifying, or unloading
+\textit{any} \gls{ebpf} programs or maps. This is done using an \gls{lsm} hook on the
+\texttt{bpf(2)} system call.
+
+\paragraph*{Crafted System Call Inputs}
+System calls define the canonical interface between userspace and the kernel, enabling
+a userspace process to request that the kernel perform some operation on its behalf, such
+as accessing a system resource, communicating with a hardware device, or allocating heap
+memory. Since many system calls accept parameters, they are often the first step in mounting
+code execution or privilege escalation attacks against the kernel. An adversary could attempt
+to use such an attack to escape confinement under \bpfbox{} or \bpfcontain{}, for example
+by modifying or entirely bypassing their \gls{ebpf} programs.
+
+Recall that \bpfbox{} and \bpfcontain{} enforce confinement at the \gls{lsm} layer.  In
+practice, this means that any exploitation must occur in one of three places: (1)
+\textit{before} an instrumented \gls{lsm} hook can be invoked; (2) within the \gls{lsm}
+hook itself, or; (3) \textit{after} an \gls{lsm} hook has permitted the associated
+operation. Currently, neither \bpfbox{} nor \bpfcontain{} handles case (1), since
+enforcement only occurs at the \gls{lsm} layer. However, future versions of \bpfbox{} and
+\bpfcontain{} could instrument \gls{ebpf} programs at system call entrypoints to perform
+basic input validation or enforce system call denylists.
+
+Unlike traditional \glspl{lsm}, \bpfbox{} and \bpfcontain{} are hardened against case (2)
+due to the safety guarantees enforced by the \gls{ebpf} verifier. In particular, the
+verifier makes it far less likely that a given \gls{ebpf} program contains a memory safety
+vulnerability\footnote{See \Cref{s:ebpf-bg} for a detailed description of the how the
+verifier enforces safety guarantees.}. Case (3) is partially handled by the fact that the
+adversary's crafted input must pass any checks in \bpfbox{} and \bpfcontain{}'s \gls{lsm}
+programs.  This significantly reduces the probability of an exploit payload successfully
+reaching this part of the system call code path. Also note that any future mitigations
+applied to case (1) would also implicitly apply to case (2) and case (3).
 
 \section{Summary}%
 \label{s:eval-summary}
