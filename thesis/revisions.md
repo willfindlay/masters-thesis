@@ -32,12 +32,12 @@
   - TODO: revisit this in background
   - TODO: revisit this in confinement problem
 
-- [ ] remove virtualization less secure than container confinement
+- [x] remove virtualization less secure than container confinement
   - paragraph in confinement problem line 94
 
 - [x] clarify forward & backward compatibility
 
-- [ ] discuss how to break it
+- [x] discuss how to break it
   - put this in its own subsection in the security evaluation
   - things to maybe talk about:
     - LSM hook placement (but all LSMs rely on this)
