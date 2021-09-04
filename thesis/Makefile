@@ -25,7 +25,7 @@ pdf: $(pdf)
 $(pdf): $(sources)
 	latexmk -pdf -f $(main)
 
-$(diff_new):
+$(diff_new): $(sources)
 	latexpand $(main) -o $(diff_new)
 
 $(diff_tex): $(diff_new)
