@@ -22,12 +22,40 @@ section provides a scoping definition of confinement that will inform later disc
 the design and implementation of \bpfbox{} and \bpfcontain{} as well as provide some
 context for the selection of related work presented later in this chapter.
 
-\todo{Definition of confinement goes here, probably in just one or two paragraphs}
+We define \textit{confinement} as the establishment of a security boundary around some
+unit of computation $\mathcal{C}$ (e.g.\ a process or a container). This boundary limits
+$\mathcal{C}$'s ability to access system resources which reside outside of the boundary or
+to perform privileged operations which could impact the rest of the system. An
+\textit{enforcement engine} mediates security-sensitive operations which would cross the
+security boundary, enforcing a \textit{confinement policy}. In particular, our goal is to
+limit the ability of a misbehaving $\mathcal{C}$ (for example, having been compromised by
+an attacker) to damage the rest of the system.
+
+% Historically, confinement has been enforced at various layers of the software stack.
+% Operating systems generally expose a set of \textit{confinement primitives} which
+
+% We define \textit{confinement} as the restriction of some unit of computation
+% $\mathcal{C}$ (e.g.\ a process or container) such that the set of all allowed actions
+% $\mathcal{A}_{allowed} \subseteq \mathcal{A}_{possible}$ is the minimal subset required
+% for $\mathcal{C}$ to function normally. In particular, we are concerned with limiting
+% access to security sensitive resources and privileged operations which could affect global
+% system state. An \textit{enforcement engine} mediates access to such resources and
+% privileged operations by enforcing a \textit{confinement policy}. As defenders, our goal
+% is to limit the ability of a misbehaving $\mathcal{C}$ (for example, having been
+% compromised by an attacker) to damage the rest of the system.
 
 \bpfbox{} and \bpfcontain{} focus on process-level and container-level confinement
 respectively. We define process-level confinement as confinement which targets the process
-as a unit of computation and security. Similarly, container-level confinement targets the
-container as a unit of computation and security.
+as a unit of computation. Similarly, container-level confinement targets the container as
+a unit of computation and security. The key differentiating factor between these two
+models is the location in which we define our security boundary. In process-level
+confinement, our boundary exists around a given process and the corresponding confinement
+policy is largely defined by the application code which is running. In container-level
+confinement, we are concerned with defining a security boundary around a \textit{group} of
+related processes, defined by a shared set of resource mappings.
+\Cref{c:confinement-problem} discusses these two models in more detail. The rest of this
+chapter focuses on surveying the existing confinement landscape at various levels of the
+software stack.
 
 \section{Classic Unix Process Security Model}%
 \label{s:process-security-model}
