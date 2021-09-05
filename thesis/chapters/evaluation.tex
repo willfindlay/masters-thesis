@@ -722,25 +722,26 @@ a policy designed to prevent such violations.
 
 \subsection{Threat Model Revisited}
 
-Recall the threat model presented in \Cref{s:cp-threat-model}. We assume a remote
-adversary who is confined by some policy $\mathcal{P}$. The adversary's goal is to escape
-confinement by circumventing $\mathcal{P}$, enabling them to access sensitive resources,
-interfere or tamper with the system, or perform other unauthorized actions. Our goal is to
-confine the adversary, limiting the set of all actions they can perform to some subset of
-allowed actions. We express such confinement using the policy $\mathcal{P}$ which defines
-rules governing the set of operations some subject $\mathcal{S}_i$ may perform on system
-objects $\mathcal{O}_1 \mathellipsis \mathcal{O}_n$. To enforce our confinement policy, we
-rely on a \textit{confinement engine} which has been loaded into the kernel's reference
-monitor.
+% Recall the threat model presented in \Cref{s:cp-threat-model}. We assume a remote
+% adversary who is confined by some policy $\mathcal{P}$. The adversary's goal is to escape
+% confinement by circumventing $\mathcal{P}$, enabling them to access sensitive resources,
+% interfere or tamper with the system, or perform other unauthorized actions. Our goal is to
+% confine the adversary, limiting the set of all actions they can perform to some subset of
+% allowed actions. We express such confinement using the policy $\mathcal{P}$ which defines
+% rules governing the set of operations some subject $\mathcal{S}_i$ may perform on system
+% objects $\mathcal{O}_1 \mathellipsis \mathcal{O}_n$. To enforce our confinement policy, we
+% rely on a \textit{confinement engine} which has been loaded into the kernel's reference
+% monitor.
 
-Under our threat model, we assign significant capabilities to the adversary. Aside from the
-restrictions imposed by our confinement policy, we assume that they have root-level access
-to the system, including the ability to load code into the kernel, bypass discretionary
-access controls, read or modify any persistent resource, and establish persistent access
-to the system. Thus, an attacker that is able to escape or bypass confinement has
-effectively compromised the entire system. Further, our enforcement engine must take steps
-protect itself, preventing the attacker from simply loading or modifying code in the
-kernel, which would result in the ability to tamper with or bypass the enforcement engine.
+Under our threat model (see \Cref{s:cp-threat-model}), we assign significant capabilities
+to the adversary. Aside from the restrictions imposed by our confinement policy, we assume
+that they have root-level access to the system, including the ability to load code into
+the kernel, bypass discretionary access controls, read or modify any persistent resource,
+and establish persistent access to the system. Thus, an attacker that is able to escape or
+bypass confinement has effectively compromised the entire system. Further, our enforcement
+engine must take steps protect itself, preventing the attacker from simply loading or
+modifying code in the kernel, which would result in the ability to tamper with or bypass
+the enforcement engine.
 
 In the subsections that follow, we consider four broad access categories and describe how
 \bpfbox{} and \bpfcontain{}'s confinement policy and enforcement engine prevent attacks
