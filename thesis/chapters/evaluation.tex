@@ -442,12 +442,14 @@ the worst case and under $3\%$ in the majority of cases.
 
 The memory allocation benchmark (\Cref{tab:phoronix-memory-allocations} and
 \Cref{fig:osbench}) indicates that none of the systems had any significant affect on
-memory allocation. In some cases, percent overhead falsely appears to indicate
-a performance \textit{improvement}, which we attribute to measurement error rather than
-any indication of increased performance; all results from this trial were well within the
-margin of error. This result is consistent with expectations since memory allocation does
-not directly interact with any \gls{lsm} hooks in the kernel, and neither \bpfbox{} nor
-\bpfcontain{} instruments any \gls{bpf} programs on the page allocation code path.
+memory allocation. In some cases, percent overhead falsely appears to indicate a minor
+performance \textit{improvement}, which we attribute to measurement error rather than any
+indication of increased performance; all results from this trial were well within the
+margin of error. In fact, there is precedent for such results in the literature, for
+example in the original \gls{lsm} paper~\cite{wright2002_lsm}. This result is consistent
+with expectations since memory allocation does not directly interact with any \gls{lsm}
+hooks in the kernel, and neither \bpfbox{} nor \bpfcontain{} instruments any \gls{bpf}
+programs on the page allocation code path.
 
 \input{results/tables/memory-allocations}
 
