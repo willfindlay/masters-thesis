@@ -699,7 +699,52 @@ performance-critical programming errors. We hypothesize that it may be possible 
 optimize \bpfcontain{} such that its overhead is more in line with \bpfbox{}.
 
 \paragraph*{Comparing Overhead With Other Academic Proposals}
-\todo{Raid the bibliography and compare overhead here}
+While the results presented in this section provide a basis for comparing the performance
+of \bpfbox{} and \bpfcontain{} with AppArmor, this comparison is not strictly fair in the
+sense that AppArmor is already a well-established security mechanism that has been heavily
+optimized for production.  To better understand the overall performance overhead of
+\bpfbox{} and \bpfcontain{}, this section presents an informal comparison between the
+results presented in this thesis and existing academic proposals.
+
+% Many existing academic proposals involve benchmarks conducted on old hardware
+% and old versions of the Linux kernel, which makes any sort of direct comparison
+% with \bpfbox{} and \bpfcontain{} impractical. \todo{So what can we actually glean from this}
+
+Janus~\cite{wagner1999_janus, goldberg96_janus} by Wagner \etal\ was among the first
+research prototypes to actively consider high-level confinement policy for Unix processes.
+Rather than interposing on \texttt{read(2)} and \texttt{write(2)} system calls, Janus
+instead enforced access control on the \texttt{open(2)} system call, permitting all reads
+and writes. Although they reported that this optimization was able to minimize file I/O
+overhead, Wagner \etal\ only studied Janus' overhead on CPU-intensive applications that
+made minimal system calls. \bpfcontain{} may be able to make similar performance
+optimizations to Janus, but this would require some modifications to \bpfcontain{}'s inode
+resolution strategy (see \Cref{s:disc-limitations} and \Cref{s:disc-future-work}).
+
+Jain and Sekar~\cite{jain2000_filtering} reported as much as 35\% overhead for their
+ptrace-based confinement implementation when confining the httpd web server. This figure is
+significantly higher than either \bpfbox{} or \bpfcontain{} under comparable workloads.
+Kim and Zeldovich evaluated the performance of \textsc{MBox}~\cite{kim2013_mbox},
+a sandboxing framework based on ptrace and seccomp-bpf. They acknowledge significant
+performance overhead under heavy file I/O workloads, on the order of 12--20.9\%. These
+results are roughly consistent with the performance of \bpfbox{} and \bpfcontain{},
+particularly considering that \textsc{MBox} does not interpose on every system
+call~\cite{kim2013_mbox}.
+
+Provos' Systrace~\cite{provos2003_systrace} exhibits as much as 31\% overhead in kernel
+compilation macro-benchmarks, significantly worse than \bpfbox{} and \bpfcontain{}. In
+micro-benchmarks, depending on the system call, Systrace can add anywhere from 7\% to 31\%
+overhead to system call execution time. These results are roughly consistent with the
+micro-benchmark results for \bpfbox{} and \bpfcontain{}.
+
+It is difficult to directly compare \bpfcontain{} with existing container security
+proposals, as they generally involve some form of policy generation that compiles down to
+a corresponding AppArmor and/or seccomp-bpf policy\footnote{Thus, we would actually be
+comparing \bpfcontain{} with AppArmor or seccomp-bpf.}~\cite{ghavamania2020_confine,
+loukidis2018_dockersec, lei2017_speaker}. The Tracee project~\cite{tracee} is perhaps the
+best candidate for a direct comparison, particularly as it also uses \gls{ebpf} to trace
+container execution. However, Tracee currently does not provide any relevant benchmarking
+data for direct comparison. Examining the performance overhead of Tracee on system call
+execution may be a promising topic for future work.
 
 \section{Security Analysis}%
 \label{s:eval-security}

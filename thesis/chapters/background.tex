@@ -688,7 +688,7 @@ provided by the kernel that allows one process (the tracer) to attach itself to 
 (the tracee), tracing and possibly manipulating nearly any aspect of its execution, system
 calls, memory, and registers. Originally designed as a debugging interface~\cite{ptrace,
 padala2002_ptrace}, ptrace has also been applied to implement system call
-filtering~\cite{goldberg96_janus, wagner1999_janus, jain2000_filtering}. However, ptrace
+filtering~\cite{goldberg96_janus, wagner1999_janus, jain2000_filtering, kim2013_mbox}. However, ptrace
 has fallen out of favour, particularly in production use cases, due to its immensely high
 overhead (on the order of several thousand percent~\cite{zinke2009_overhead}) and
 propensity to introduce undefined behaviour when tracing even moderately complex
@@ -711,6 +711,9 @@ process}, would then be able to kill the offending process or inject failure int
 offending system call when it detected a policy violation.  Jain and
 Sekar~\cite{jain2000_filtering} implemented a similar system call monitor, adding the
 ability to modify system call arguments and using a different policy language design.
+Kim and Zeldovich~\cite{kim2013_mbox} used a combination of seccomp-bpf and ptrace
+to interpose on filesystem operations and rewrite arguments, redirecting access into
+a sandboxed filesystem.
 
 Provos' Systrace~\cite{provos2003_systrace} uses ptrace to analyze per-process system
 calls and generate a system-call-level policy. Unlike Janus~\cite{goldberg96_janus,

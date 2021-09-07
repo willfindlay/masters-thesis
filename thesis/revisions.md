@@ -1,7 +1,7 @@
 - [ ] fix typos (see Viau's notes)
   - [x] grsecurity
 
-- [ ] early definition of confinement
+- [x] early definition of confinement
   - NOTE: in progress, background.tex line 16
   - TODO: revisit section 3.6.1 (confinement policy and enforcement engine)
     - either need to make this match or completely replace it with our definition in the background
