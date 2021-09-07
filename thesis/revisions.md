@@ -1,4 +1,4 @@
-- [ ] fix typos (see Viau's notes)
+- [x] fix typos (see Viau's notes)
   - [x] grsecurity
 
 - [x] early definition of confinement
@@ -23,11 +23,11 @@
     introduces the potential to make performance-critical mistakes
   - highlight the need for subsequent optimization
 
-- [ ] compare overhead with academic security efforts (quote stats)
+- [x] compare overhead with academic security efforts (quote stats)
   - TODO: get a nice list of comparable performance results
     (probably should be things already cited in the background?)
 
-- [ ] virtualization: aggregation & segregation
+- [x] virtualization: aggregation & segregation
   - TODO: revisit this in the intro
   - TODO: revisit this in background
   - TODO: revisit this in confinement problem

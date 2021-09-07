@@ -391,7 +391,10 @@ default allow. Conversely, resources outside of the container, such as external 
 processes, are considered default deny. Similarly, access is also denied to any operating
 system interfaces that could affect global system state, such as character devices, kernel
 modules, \gls{ebpf}, and some special filesystems. Exceptions to these defaults may
-be explicitly defined in the policy file as required. \Cref{ss:bpfcontain-default}
+be explicitly defined in the policy file as required. \bpfcontain{} currently uses
+ad-hoc information gathered at runtime to enforce its default policy; future integration
+with container runtimes (discussed in \Cref{s:disc-future-work}) could significantly
+improve container-specific policy defaults in the future. \Cref{ss:bpfcontain-default}
 examines the implementation of \bpfcontain{}'s default policy in more detail.
 
 Like \bpfbox{}, \bpfcontain{} maintains its policy files in a root-controlled directory

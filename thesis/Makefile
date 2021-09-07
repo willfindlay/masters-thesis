@@ -35,7 +35,7 @@ $(diff_pdf): $(diff_tex)
 	latexmk -pdf -f -cd- $(diff_tex) -jobname=$(diff_pdf_prefix)
 
 .PHONY: diff
-diff: $(diff_pdf)
+diff: | $(diff_pdf)
 
 .PHONY: clean
 clean:

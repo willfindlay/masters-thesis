@@ -601,32 +601,15 @@ This section outlines the threat model for \bpfbox{} and \bpfcontain{}. In parti
 provide a scoping definition of confinement policy and what it means for a policy
 enforcement mechanism to confine a subject using that policy. We also discuss the
 adversary's capabilities, goals, and potential attack vectors in a commodity Linux-based
-operating system. In general, both \bpfbox{} and \bpfcontain{} have a very similar threat
-model, with subtle and specific differences arising in a few key areas. Where
-discrepancies arise, they will be noted accordingly.
+operating system. In the rest of this section, we consider the
+definitions for \textit{confinement}, \textit{confinement policy}, and the
+\textit{enforcement engine} as they were presented in \Cref{s:confinement-definition}.
 
-\subsection{Confinement Policy and Enforcement Engine}
+% In general, both \bpfbox{} and \bpfcontain{} have a very similar threat
+% model, with subtle and specific differences arising in a few key areas. Where
+% discrepancies arise, they will be noted accordingly.
 
-\todo{Redo this to make a back reference to \Cref{s:confinement-definition}}
-
-We define \textit{confinement} as the restriction of \textit{subject} (system actors such
-as processes) behaviours to a set of desired behaviours, as they pertain to
-\textit{objects} (system resources such as files, network sockets, devices, and \gls{ipc}
-handles onto other subjects). Consider the set of all subjects $\mathcal{S}$ and the set
-of all objects $\mathcal{O}$. We define $\mathcal{S} \subseteq \mathcal{O}$ to account for
-\gls{ipc} objects. The goal is to create a confinement policy $\mathcal{P}_i$ for a subject
-$\mathcal{S}_i$ that maps $(\mathcal{S}_i, \mathcal{O}_j, Op)$ tuples to \textit{policy
-decisions} where $Op$ is an operation $\mathcal{S}_i \xrightarrow{Op} \mathcal{O}_j$.  The
-policy is written in some abstract policy language that encodes such tuples in
-a human-readable format.
-
-An \textit{enforcement engine} operates between the subject and system objects. It
-intercepts requests to access these objects and makes an access control decision according
-to the corresponding confinement policy. The end result is a behavioural restriction on
-the subject to some subset of all possible behaviours. The goal of an effective
-confinement policy and enforcement engine is to achieve the minimal possible subset for
-normal operation, thus achieving the principle of least privilege and minimizing the
-attack surface for potential exploitation.
+\section{Differences Between \bpfbox{} and \bpfcontain{}}
 
 Under \bpfbox{}, the enforcement engine targets access at the process level, interposing
 on individual system calls using \gls{ebpf} programs attached to \gls{lsm} hooks and
@@ -640,6 +623,27 @@ defines a protection boundary around the container itself; access to resources
 \textit{within} the container is considered default-allow, whereas resources
 \textit{outside}  of the container or operations that can affect global system state are
 considered default-deny.
+
+% \subsection{Confinement Policy and Enforcement Engine}
+
+% We define \textit{confinement} as the restriction of \textit{subject} (system actors such
+% as processes) behaviours to a set of desired behaviours, as they pertain to
+% \textit{objects} (system resources such as files, network sockets, devices, and \gls{ipc}
+% handles onto other subjects). Consider the set of all subjects $\mathcal{S}$ and the set
+% of all objects $\mathcal{O}$. We define $\mathcal{S} \subseteq \mathcal{O}$ to account for
+% \gls{ipc} objects. The goal is to create a confinement policy $\mathcal{P}_i$ for a subject
+% $\mathcal{S}_i$ that maps $(\mathcal{S}_i, \mathcal{O}_j, Op)$ tuples to \textit{policy
+% decisions} where $Op$ is an operation $\mathcal{S}_i \xrightarrow{Op} \mathcal{O}_j$.  The
+% policy is written in some abstract policy language that encodes such tuples in
+% a human-readable format.
+
+% An \textit{enforcement engine} operates between the subject and system objects. It
+% intercepts requests to access these objects and makes an access control decision according
+% to the corresponding confinement policy. The end result is a behavioural restriction on
+% the subject to some subset of all possible behaviours. The goal of an effective
+% confinement policy and enforcement engine is to achieve the minimal possible subset for
+% normal operation, thus achieving the principle of least privilege and minimizing the
+% attack surface for potential exploitation.
 
 % When designing a policy language and policy enforcement engine, there are a few trade-offs
 % to consider that can directly impact the security, usability, readability, and

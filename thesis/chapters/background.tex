@@ -458,7 +458,7 @@ Finally, the effective set determines the set of capabilities that a process can
 Linux exposes POSIX capabilities through extended filesystem attributes, much the same way
 that \glspl{acl} are implemented~\cite{corbet2006_capabities_b}. These file-based
 capabilities function in a similar manner to the setuid bit, implicitly setting the
-bounding, inheritable, and effective capability sets on execution. In addition so
+bounding, inheritable, and effective capability sets on execution. In addition to
 supporting capabilities as extended filesystem attributes, the kernel also supports
 dropping specific capabilities from each of the three sets through the \texttt{ptrctl(2)}
 system call. This enables a higher-privileged process (e.g.\ running as root) to drop
@@ -513,7 +513,7 @@ subsequent \gls{mac} enforcement mechanisms, most notably
 SELinux~\cite{smalley2001_selinux, loscocco2001_selinux}.
 
 The basic notion behind flask is straightforward; the security architecture is divided
-into a security server, responsible for storing security policy, and a object manager that
+into a security server, responsible for storing security policy, and an object manager that
 serves requests to userspace applications. When an application requests a resource, the
 object manager queries security policy from the security server and decides whether or not
 to serve the request based on the resulting enforcement decision. By designing Flask to be
@@ -900,6 +900,14 @@ runtimes, such as the Java Virtual Machine~\cite{chin2009_efficient}.
 % virtualization and confinement mechanisms to restrict access to system resources and
 % prevent unwanted behaviour.
 
+What we commonly think of as virtualization can be divided into two major categories:
+\textit{aggregation} and \textit{segregation}. Aggregation can be thought of as
+provisioning a single virtual interface on top of disparate resources (for example,
+combining two physical disks into one virtual disk). On the other hand, segregation
+involves providing an isolated view of a given resource (for example, virtual memory to
+isolate process address spaces). This section focuses primarily on \textit{segregation}
+and how it relates to confinement.
+
 \subsubsection*{Chroots and Chroot Jails}
 
 To virtualize the filesystem, Unix has classically supported the \texttt{chroot(2)} system
@@ -1243,7 +1251,7 @@ Sultan \etal~\cite{sultan2019_container_security} published a comprehensive revi
 container security, including a threat model and comparison with full-virtualization
 solutions like type I and type II hypervisors. Their work outlined four distinct cases and
 presented a survey of existing security mechanisms targeting each case: (i)
-a containerized attacking the container; (ii) a container attacking other containers;
+a containerized process attacking the container; (ii) a container attacking other containers;
 (iii) a container attacking the host; and (iv) the host attacking a container. Their
 recommendations included an increased adoption of trusted computing technologies to solve
 case iv and that work towards a container-specific \gls{lsm} would be necessary to harden
@@ -1366,7 +1374,7 @@ well.
 
 In essence, classic \gls{bpf} is a \textit{register virtual machine} designed to take packets as
 input and produce \textit{filtering decisions} as output. These filtering decisions could
-then used to make decisions about whether a packet should be passed down to a more complex
+then be used to make decisions about whether a packet should be passed down to a more complex
 pipeline for further analysis. The key insight behind \gls{cbpf} is that these filtering
 decisions could be made more efficiently in \textit{kernelspace}, the part of the
 operating system that runs in protection ring 0\footnote{Code that runs in ring 0 is said
