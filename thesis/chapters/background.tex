@@ -1,6 +1,6 @@
 This chapter presents technical background information required to understand this thesis
 and discusses related work from the perspective of industry and academia.
-\Cref{s:confinement-definition} provides a scoping definition of the term
+\Cref{s:confinement-definition} provides a definition of the term
 \textit{confinement} in the context of this thesis. \Cref{s:process-security-model}
 presents technical background on historical models for process-level confinement, with
 a particular emphasis on Multics, Unix, and Unix derivatives.
@@ -13,14 +13,14 @@ space. Finally, \Cref{s:ebpf-bg} presents a detailed history of \glsentryshort{e
 describes its architectural components and features, and discusses use cases in security
 and beyond.
 
-\section{A Scoping Definition of Confinement}%
+\section{Confinement in Operating Systems}%
 \label{s:confinement-definition}
 
 Before discussing the design and implementation of a novel confinement framework, it is
 critical to understand precisely what we mean by the term \textit{confinement}. This
-section provides a scoping definition of confinement that will inform later discussion on
-the design and implementation of \bpfbox{} and \bpfcontain{} as well as provide some
-context for the selection of related work presented later in this chapter.
+section provides a definition of confinement in operating systems that will inform later
+discussion on the design and implementation of \bpfbox{} and \bpfcontain{} as well as
+provide some context for the selection of related work presented later in this chapter.
 
 We define \textit{confinement} as the establishment of a security boundary around some
 unit of computation $\mathcal{C}$ (e.g.\ a process or a container). This boundary limits
@@ -30,6 +30,14 @@ to perform privileged operations which could impact the rest of the system. An
 security boundary, enforcing a \textit{confinement policy}. In particular, our goal is to
 limit the ability of a misbehaving $\mathcal{C}$ (for example, having been compromised by
 an attacker) to damage the rest of the system.
+
+This definition of confinement is consistent with seminal work in the field.
+Lampson~\cite{lampson1973_confinement} first defines process confinement as the inability
+for a confined process to leak sensitive data, but focuses on the fact that a misbehaving
+program should be trapped when attempting to escape. Others later expanded this definition
+to include other threats such as tampering with the host system~\cite{kim2013_mbox,
+goldberg96_janus, wagner1999_janus, jain2000_filtering, provos2003_systrace,
+watson2010_capsicum}.
 
 % Historically, confinement has been enforced at various layers of the software stack.
 % Operating systems generally expose a set of \textit{confinement primitives} which
@@ -1086,8 +1094,9 @@ hypervisor-based architectures.
     \gls{os} itself. They share the underlying operating system kernel and resources,
     requiring no guest \gls{os}. A hypervisor \textbf{(b)} virtualizes and controls the
     underlying hardware directly, but requires full guest operating systems on top of the
-    virtualization layer. Note that a guest operating system may run directly on top of
-    the hypervisor or on top of a host operating system.
+    virtualization layer. Note that hypervisor-based virtualization may be further
+    subdivided into Type I and Type II based on the presence (or lack thereof) of a host
+    operating system. This figure depicts both types simultaneously.
   }%
   \label{fig:virt}
 \end{figure}
@@ -1394,7 +1403,11 @@ network monitor anyway.
   \centering
   \includegraphics[width=0.8\linewidth]{figs/background/classic-bpf.pdf}
   \caption[The classic BPF architecture]{
-    The classic \gls{bpf} architecture. Adapted from McCanne and Jacobson~\cite{mccanne1993_bpf}.
+    The classic \gls{bpf} architecture.  A tap intercepts and copies packets as they
+    arrive from the NIC driver before they are forwarded to the operating system's
+    protocol stack.  The tap then passes packets through a filtering mechanism which
+    selectively delivers them to various consuming userspace applications.  This figure
+    was adapted from McCanne and Jacobson~\cite{mccanne1993_bpf}.
   }%
   \label{fig:classic-bpf}
 \end{figure}

@@ -92,7 +92,7 @@ implicit isolation and additional \gls{os}-level security mechanisms: a form of
 \textit{policy through mechanism}.
 
 The central argument of this thesis is that container security can be greatly
-improved by provisioning the operating system with the right set of confinement primitives.
+improved by providing the operating system with the right set of confinement primitives.
 In particular, such primitives should enable the definition of a security boundary
 around the container similar in spirit to the implicit boundary that exists around a
 virtual machine. A policy author could then define exceptions to this security boundary
@@ -238,11 +238,12 @@ in \Cref{s:cp-design}.
     process-level} confinement. LXC, Docker, Snap, and others all combine namespaces,
     cgroups, capabilities, seccomp-bpf, and AppArmor/SELinux policy to achieve
     confinement. In the case of Snap, high-level abstractions in policy definition can
-    simplify the process of policy authorship to a certain extent, but simple policies
-    are still compiled down into thousands of lines of policy soup, spanning multiple
+    simplify the process of policy authorship to a certain extent, but simple policies are
+    still compiled down into thousands of lines of policy soup, spanning multiple
     confinement mechanisms. FreeBSD Jails and Solaris Zones take an alternate approach,
-    enforcing a rigid protection boundary around the container, but with little flexibility
-    for policy customization.
+    enforcing a rigid protection boundary around the container, but with little
+    flexibility for policy customization. Flexibility in confinement policy, however, is
+    a desirable property due to the diversity of application code in practice.
 
   \item \label{i:problem-unsuitability} \textbf{Unsuitability for Containers.}
     Existing Linux \gls{dac} and \gls{mac} is unsuitable for containers.
@@ -609,7 +610,7 @@ definitions for \textit{confinement}, \textit{confinement policy}, and the
 % model, with subtle and specific differences arising in a few key areas. Where
 % discrepancies arise, they will be noted accordingly.
 
-\section{Differences Between \bpfbox{} and \bpfcontain{}}
+\subsection{Differences Between \bpfbox{} and \bpfcontain{}}
 
 Under \bpfbox{}, the enforcement engine targets access at the process level, interposing
 on individual system calls using \gls{ebpf} programs attached to \gls{lsm} hooks and
@@ -677,15 +678,16 @@ considered default-deny.
 
 \subsection{The Adversary and Attack Vectors}
 
-We consider a privileged remote adversary with root-level access under conventional Unix
+We consider a privileged adversary with root-level access under conventional Unix
 discretionary access controls.  Further, we assume that the adversary has already achieved
-local code execution at the process level. This means that the adversary is capable of
-running arbitrary code in the context of a given process or container and can perform
-arbitrary interactions with the kernel's reference monitor; these interactions may be
-allowed or denied at the discretion of the reference monitor, and may or may not result in
-the subsequent execution of kernel code, such as system call implementations. Without any
-confinement in place, the adversary is capable of reading or writing any file, accessing
-any device, loading kernel code, and performing any other privileged operation.
+local code execution (i.e.\ the ability to execute arbitrary code within a given process)
+at the process level. This means that the adversary is capable of running arbitrary code
+in the context of a given process or container and can perform arbitrary interactions with
+the kernel's reference monitor; these interactions may be allowed or denied at the
+discretion of the reference monitor, and may or may not result in the subsequent execution
+of kernel code, such as system call implementations. Without any confinement in place, the
+adversary is capable of reading or writing any file, accessing any device, loading kernel
+code, and performing any other privileged operation.
 
 Our goal is to confine the adversary such that they are unable to access
 security-sensitive resources, interfere with external processes, make changes to global
